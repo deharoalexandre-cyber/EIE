@@ -1,0 +1,12 @@
+FROM rocm/dev-ubuntu-22.04:6.0 AS build
+RUN apt-get update && apt-get install -y cmake git
+WORKDIR /eie
+COPY . .
+RUN git submodule update --init || true
+RUN cmake -B build -DGGML_HIP=ON -DCMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc)
+
+FROM rocm/dev-ubuntu-22.04:6.0
+COPY --from=build /eie/build/eie-server /usr/local/bin/
+COPY presets/ /etc/eie/presets/
+EXPOSE 8080
+CMD ["eie-server", "--config", "/etc/eie/presets/generic.yaml"]

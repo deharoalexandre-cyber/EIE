@@ -1,0 +1,11 @@
+# EIE Preset: Development
+host: 127.0.0.1
+port: 8080
+strategy: generic
+model_dir: ./models
+auto_discover: true
+type_k: f16
+type_v: f16
+n_ctx: 2048
+reserve_mb: 256
+log_level: debug

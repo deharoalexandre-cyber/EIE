@@ -1,0 +1,12 @@
+# EIE Preset: Generic (Ollama replacement)
+host: 0.0.0.0
+port: 8080
+strategy: generic
+model_dir: /models
+auto_discover: true
+type_k: turbo3
+type_v: turbo3
+flash_attn: true
+n_ctx: 4096
+reserve_mb: 512
+log_level: info

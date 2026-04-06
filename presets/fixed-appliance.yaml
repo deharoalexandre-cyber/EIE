@@ -1,0 +1,12 @@
+# EIE Preset: Fixed appliance (no dynamic loading)
+host: 0.0.0.0
+port: 8080
+strategy: fixed-appliance
+model_dir: /models
+auto_discover: false
+type_k: turbo3
+type_v: turbo3
+n_ctx: 4096
+reserve_mb: 256
+audit_enabled: true
+audit_path: /var/log/eie/audit.chain

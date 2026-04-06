@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  eie-cuda:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cuda
+    ports: ["8080:8080"]
+    volumes: ["./models:/models"]
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+
+  eie-rocm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.rocm
+    ports: ["8080:8080"]
+    volumes: ["./models:/models"]
+    devices: ["/dev/kfd", "/dev/dri"]
+    group_add: ["video"]

@@ -1,0 +1,12 @@
+# EIE Preset: Dual-core 6-model (2x3)
+host: 0.0.0.0
+port: 8080
+strategy: multi-group
+model_dir: /models
+auto_discover: false
+type_k: turbo3
+type_v: turbo3
+n_ctx: 4096
+reserve_mb: 512
+audit_enabled: true
+audit_path: /var/log/eie/audit.chain

@@ -1,0 +1,11 @@
+# EIE Preset: 3-model pinned group
+host: 0.0.0.0
+port: 8080
+strategy: pinned-group
+model_dir: /models
+auto_discover: false
+type_k: turbo3
+type_v: turbo3
+n_ctx: 8192
+reserve_mb: 512
+# Groups defined via API or extended YAML parser
