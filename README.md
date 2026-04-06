@@ -302,6 +302,20 @@ All contributions must be Apache 2.0 compatible.
 - [TurboQuant](https://github.com/TheTom/turboquant_plus) by TheTom — KV cache compression
 - [TurboQuant paper](https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/) — Google Research, ICLR 2026
 
+## Citing EIE
+
+If you use EIE in your research, please cite:
+```bibtex
+@misc{deharo2026eie,
+  author       = {De Haro, Alexandre},
+  title        = {EIE: A Policy-Driven Multi-Model Inference Server with Adaptive KV Cache Compression and GPU-Agnostic Backend Abstraction},
+  year         = {2026},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.19439972},
+  url          = {https://doi.org/10.5281/zenodo.19439972}
+}
+```
+
 ## License
 
 ```
