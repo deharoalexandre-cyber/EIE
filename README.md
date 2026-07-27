@@ -20,7 +20,12 @@ Benchmarked on NVIDIA GeForce RTX 4090 Laptop GPU (16 GB VRAM), Windows 11:
 |---|---|---|---|---|
 | Gemma 4 E2B | Q6_K | ~2.5 GB | 3,146 t/s | 126 t/s |
 | Gemma 4 E4B | Q6_K | ~4.5 GB | 1,883 t/s | 70 t/s |
+| Gemma 4 26B A4B | QAT Q4_0 | 15.3-15.6 GB | 2,442-2,614 t/s | 79-100 t/s |
 | **Both loaded** | Q6_K | **~7.5 GB** | — | — |
+
+The 26B A4B result uses a 16,384-token context with Q4_0 KV caches on a
+16 GB RTX 4090 Laptop GPU. See the
+[full configuration and field report](docs/benchmarks/gemma4-26b-a4b-rtx4090-laptop.md).
 
 Compared to Ollama with the same models on the same hardware:
 - **30% less VRAM** (7.5 GB vs 10.8 GB)
@@ -286,6 +291,7 @@ See `presets/` for ready-to-use configurations.
 |---|---|---|---|---|---|
 | Windows 11 | RTX 4090 Laptop 16 GB | CUDA 13.2 | Gemma 4 E2B + E4B | 7.5 GB | ✅ |
 | Windows 11 | RTX 4090 Laptop 16 GB | CUDA 13.2 | Gemma 4 E4B solo | 5.6 GB | ✅ |
+| Windows 11 | RTX 4090 Laptop 16 GB | CUDA | Gemma 4 26B A4B QAT Q4_0, 16k context | 15.3-15.6 GB | ✅ |
 | Ubuntu 24 | RTX 4090 24 GB | CUDA 12.x | Various | — | ✅ |
 | Linux | AMD GPUs | ROCm 6.x | — | — | 🎯 Target |
 | Any | CPU only | N/A | Any GGUF | RAM | ✅ |
