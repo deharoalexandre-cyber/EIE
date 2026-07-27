@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "test_date": "2026-07-27",
+  "scope": "single-system field report",
+  "system": {
+    "os": "Windows 11",
+    "gpu": "NVIDIA GeForce RTX 4090 Laptop GPU",
+    "vram_reported_mib": 16375,
+    "driver": "595.79",
+    "cuda_architecture": "8.9",
+    "logical_cpu_threads": 32,
+    "runtime_threads": 24,
+    "runtime_build": "b1-fae3a28"
+  },
+  "model": {
+    "repository": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf",
+    "file": "gemma-4-26B_q4_0-it.gguf",
+    "quantization": "QAT Q4_0",
+    "size_bytes": 14439363584,
+    "sha256": "3eca3b8f6d7baf218a7dd6bba5fb59a56ee25fe2d567b6f5f589b4f697eca51d"
+  },
+  "configuration": {
+    "context_tokens": 16384,
+    "gpu_layers": "all",
+    "cache_type_k": "q4_0",
+    "cache_type_v": "q4_0",
+    "flash_attention": true,
+    "parallel_slots": 1,
+    "thinking_enabled": false,
+    "embeddings_device": "cpu"
+  },
+  "memory": {
+    "gpu_used_mib_range": [
+      15299,
+      15585
+    ],
+    "gpu_free_mib_range": [
+      464,
+      750
+    ],
+    "cuda_model_buffer_mib": 13755.42,
+    "cpu_mapped_model_buffer_mib": 577.5,
+    "non_swa_kv_cache_mib": 90.0,
+    "swa_kv_cache_mib": 84.38
+  },
+  "raw_eie": {
+    "cold_first_request_8k_seconds": 8.732,
+    "long_generation_8k": {
+      "generated_tokens": 372,
+      "end_to_end_seconds": 4.285,
+      "ttft_seconds": 0.551,
+      "generation_tokens_per_second": 99.63
+    },
+    "context_16k_samples": [
+      {
+        "prompt_tokens": 3957,
+        "prompt_tokens_per_second": 2613.96,
+        "generated_tokens": 37,
+        "generation_tokens_per_second": 78.68
+      },
+      {
+        "prompt_tokens": 4016,
+        "prompt_tokens_per_second": 2441.87,
+        "generated_tokens": 73,
+        "generation_tokens_per_second": 81.7
+      }
+    ]
+  },
+  "orchestrated_client": {
+    "task_count": 12,
+    "direct_eie": {
+      "score": 6.33,
+      "pure_reasoning_score": 6.0,
+      "operational_score": 0.33,
+      "mean_latency_seconds": 11.548,
+      "median_latency_seconds": 7.592
+    },
+    "orchestrated": {
+      "score": 10.33,
+      "pure_reasoning_score": 5.0,
+      "operational_score": 5.33,
+      "mean_latency_seconds": 2.554,
+      "median_latency_seconds": 2.206
+    },
+    "notes": [
+      "Direct EIE intentionally had no tools, persistent memory, or RAG.",
+      "The orchestrated client made one code-tracing error.",
+      "The isolated memory database intentionally lacked historical beliefs requested by one task."
+    ]
+  }
+}
