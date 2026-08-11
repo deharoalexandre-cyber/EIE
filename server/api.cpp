@@ -24,6 +24,16 @@ using json = nlohmann::json;
 namespace eie {
 
 #if defined(HAS_HTTPLIB) && HAS_HTTPLIB
+// Un alias "de type embedding" (bge, embed, mmproj) n'est jamais choisi comme
+// modèle de chat par défaut, et inversement sert de repli pour /v1/embeddings.
+static bool looksLikeEmbedder(const std::string& alias) {
+    std::string a = alias;
+    for (auto& c : a) c = (char)tolower(c);
+    return a.find("bge") != std::string::npos ||
+           a.find("embed") != std::string::npos ||
+           a.find("mmproj") != std::string::npos;
+}
+
 // Flatten an OpenAI-style messages[] array into a single prompt.
 static std::string promptFromMessages(const json& body) {
     std::ostringstream ss;
@@ -146,9 +156,11 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
         auto* backend = models.get(model);
         if (!backend) {
-            // single-model convenience: route to the only loaded model
-            auto all = models.loaded();
-            if (all.size() == 1) { model = all[0]; backend = models.get(model); }
+            // repli : l'unique modèle de GÉNÉRATION chargé (les embedders sont exclus)
+            std::vector<std::string> gen;
+            for (auto& a : models.loaded())
+                if (!looksLikeEmbedder(a)) gen.push_back(a);
+            if (gen.size() == 1) { model = gen[0]; backend = models.get(model); }
         }
 
         // Template de chat natif du modèle pour messages[] ; repli générique sinon.
@@ -179,6 +191,58 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
     // GET /health
     svr.Get("/health", [&](const httplib::Request&, httplib::Response& res) {
         res.set_content(metrics.healthJson(), "application/json");
+    });
+
+    // POST /v1/embeddings — OpenAI-compatible
+    svr.Post("/v1/embeddings", [&](const httplib::Request& req, httplib::Response& res) {
+        json body = json::parse(req.body, nullptr, false);
+        if (body.is_discarded()) {
+            res.status = 400;
+            res.set_content("{\"error\":\"invalid JSON\"}", "application/json");
+            return;
+        }
+        std::string model = body.value("model", "embedder");
+        auto* backend = models.get(model);
+        if (!backend) {
+            // repli : le premier modèle chargé de type embedding
+            for (auto& a : models.loaded())
+                if (looksLikeEmbedder(a)) { model = a; backend = models.get(a); break; }
+        }
+        if (!backend) {
+            res.status = 404;
+            res.set_content("{\"error\":\"no embedding model loaded\"}", "application/json");
+            return;
+        }
+
+        std::vector<std::string> inputs;
+        if (body.contains("input")) {
+            if (body["input"].is_string()) inputs.push_back(body["input"]);
+            else if (body["input"].is_array())
+                for (auto& s : body["input"])
+                    if (s.is_string()) inputs.push_back(s);
+        }
+        if (inputs.empty()) {
+            res.status = 400;
+            res.set_content("{\"error\":\"missing input\"}", "application/json");
+            return;
+        }
+
+        json data = json::array();
+        for (size_t i = 0; i < inputs.size(); i++) {
+            auto t0 = std::chrono::steady_clock::now();
+            auto vec = backend->embed(inputs[i]);
+            if (vec.empty()) {
+                res.status = 500;
+                res.set_content("{\"error\":\"embedding failed\"}", "application/json");
+                return;
+            }
+            auto ms = std::chrono::duration<float, std::milli>(
+                std::chrono::steady_clock::now() - t0).count();
+            metrics.recordModel(model, ms, 0);
+            data.push_back({{"object", "embedding"}, {"index", i}, {"embedding", vec}});
+        }
+        json out = {{"object", "list"}, {"model", model}, {"data", data}};
+        res.set_content(out.dump(), "application/json");
     });
 
     // ════════════════════════════════════

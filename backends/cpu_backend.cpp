@@ -16,6 +16,7 @@
 #include <mutex>
 #include <thread>
 #include <algorithm>
+#include <cmath>
 #endif
 
 namespace eie {
@@ -56,6 +57,36 @@ protected:
     llama_context * ctx_ = nullptr;
     common_chat_templates_ptr tmpls_;
     std::mutex infer_mutex_;
+    bool embed_mode_ = false;
+
+    // (Re)crée le contexte en mode génération ou embedding (mêmes poids).
+    llama_context* makeContext(bool embeddings) {
+        llama_context_params cp = llama_context_default_params();
+        cp.n_ctx = kv_.n_ctx;
+        cp.n_threads = threads_;
+        cp.n_threads_batch = threads_;
+        if (embeddings) {
+            cp.embeddings = true;
+            cp.n_batch = cp.n_ubatch = 2048; // encodeurs : la séquence en un seul ubatch
+            cp.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
+        } else {
+            cp.flash_attn_type = kv_.flash_attn ? LLAMA_FLASH_ATTN_TYPE_AUTO
+                                                : LLAMA_FLASH_ATTN_TYPE_DISABLED;
+            cp.type_k = mapKvType(kv_.type_k);
+            cp.type_v = mapKvType(kv_.type_v);
+        }
+        return llama_init_from_model(model_, cp);
+    }
+
+    bool switchMode(bool embeddings) {
+        if (embed_mode_ == embeddings && ctx_) return true;
+        llama_context* nctx = makeContext(embeddings);
+        if (!nctx) return false;
+        if (ctx_) llama_free(ctx_);
+        ctx_ = nctx;
+        embed_mode_ = embeddings;
+        return true;
+    }
 
 public:
     ~CpuBackend() override { unload(); }
@@ -159,6 +190,12 @@ public:
 
         std::lock_guard<std::mutex> lock(infer_mutex_);
 
+        if (!switchMode(false)) {
+            r.ok = false;
+            r.error = "context switch failed";
+            return r;
+        }
+
         // Fresh KV cache per request (stateless completions)
         llama_memory_clear(llama_get_memory(ctx_), true);
 
@@ -238,6 +275,36 @@ public:
         auto t1 = std::chrono::steady_clock::now();
         r.latency_ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
         return r;
+    }
+
+    std::vector<float> embed(const std::string& text) override {
+        if (!model_) return {};
+        std::lock_guard<std::mutex> lock(infer_mutex_);
+        if (!switchMode(true)) return {};
+
+        llama_memory_clear(llama_get_memory(ctx_), true);
+        auto tokens = common_tokenize(ctx_, text, true, true);
+        if (tokens.empty()) return {};
+        if ((int)tokens.size() > 2048) tokens.resize(2048);
+
+        llama_batch batch = llama_batch_init((int)tokens.size(), 0, 1);
+        common_batch_clear(batch);
+        for (size_t i = 0; i < tokens.size(); i++)
+            common_batch_add(batch, tokens[i], (llama_pos)i, {0}, true);
+        int rc = llama_decode(ctx_, batch);
+        llama_batch_free(batch);
+        if (rc != 0) return {};
+
+        const float* v = llama_get_embeddings_seq(ctx_, 0);
+        if (!v) return {};
+        int n = llama_model_n_embd(model_);
+        std::vector<float> out(v, v + n);
+        // Normalisation L2 (cosinus = produit scalaire côté client)
+        float norm = 0;
+        for (float x : out) norm += x * x;
+        norm = std::sqrt(norm);
+        if (norm > 0) for (float& x : out) x /= norm;
+        return out;
     }
 
     VramStatus vram() override { return VramStatus{gpu_id_, 0, 0, 0}; }

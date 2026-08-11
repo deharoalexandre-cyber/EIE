@@ -65,6 +65,9 @@ public:
     /** Applique le template de chat natif du modèle (métadonnées GGUF).
      *  Renvoie "" si le backend ne sait pas ; l'appelant utilise alors un repli. */
     virtual std::string formatChat(const std::vector<ChatMessage>& msgs) { return ""; }
+    /** Embedding L2-normalisé du texte (modèles encodeurs type bge-m3).
+     *  Renvoie un vecteur vide si le backend ne sait pas. */
+    virtual std::vector<float> embed(const std::string& text) { return {}; }
     virtual VramStatus vram() = 0;
     virtual HealthStatus health() = 0;
     virtual void unload() = 0;
