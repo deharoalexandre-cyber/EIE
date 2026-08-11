@@ -3,9 +3,19 @@ host: 0.0.0.0
 port: 8080
 strategy: pinned-group
 model_dir: /models
-auto_discover: false
+auto_discover: true
 type_k: turbo3
 type_v: turbo3
 n_ctx: 8192
 reserve_mb: 512
-# Groups defined via API or extended YAML parser
+
+# Aliases must match GGUF filenames (without extension) in model_dir,
+# or explicit entries in a `models:` map (alias: path).
+groups:
+  - name: core
+    models: [model-a, model-b, model-c]
+    required_responses: 3
+    type: parallel          # parallel / sequential / fanout
+    pinned: true
+    fallback: partial       # strict / partial / retry_once / replace_with
+    max_latency_ms: 5000
