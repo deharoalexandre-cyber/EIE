@@ -140,6 +140,19 @@ git submodule update --init
 ./scripts/build-cpu.sh
 ```
 
+### macOS (CPU)
+
+Works on Intel and Apple Silicon Macs. Requires CMake (`brew install cmake`).
+
+```bash
+git submodule update --init
+./scripts/build-cpu.sh
+./build/eie-server --config presets/macos-cpu.yaml
+```
+
+> **Note:** On Intel Macs, Metal is disabled at configure time — non-Apple-Silicon
+> GPUs produce incorrect results with the Metal backend. Inference runs on CPU.
+
 ### Windows (CUDA)
 
 **Prerequisites:**
@@ -294,6 +307,7 @@ See `presets/` for ready-to-use configurations.
 | Windows 11 | RTX 4090 Laptop 16 GB | CUDA | Gemma 4 26B A4B QAT Q4_0, 16k context | 15.3-15.6 GB | ✅ |
 | Ubuntu 24 | RTX 4090 24 GB | CUDA 12.x | Various | — | ✅ |
 | Linux | AMD GPUs | ROCm 6.x | — | — | 🎯 Target |
+| macOS 15 (Intel) | CPU (Metal off) | N/A | Gemma 4 E2B QAT Q4_0 | RAM | ✅ |
 | Any | CPU only | N/A | Any GGUF | RAM | ✅ |
 
 ## VRAM Budget Examples
