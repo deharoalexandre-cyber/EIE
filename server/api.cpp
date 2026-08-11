@@ -52,6 +52,15 @@ static std::string promptFromMessages(const json& body) {
     return ss.str();
 }
 
+// Extract OpenAI-style messages[] into ChatMessage structs.
+static std::vector<ChatMessage> messagesFromJson(const json& body) {
+    std::vector<ChatMessage> msgs;
+    if (body.contains("messages") && body["messages"].is_array())
+        for (auto& m : body["messages"])
+            msgs.push_back({m.value("role", "user"), m.value("content", "")});
+    return msgs;
+}
+
 static SamplingParams samplingFromJson(const json& body) {
     SamplingParams sp;
     sp.temperature = body.value("temperature", sp.temperature);
@@ -165,12 +174,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
         // Template de chat natif du modèle pour messages[] ; repli générique sinon.
         std::string prompt;
-        if (backend && body.contains("messages") && body["messages"].is_array()) {
-            std::vector<ChatMessage> msgs;
-            for (auto& m : body["messages"])
-                msgs.push_back({m.value("role", "user"), m.value("content", "")});
-            prompt = backend->formatChat(msgs);
-        }
+        if (backend) prompt = backend->formatChat(messagesFromJson(body));
         if (prompt.empty()) prompt = promptFromMessages(body);
         if (!backend) {
             res.status = 404;
@@ -258,7 +262,10 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
             return;
         }
         std::string group_name = body.value("group", "core");
-        std::string prompt = promptFromMessages(body);
+        // Chaque backend du groupe templte les mêmes messages avec le
+        // template natif de son propre GGUF ; repli générique sinon.
+        auto msgs = messagesFromJson(body);
+        std::string fallback = promptFromMessages(body);
         SamplingParams sp = samplingFromJson(body);
 
         auto it = policy->groups.find(group_name);
@@ -269,7 +276,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
         }
 
         auto backends = models.getAll();
-        auto result = scheduler.exec(it->second, prompt, sp, backends);
+        auto result = scheduler.exec(it->second, msgs, fallback, sp, backends);
         metrics.recordGroup(group_name, result.status == "complete", result.latency_ms);
         audit.record(group_name, result.status, "prompt_hash");
         res.set_content(groupResultJson(result), "application/json");
@@ -284,7 +291,8 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
             return;
         }
         std::string group_name = body.value("group", "chain");
-        std::string prompt = promptFromMessages(body);
+        auto msgs = messagesFromJson(body);
+        std::string fallback = promptFromMessages(body);
         SamplingParams sp = samplingFromJson(body);
 
         auto it = policy->groups.find(group_name);
@@ -295,7 +303,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
         }
 
         auto backends = models.getAll();
-        auto result = scheduler.execSequential(it->second, prompt, sp, backends);
+        auto result = scheduler.execSequential(it->second, msgs, fallback, sp, backends);
         metrics.recordGroup(group_name, result.status == "complete", result.latency_ms);
         res.set_content(groupResultJson(result), "application/json");
     });

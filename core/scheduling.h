@@ -177,13 +177,29 @@ inline std::unique_ptr<PolicyStrategy> createStrategy(const std::string& n) {
 // Group Scheduler
 // ═══════════════════════════════════════════
 
+/** Rend le prompt pour un backend donné : template de chat natif du modèle
+ *  (métadonnées GGUF) si disponible, sinon le repli fourni par l'appelant. */
+inline std::string renderPrompt(ComputeBackend* b,
+                                const std::vector<ChatMessage>& msgs,
+                                const std::string& fallback) {
+    if (b && !msgs.empty()) {
+        std::string p = b->formatChat(msgs);
+        if (!p.empty()) return p;
+    }
+    return fallback;
+}
+
 class GroupScheduler {
     PolicyStrategy* policy_;
 public:
     GroupScheduler(PolicyStrategy* p) : policy_(p) {}
 
-    // ── Parallel: same prompt to N models simultaneously ──
-    GroupResult execParallel(const GroupConfig& g, const std::string& prompt,
+    // ── Parallel: same messages to N models simultaneously ──
+    // Chaque modèle du groupe templte les mêmes messages avec son propre
+    // template natif ; fallback_prompt sert aux modèles sans template.
+    GroupResult execParallel(const GroupConfig& g,
+                            const std::vector<ChatMessage>& msgs,
+                            const std::string& fallback_prompt,
                             const SamplingParams& sp,
                             std::map<std::string, ComputeBackend*>& backends) {
         auto t0 = std::chrono::steady_clock::now();
@@ -205,8 +221,9 @@ public:
             }
 
             auto* b = it->second;
+            std::string prompt = renderPrompt(b, msgs, fallback_prompt);
             futs.push_back(std::async(std::launch::async,
-                [b, &prompt, &sp] { return b->chat(prompt, sp); }));
+                [b, prompt, &sp] { return b->chat(prompt, sp); }));
         }
 
         for (auto& f : futs) {
@@ -232,7 +249,50 @@ public:
         return r;
     }
 
+    // Raw prompt passthrough — aucun template appliqué.
+    GroupResult execParallel(const GroupConfig& g, const std::string& prompt,
+                            const SamplingParams& sp,
+                            std::map<std::string, ComputeBackend*>& backends) {
+        return execParallel(g, {}, prompt, sp, backends);
+    }
+
     // ── Sequential: output(N) -> input(N+1) ──
+    // La sortie du modèle N devient le tour utilisateur du modèle N+1,
+    // re-templatée avec le template natif de chaque maillon.
+    GroupResult execSequential(const GroupConfig& g,
+                              const std::vector<ChatMessage>& msgs,
+                              const std::string& fallback_prompt,
+                              const SamplingParams& sp,
+                              std::map<std::string, ComputeBackend*>& backends) {
+        auto t0 = std::chrono::steady_clock::now();
+        GroupResult r;
+        r.group = g.name;
+        r.required = 1;
+
+        std::vector<ChatMessage> step_msgs = msgs;
+        std::string step_fallback = fallback_prompt;
+        for (auto& alias : g.models) {
+            auto it = backends.find(alias);
+            if (it == backends.end() || !it->second->loaded) {
+                r.status = "failed";
+                return r;
+            }
+            std::string prompt = renderPrompt(it->second, step_msgs, step_fallback);
+            auto res = it->second->chat(prompt, sp);
+            r.responses.push_back(res);
+            if (!res.ok) { r.status = "failed"; return r; }
+            step_msgs = {{"user", res.text}};
+            step_fallback = res.text;
+            r.completed++;
+        }
+
+        r.latency_ms = std::chrono::duration<float, std::milli>(
+            std::chrono::steady_clock::now() - t0).count();
+        r.status = "complete";
+        return r;
+    }
+
+    // Raw prompt passthrough — la chaîne circule sans template.
     GroupResult execSequential(const GroupConfig& g, const std::string& prompt,
                               const SamplingParams& sp,
                               std::map<std::string, ComputeBackend*>& backends) {
@@ -262,10 +322,12 @@ public:
     }
 
     // ── Fan-out: same prompt, best response wins ──
-    GroupResult execFanout(const GroupConfig& g, const std::string& prompt,
+    GroupResult execFanout(const GroupConfig& g,
+                          const std::vector<ChatMessage>& msgs,
+                          const std::string& fallback_prompt,
                           const SamplingParams& sp,
                           std::map<std::string, ComputeBackend*>& backends) {
-        auto pr = execParallel(g, prompt, sp, backends);
+        auto pr = execParallel(g, msgs, fallback_prompt, sp, backends);
         GroupResult r;
         r.group = g.name;
         r.required = 1;
@@ -285,7 +347,23 @@ public:
         return r;
     }
 
+    GroupResult execFanout(const GroupConfig& g, const std::string& prompt,
+                          const SamplingParams& sp,
+                          std::map<std::string, ComputeBackend*>& backends) {
+        return execFanout(g, {}, prompt, sp, backends);
+    }
+
     // ── Dispatch based on group type ──
+    GroupResult exec(const GroupConfig& g,
+                     const std::vector<ChatMessage>& msgs,
+                     const std::string& fallback_prompt,
+                     const SamplingParams& sp,
+                     std::map<std::string, ComputeBackend*>& backends) {
+        if (g.type == "sequential") return execSequential(g, msgs, fallback_prompt, sp, backends);
+        if (g.type == "fanout") return execFanout(g, msgs, fallback_prompt, sp, backends);
+        return execParallel(g, msgs, fallback_prompt, sp, backends);
+    }
+
     GroupResult exec(const GroupConfig& g, const std::string& prompt,
                      const SamplingParams& sp,
                      std::map<std::string, ComputeBackend*>& backends) {
