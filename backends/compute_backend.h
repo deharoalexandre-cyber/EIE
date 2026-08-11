@@ -42,6 +42,11 @@ struct SamplingParams {
     std::vector<std::string> stop; // arrêt de génération sur ces séquences
 };
 
+struct ChatMessage {
+    std::string role;    // "system" / "user" / "assistant"
+    std::string content;
+};
+
 struct InferenceResult {
     std::string model, text, error;
     int tokens = 0;
@@ -57,6 +62,9 @@ public:
     virtual bool init(int gpu_id = 0) = 0;
     virtual bool load(const ModelParams& p) = 0;
     virtual InferenceResult chat(const std::string& prompt, const SamplingParams& s) = 0;
+    /** Applique le template de chat natif du modèle (métadonnées GGUF).
+     *  Renvoie "" si le backend ne sait pas ; l'appelant utilise alors un repli. */
+    virtual std::string formatChat(const std::vector<ChatMessage>& msgs) { return ""; }
     virtual VramStatus vram() = 0;
     virtual HealthStatus health() = 0;
     virtual void unload() = 0;

@@ -12,6 +12,7 @@
 #ifdef EIE_HAS_LLAMA
 #include "llama.h"
 #include "common.h"
+#include "chat.h"
 #include <mutex>
 #include <thread>
 #include <algorithm>
@@ -53,6 +54,7 @@ protected:
     int gpu_id_ = 0;
     llama_model * model_ = nullptr;
     llama_context * ctx_ = nullptr;
+    common_chat_templates_ptr tmpls_;
     std::mutex infer_mutex_;
 
 public:
@@ -109,12 +111,37 @@ public:
             return false;
         }
 
+        // Template de chat natif du modèle (métadonnées GGUF)
+        try {
+            tmpls_ = common_chat_templates_init(model_, "");
+        } catch (const std::exception& e) {
+            std::cerr << "[" << name() << "] no usable chat template: " << e.what() << std::endl;
+        }
+
         loaded = true;
         std::cout << "[" << name() << "] loaded: " << alias
                   << " kv=" << kv_.type_k << "/" << kv_.type_v
                   << " ctx=" << kv_.n_ctx
                   << " threads=" << threads_ << std::endl;
         return true;
+    }
+
+    std::string formatChat(const std::vector<ChatMessage>& msgs) override {
+        if (!tmpls_ || msgs.empty()) return "";
+        common_chat_templates_inputs in;
+        for (auto& m : msgs) {
+            common_chat_msg cm;
+            cm.role = m.role;
+            cm.content = m.content;
+            in.messages.push_back(cm);
+        }
+        in.add_generation_prompt = true;
+        try {
+            return common_chat_templates_apply(tmpls_.get(), in).prompt;
+        } catch (const std::exception& e) {
+            std::cerr << "[" << name() << "] chat template failed: " << e.what() << std::endl;
+            return "";
+        }
     }
 
     InferenceResult chat(const std::string& prompt, const SamplingParams& s) override {
@@ -218,6 +245,7 @@ public:
     }
 
     void unload() override {
+        tmpls_.reset();
         if (ctx_)   { llama_free(ctx_); ctx_ = nullptr; }
         if (model_) { llama_model_free(model_); model_ = nullptr; }
         if (loaded) std::cout << "[" << name() << "] unloaded: " << alias << std::endl;

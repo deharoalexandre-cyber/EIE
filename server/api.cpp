@@ -142,7 +142,6 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
             return;
         }
         std::string model = body.value("model", "default");
-        std::string prompt = promptFromMessages(body);
         SamplingParams sp = samplingFromJson(body);
 
         auto* backend = models.get(model);
@@ -151,6 +150,16 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
             auto all = models.loaded();
             if (all.size() == 1) { model = all[0]; backend = models.get(model); }
         }
+
+        // Template de chat natif du modèle pour messages[] ; repli générique sinon.
+        std::string prompt;
+        if (backend && body.contains("messages") && body["messages"].is_array()) {
+            std::vector<ChatMessage> msgs;
+            for (auto& m : body["messages"])
+                msgs.push_back({m.value("role", "user"), m.value("content", "")});
+            prompt = backend->formatChat(msgs);
+        }
+        if (prompt.empty()) prompt = promptFromMessages(body);
         if (!backend) {
             res.status = 404;
             res.set_content("{\"error\":\"model not found\"}", "application/json");
