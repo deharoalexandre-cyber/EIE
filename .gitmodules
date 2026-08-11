@@ -1,0 +1,4 @@
+[submodule "llama.cpp"]
+	path = llama.cpp
+	url = https://github.com/TheTom/llama-cpp-turboquant.git
+	branch = feature/turboquant-kv-cache
