@@ -1,0 +1,16 @@
+# Build trees
+build/
+build-*/
+cmake-build-*/
+
+# Models
+models/
+*.gguf
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Python
+__pycache__/

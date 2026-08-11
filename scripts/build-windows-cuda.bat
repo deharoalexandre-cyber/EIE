@@ -5,6 +5,9 @@ REM Requires: Visual Studio 2022 Build Tools, CUDA Toolkit, CMake
 REM Run from: Developer PowerShell for VS 2022
 REM ============================================
 
+REM Always run from the repository root
+cd /d "%~dp0.."
+
 echo.
 echo  EIE - Elyne Inference Engine
 echo  Building with CUDA backend (Windows)
@@ -60,6 +63,14 @@ if exist "llama.cpp\ggml\CMakeLists.txt" (
     echo [OK] Applied ASM fix for MSVC Build Tools
 )
 
+REM Fix MSVC storage-class error: GGML_API already carries `extern` on MSVC,
+REM so `GGML_API extern int` is `extern extern` (C2159). Static link makes the
+REM plain extern declaration sufficient.
+if exist "llama.cpp\ggml\src\ggml-cpu\ops.cpp" (
+    powershell -Command "(Get-Content 'llama.cpp\ggml\src\ggml-cpu\ops.cpp') -replace 'GGML_API extern int turbo3_cpu_wht_group_size', 'extern int turbo3_cpu_wht_group_size' | Set-Content 'llama.cpp\ggml\src\ggml-cpu\ops.cpp'"
+    echo [OK] Applied GGML_API extern fix for MSVC
+)
+
 REM Clean previous build
 if exist build (
     echo [..] Cleaning previous build...
@@ -71,6 +82,7 @@ echo.
 echo [..] Configuring with CMake...
 cmake -B build -G "Visual Studio 17 2022" ^
     -DGGML_CUDA=ON ^
+    -DBUILD_SHARED_LIBS=OFF ^
     -DCUDAToolkit_ROOT="%CUDA_PATH%" ^
     -DCMAKE_CUDA_COMPILER="%CUDA_PATH%\bin\nvcc.exe"
 
@@ -100,14 +112,14 @@ echo  ============================================
 echo  BUILD SUCCESSFUL
 echo  ============================================
 echo.
-echo  Binary: build\bin\Release\llama-server.exe
+echo  Binary: build\Release\eie-server.exe
 echo.
 echo  Quick start:
 echo    Single model:
-echo      build\bin\Release\llama-server.exe -m model.gguf -c 8192 --port 8090 -ngl 99
+echo      build\Release\eie-server.exe -m model.gguf --ctx 8192 --port 8090
 echo.
 echo    Multi-model router:
-echo      build\bin\Release\llama-server.exe --models-dir C:\path\to\models -c 8192 --port 8090 -ngl 99
+echo      build\Release\eie-server.exe --models-dir C:\path\to\models --ctx 8192 --port 8090
 echo.
 echo  Tested configurations:
 echo    - Windows 11 + RTX 4090 Laptop (16 GB) + CUDA 13.2

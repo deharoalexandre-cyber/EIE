@@ -53,12 +53,10 @@ Compared to Ollama with the same models on the same hardware:
 
 ### Policy Engine (pluggable)
 
-Scheduling behavior is defined by strategies, not hardcoded. Four built-in strategies ship with EIE. Custom strategies can be loaded from shared libraries without recompiling.
+Scheduling behavior is defined by strategies, not hardcoded. Four built-in strategies ship with EIE. Loading custom strategies from shared libraries (`plugin:libcustom.so`) is planned but not implemented yet.
 
 ```yaml
-policy:
-  strategy: pinned-group        # or: generic, multi-group, fixed-appliance
-  # strategy: plugin:libcustom.so  # custom plugin
+strategy: pinned-group          # or: generic, multi-group, fixed-appliance
 ```
 
 | Strategy | Behavior | Use case |
@@ -182,23 +180,28 @@ $env:PATH = "$env:CUDA_PATH\bin;$env:PATH"
 # Fix ASM issue (if MASM not installed)
 (Get-Content 'llama.cpp\ggml\CMakeLists.txt') -replace 'project\(ggml C CXX ASM\)', 'project(ggml C CXX)' | Set-Content 'llama.cpp\ggml\CMakeLists.txt'
 
-# Configure and build
-cmake -B build -G "Visual Studio 17 2022" -DGGML_CUDA=ON -DCUDAToolkit_ROOT="$env:CUDA_PATH" -DCMAKE_CUDA_COMPILER="$env:CUDA_PATH\bin\nvcc.exe"
+# Fix MSVC storage-class error (GGML_API already carries `extern` on MSVC)
+(Get-Content 'llama.cpp\ggml\src\ggml-cpu\ops.cpp') -replace 'GGML_API extern int turbo3_cpu_wht_group_size', 'extern int turbo3_cpu_wht_group_size' | Set-Content 'llama.cpp\ggml\src\ggml-cpu\ops.cpp'
+
+# Configure and build (static link — required by the extern fix above)
+cmake -B build -G "Visual Studio 17 2022" -DGGML_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCUDAToolkit_ROOT="$env:CUDA_PATH" -DCMAKE_CUDA_COMPILER="$env:CUDA_PATH\bin\nvcc.exe"
 cmake --build build --config Release
 ```
 
-> **Note:** Build takes 15-20 minutes due to CUDA kernel compilation. The binary is at `build\bin\Release\llama-server.exe`.
+Both fixes are applied automatically by `scripts\build-windows-cuda.bat`.
+
+> **Note:** Build takes 15-20 minutes due to CUDA kernel compilation. The binary is at `build\Release\eie-server.exe`.
 
 ## Quick Start
 
 ### Single model
 
 ```bash
-# Linux
-./build/eie-server -m model.gguf -c 8192 --port 8090 -ngl 99
+# Linux / macOS
+./build/eie-server -m model.gguf --ctx 8192 --port 8090
 
 # Windows
-build\bin\Release\llama-server.exe -m model.gguf -c 8192 --port 8090 -ngl 99
+build\Release\eie-server.exe -m model.gguf --ctx 8192 --port 8090
 ```
 
 ### Multi-model router
@@ -206,16 +209,16 @@ build\bin\Release\llama-server.exe -m model.gguf -c 8192 --port 8090 -ngl 99
 Load all GGUF models from a directory and route by model name via the API:
 
 ```bash
-# Linux
-./build/eie-server --models-dir /path/to/models -c 8192 --port 8090 -ngl 99
+# Linux / macOS
+./build/eie-server --models-dir /path/to/models --ctx 8192 --port 8090
 
 # Windows
-build\bin\Release\llama-server.exe --models-dir C:\Users\User\models -c 8192 --port 8090 -ngl 99
+build\Release\eie-server.exe --models-dir C:\Users\User\models --ctx 8192 --port 8090
 ```
 
-### Web UI
-
-EIE includes a built-in web interface. Open your browser to `http://127.0.0.1:8090` after starting the server.
+CLI flags: `--config`/`-c <path>` (YAML preset), `-m <model.gguf>` (repeatable),
+`--models-dir <dir>`, `--host`, `--port`, `--ctx <n>`. GPU offload is automatic
+when built with CUDA/ROCm.
 
 ## API
 
@@ -248,27 +251,31 @@ Two escape hatches:
 - `"stop"` (string or array) — cut generation on custom sequences, in addition
   to the model's native end-of-generation token.
 
-| Endpoint | Method | Description |
-| --- | --- | --- |
-| `/v1/chat/completions` | POST | Chat completion (native template, `prompt` passthrough, `stop`) |
-| `/v1/completions` | POST | Text completion |
-| `/v1/models` | GET | List available models |
-| `/v1/embeddings` | POST | Embeddings |
-| `/health` | GET | Server health |
+Group endpoints (`/v1/batch/execute`, `/v1/chain/execute`) apply the same rule
+per model: each backend in the group renders the shared `messages[]` with the
+native template of **its own** GGUF before generating.
+
+| Endpoint | Method | Status | Description |
+| --- | --- | --- | --- |
+| `/v1/chat/completions` | POST | ✅ | Chat completion (native template, `prompt` passthrough, `stop`) |
+| `/v1/models` | GET | ✅ | List loaded models |
+| `/health` | GET | ✅ | Server health |
+| `/v1/embeddings` | POST | ✅ | Embeddings (encoder models, e.g. bge-m3) |
+| `/v1/completions` | POST | 🚧 planned | Text completion |
 
 ### Layer 2 — Generic Extensions
 
-| Endpoint | Method | Description |
-| --- | --- | --- |
-| `/v1/batch/execute` | POST | Execute a model group (N parallel responses) |
-| `/v1/chain/execute` | POST | Execute a sequential chain (pipeline) |
-| `/v1/admin/models/load` | POST | Load a GGUF model into VRAM |
-| `/v1/admin/models/unload` | POST | Unload a model |
-| `/v1/admin/models/discover` | GET | Scan model directory |
-| `/v1/admin/vram/status` | GET | VRAM per GPU, per model, per group |
-| `/v1/admin/scheduling/status` | GET | Active policy and groups |
-| `/v1/admin/config/reload` | POST | Hot-reload YAML configuration |
-| `/metrics` | GET | Prometheus-compatible metrics |
+| Endpoint | Method | Status | Description |
+| --- | --- | --- | --- |
+| `/v1/batch/execute` | POST | ✅ | Execute a model group (N parallel responses, per-model native template) |
+| `/v1/chain/execute` | POST | ✅ | Execute a sequential chain (pipeline) |
+| `/v1/admin/models/discover` | GET | ✅ | Scan model directory |
+| `/v1/admin/scheduling/status` | GET | ✅ | Active policy and groups |
+| `/metrics` | GET | ✅ | Prometheus-compatible metrics |
+| `/v1/admin/vram/status` | GET | 🚧 stub | VRAM per GPU, per model, per group |
+| `/v1/admin/config/reload` | POST | 🚧 stub | Hot-reload YAML configuration |
+| `/v1/admin/models/load` | POST | 🚧 planned | Load a GGUF model into VRAM |
+| `/v1/admin/models/unload` | POST | 🚧 planned | Unload a model |
 
 #### Group Execution
 
@@ -306,9 +313,20 @@ audit_enabled: false
 audit_path: /var/log/eie/audit.chain
 
 log_level: info
+
+# Model groups (aliases = GGUF filenames without extension, or `models:` map entries)
+groups:
+  - name: core
+    models: [model-a, model-b, model-c]
+    required_responses: 3
+    type: parallel
+    pinned: true
+    fallback: partial
 ```
 
-See `presets/` for ready-to-use configurations.
+The parser is a minimal YAML subset: flat `key: value` entries, a `groups:`
+list, and a `models:` map (alias → path). See `presets/` for ready-to-use
+configurations.
 
 ## Tested Configurations
 
@@ -337,7 +355,7 @@ With TurboQuant turbo3 (Q4_K_M weights, 4096 context):
 
 1. Build EIE for your GPU
 2. Download GGUF models from HuggingFace (e.g., `bartowski/google_gemma-4-E4B-it-GGUF`)
-3. Start EIE: `./build/eie-server -m model.gguf --port 8090 -ngl 99`
+3. Start EIE: `./build/eie-server -m model.gguf --port 8090`
 4. Point your application to `http://localhost:8090/v1` instead of `http://localhost:11434/v1`
 5. Same API, faster inference, lower VRAM
 
