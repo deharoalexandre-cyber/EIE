@@ -21,6 +21,7 @@ struct ServerConfig {
     VramConfig vram;
     std::map<std::string, GroupConfig> groups;
     std::map<std::string, std::string> models; // alias -> path
+    std::vector<std::string> preload;          // aliases to load at boot ("all" = every discovered model)
     bool audit_enabled = false;
     std::string audit_path = "/var/log/eie/audit.chain";
     std::string log_level = "info";
@@ -62,6 +63,15 @@ inline ServerConfig loadConfig(const std::string& path) {
         else if (key == "audit_path") cfg.audit_path = val;
         else if (key == "reserve_mb") cfg.vram.reserve_mb = std::stoul(val);
         else if (key == "log_level") cfg.log_level = val;
+        else if (key == "preload") {
+            std::stringstream ps(val);
+            std::string item;
+            while (std::getline(ps, item, ',')) {
+                item.erase(0, item.find_first_not_of(" \t"));
+                item.erase(item.find_last_not_of(" \t") + 1);
+                if (!item.empty()) cfg.preload.push_back(item);
+            }
+        }
     }
     std::cout << "[Config] loaded: strategy=" << cfg.strategy
               << " port=" << cfg.port << std::endl;

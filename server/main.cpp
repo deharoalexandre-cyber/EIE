@@ -23,18 +23,36 @@ int main(int argc, char** argv) {
 
     // Parse args
     std::string config_path = "presets/generic.yaml";
+    std::vector<std::string> cli_models;
+    std::string cli_models_dir, cli_host;
+    int cli_port = 0, cli_ctx = 0;
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if ((arg == "--config" || arg == "-c") && i + 1 < argc)
             config_path = argv[++i];
-        if (arg == "--help" || arg == "-h") {
-            std::cout << "Usage: eie-server [--config <path>]\n";
+        else if ((arg == "--model" || arg == "-m") && i + 1 < argc)
+            cli_models.push_back(argv[++i]);
+        else if (arg == "--models-dir" && i + 1 < argc)
+            cli_models_dir = argv[++i];
+        else if (arg == "--port" && i + 1 < argc)
+            cli_port = std::stoi(argv[++i]);
+        else if (arg == "--host" && i + 1 < argc)
+            cli_host = argv[++i];
+        else if (arg == "--ctx" && i + 1 < argc)
+            cli_ctx = std::stoi(argv[++i]);
+        else if (arg == "--help" || arg == "-h") {
+            std::cout << "Usage: eie-server [--config <path>] [-m <model.gguf>]...\n"
+                      << "                  [--models-dir <dir>] [--host <h>] [--port <p>] [--ctx <n>]\n";
             return 0;
         }
     }
 
-    // Load config
+    // Load config (CLI overrides)
     auto cfg = eie::loadConfig(config_path);
+    if (!cli_models_dir.empty()) { cfg.model_dir = cli_models_dir; cfg.auto_discover = true; }
+    if (!cli_host.empty()) cfg.host = cli_host;
+    if (cli_port > 0) cfg.port = cli_port;
+    if (cli_ctx > 0) cfg.default_kv.n_ctx = cli_ctx;
 
     // Initialize policy engine
     auto strategy = eie::createStrategy(cfg.strategy);
@@ -56,6 +74,11 @@ int main(int argc, char** argv) {
     for (auto& [alias, path] : cfg.models) {
         models.reg(alias, path);
     }
+    for (auto& path : cli_models) {
+        auto stem = std::filesystem::path(path).stem().string();
+        models.reg(stem, path);
+        cfg.preload.push_back(stem);
+    }
 
     // Pre-load pinned models from groups
     for (auto& [gname, group] : cfg.groups) {
@@ -68,6 +91,25 @@ int main(int argc, char** argv) {
             } else {
                 std::cerr << "[EIE] WARN: Failed to load: " << alias << std::endl;
             }
+        }
+    }
+
+    // Preload models requested via config `preload:` or CLI -m
+    std::vector<std::string> to_preload;
+    for (auto& alias : cfg.preload) {
+        if (alias == "all") {
+            auto avail = models.available();
+            to_preload.insert(to_preload.end(), avail.begin(), avail.end());
+        } else {
+            to_preload.push_back(alias);
+        }
+    }
+    for (auto& alias : to_preload) {
+        if (models.get(alias)) continue; // already loaded
+        if (models.load(alias, cfg.default_kv)) {
+            std::cout << "[EIE] Pre-loaded: " << alias << std::endl;
+        } else {
+            std::cerr << "[EIE] WARN: Failed to load: " << alias << std::endl;
         }
     }
 

@@ -1,0 +1,14 @@
+# EIE Preset: macOS CPU (Accelerate)
+# Intel/Apple Silicon Macs — CPU inference, f16 KV cache.
+host: 127.0.0.1
+port: 8090
+strategy: generic
+model_dir: models
+auto_discover: true
+preload: all
+type_k: f16
+type_v: f16
+flash_attn: false
+n_ctx: 4096
+reserve_mb: 256
+log_level: info

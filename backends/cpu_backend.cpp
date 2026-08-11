@@ -1,14 +1,21 @@
 // EIE — Backend Implementations (CPU + CUDA + HIP)
 // Apache License 2.0
 //
-// In production: replace placeholder inference with llama.cpp calls:
-//   #include "llama.h"
-//   llama_model_load_from_file(), llama_init_from_model(),
-//   llama_decode(), llama_sampling(), llama_free()
+// Built with the llama.cpp submodule (EIE_HAS_LLAMA), the CPU backend runs
+// real GGUF inference. Without it, it falls back to placeholder responses
+// so the scheduler/API layers can still be exercised standalone.
 
 #include "compute_backend.h"
 #include <iostream>
 #include <chrono>
+
+#ifdef EIE_HAS_LLAMA
+#include "llama.h"
+#include "common.h"
+#include <mutex>
+#include <thread>
+#include <algorithm>
+#endif
 
 namespace eie {
 
@@ -16,14 +23,236 @@ namespace eie {
 // CPU Backend (also base for CUDA/HIP — same API)
 // ═══════════════════════════════════════════════
 
+#ifdef EIE_HAS_LLAMA
+
+static void ensureBackendInit() {
+    static std::once_flag once;
+    std::call_once(once, [] { llama_backend_init(); });
+}
+
+// Map EIE KV type names to ggml types. TurboQuant KV types come from the
+// llama-cpp-turboquant fork; on plain CPU builds the safe choices are
+// f16 / q8_0 / q4_0.
+static ggml_type mapKvType(const std::string& t) {
+    if (t == "f32")    return GGML_TYPE_F32;
+    if (t == "f16")    return GGML_TYPE_F16;
+    if (t == "q8_0")   return GGML_TYPE_Q8_0;
+    if (t == "q4_0")   return GGML_TYPE_Q4_0;
+    if (t == "turbo2") return GGML_TYPE_TQ2_0;
+    if (t == "turbo3") return GGML_TYPE_TQ3_1S;
+    if (t == "turbo4") return GGML_TYPE_TQ4_1S;
+    std::cerr << "[KV] unknown type '" << t << "', using f16" << std::endl;
+    return GGML_TYPE_F16;
+}
+
 class CpuBackend : public ComputeBackend {
 protected:
     KvConfig kv_;
     std::string path_;
     int threads_ = 4;
     int gpu_id_ = 0;
-    // llama_model * model_ = nullptr;
-    // llama_context * ctx_ = nullptr;
+    llama_model * model_ = nullptr;
+    llama_context * ctx_ = nullptr;
+    std::mutex infer_mutex_;
+
+public:
+    ~CpuBackend() override { unload(); }
+
+    BackendType type() const override { return BackendType::CPU; }
+    std::string name() const override { return "CPU"; }
+
+    bool init(int gpu_id) override {
+        gpu_id_ = gpu_id;
+        ensureBackendInit();
+        std::cout << "[" << name() << "] GPU " << gpu_id << " init" << std::endl;
+        return true;
+    }
+
+    bool load(const ModelParams& p) override {
+        path_ = p.path;
+        alias = p.alias;
+        threads_ = p.n_threads > 0 ? p.n_threads
+                 : (int)std::max(1u, std::thread::hardware_concurrency() / 2);
+        kv_ = p.kv;
+
+        llama_model_params mp = llama_model_default_params();
+        // CPU backend: never offload. On Intel Macs ggml would otherwise pick
+        // the Metal backend, which produces garbage on non-Apple-Silicon GPUs.
+        mp.n_gpu_layers = (type() == BackendType::CPU) ? 0 : p.n_gpu_layers;
+        model_ = llama_model_load_from_file(path_.c_str(), mp);
+        if (!model_) {
+            std::cerr << "[" << name() << "] failed to load model: " << path_ << std::endl;
+            return false;
+        }
+
+        llama_context_params cp = llama_context_default_params();
+        cp.n_ctx = kv_.n_ctx;
+        cp.n_threads = threads_;
+        cp.n_threads_batch = threads_;
+        cp.flash_attn_type = kv_.flash_attn ? LLAMA_FLASH_ATTN_TYPE_AUTO
+                                            : LLAMA_FLASH_ATTN_TYPE_DISABLED;
+        cp.type_k = mapKvType(kv_.type_k);
+        cp.type_v = mapKvType(kv_.type_v);
+
+        ctx_ = llama_init_from_model(model_, cp);
+        if (!ctx_ && (cp.type_k != GGML_TYPE_F16 || cp.type_v != GGML_TYPE_F16)) {
+            std::cerr << "[" << name() << "] context init failed with kv="
+                      << kv_.type_k << "/" << kv_.type_v << ", retrying f16" << std::endl;
+            cp.type_k = GGML_TYPE_F16;
+            cp.type_v = GGML_TYPE_F16;
+            kv_.type_k = kv_.type_v = "f16";
+            ctx_ = llama_init_from_model(model_, cp);
+        }
+        if (!ctx_) {
+            llama_model_free(model_);
+            model_ = nullptr;
+            return false;
+        }
+
+        loaded = true;
+        std::cout << "[" << name() << "] loaded: " << alias
+                  << " kv=" << kv_.type_k << "/" << kv_.type_v
+                  << " ctx=" << kv_.n_ctx
+                  << " threads=" << threads_ << std::endl;
+        return true;
+    }
+
+    InferenceResult chat(const std::string& prompt, const SamplingParams& s) override {
+        auto t0 = std::chrono::steady_clock::now();
+        InferenceResult r;
+        r.model = alias;
+
+        if (!ctx_ || !model_) {
+            r.ok = false;
+            r.error = "model not loaded";
+            return r;
+        }
+
+        std::lock_guard<std::mutex> lock(infer_mutex_);
+
+        // Fresh KV cache per request (stateless completions)
+        llama_memory_clear(llama_get_memory(ctx_), true);
+
+        auto tokens = common_tokenize(ctx_, prompt, true, true);
+        int n_ctx = (int)llama_n_ctx(ctx_);
+        if ((int)tokens.size() >= n_ctx - 8) {
+            // keep the tail of the prompt if it does not fit
+            tokens.erase(tokens.begin(), tokens.end() - (n_ctx - 8));
+        }
+        if (tokens.empty()) {
+            r.ok = false;
+            r.error = "empty prompt";
+            return r;
+        }
+
+        const llama_vocab* vocab = llama_model_get_vocab(model_);
+        const int chunk = 512;
+        llama_batch batch = llama_batch_init(std::max((int)tokens.size(), chunk), 0, 1);
+
+        // Prompt evaluation (chunked)
+        bool decode_ok = true;
+        for (size_t off = 0; off < tokens.size(); off += chunk) {
+            size_t end = std::min(tokens.size(), off + chunk);
+            common_batch_clear(batch);
+            for (size_t i = off; i < end; i++) {
+                common_batch_add(batch, tokens[i], (llama_pos)i, {0},
+                                 i == tokens.size() - 1);
+            }
+            if (llama_decode(ctx_, batch) != 0) { decode_ok = false; break; }
+        }
+        if (!decode_ok) {
+            llama_batch_free(batch);
+            r.ok = false;
+            r.error = "prompt decode failed";
+            return r;
+        }
+
+        // Sampler chain
+        llama_sampler* smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
+        // Pénalité de répétition : les petits modèles bouclent vite en complétion brute
+        llama_sampler_chain_add(smpl, llama_sampler_init_penalties(256, 1.15f, 0.0f, 0.0f));
+        llama_sampler_chain_add(smpl, llama_sampler_init_top_k(s.top_k));
+        llama_sampler_chain_add(smpl, llama_sampler_init_top_p(s.top_p, 1));
+        llama_sampler_chain_add(smpl, llama_sampler_init_temp(s.temperature));
+        llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+
+        // Generation loop
+        std::string output;
+        int n_past = (int)tokens.size();
+        for (int i = 0; i < s.max_tokens && n_past < n_ctx; i++) {
+            llama_token id = llama_sampler_sample(smpl, ctx_, -1);
+            if (llama_vocab_is_eog(vocab, id)) break;
+            output += common_token_to_piece(ctx_, id);
+            r.tokens++;
+            // Séquences d'arrêt : coupe dès qu'une apparaît en fin de sortie
+            bool stopped = false;
+            for (auto& st : s.stop) {
+                auto pos = output.rfind(st);
+                if (pos != std::string::npos && pos + st.size() >= output.size()) {
+                    output.erase(pos);
+                    stopped = true;
+                    break;
+                }
+            }
+            if (stopped) break;
+            common_batch_clear(batch);
+            common_batch_add(batch, id, n_past++, {0}, true);
+            if (llama_decode(ctx_, batch) != 0) break;
+        }
+
+        llama_sampler_free(smpl);
+        llama_batch_free(batch);
+
+        r.text = output;
+        r.ok = true;
+
+        auto t1 = std::chrono::steady_clock::now();
+        r.latency_ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
+        return r;
+    }
+
+    VramStatus vram() override { return VramStatus{gpu_id_, 0, 0, 0}; }
+
+    HealthStatus health() override {
+        return HealthStatus{loaded, 0, loaded ? "OK" : "not loaded"};
+    }
+
+    void unload() override {
+        if (ctx_)   { llama_free(ctx_); ctx_ = nullptr; }
+        if (model_) { llama_model_free(model_); model_ = nullptr; }
+        if (loaded) std::cout << "[" << name() << "] unloaded: " << alias << std::endl;
+        loaded = false;
+    }
+
+    bool adaptKv(const KvConfig& kv) override {
+        std::cout << "[" << name() << "] adapt KV " << kv_.type_v << " -> " << kv.type_v << std::endl;
+        // Reallocate the context with the new KV quantization (weights stay loaded)
+        std::lock_guard<std::mutex> lock(infer_mutex_);
+        llama_context_params cp = llama_context_default_params();
+        cp.n_ctx = kv.n_ctx;
+        cp.n_threads = threads_;
+        cp.n_threads_batch = threads_;
+        cp.flash_attn_type = kv.flash_attn ? LLAMA_FLASH_ATTN_TYPE_AUTO
+                                           : LLAMA_FLASH_ATTN_TYPE_DISABLED;
+        cp.type_k = mapKvType(kv.type_k);
+        cp.type_v = mapKvType(kv.type_v);
+        llama_context* nctx = llama_init_from_model(model_, cp);
+        if (!nctx) return false;
+        if (ctx_) llama_free(ctx_);
+        ctx_ = nctx;
+        kv_ = kv;
+        return true;
+    }
+};
+
+#else // !EIE_HAS_LLAMA — placeholder backend (standalone scheduler/API testing)
+
+class CpuBackend : public ComputeBackend {
+protected:
+    KvConfig kv_;
+    std::string path_;
+    int threads_ = 4;
+    int gpu_id_ = 0;
 
 public:
     BackendType type() const override { return BackendType::CPU; }
@@ -40,32 +269,8 @@ public:
         alias = p.alias;
         threads_ = p.n_threads;
         kv_ = p.kv;
-
-        // ── llama.cpp integration point ──
-        // llama_model_params mp = llama_model_default_params();
-        // mp.n_gpu_layers = p.n_gpu_layers;
-        // model_ = llama_model_load_from_file(path_.c_str(), mp);
-        // if (!model_) return false;
-        //
-        // llama_context_params cp = llama_context_default_params();
-        // cp.n_ctx = kv_.n_ctx;
-        // cp.flash_attn = kv_.flash_attn;
-        //
-        // Map KV types:
-        //   "f16"    -> GGML_TYPE_F16
-        //   "q8_0"   -> GGML_TYPE_Q8_0
-        //   "q4_0"   -> GGML_TYPE_Q4_0
-        //   "turbo2" -> GGML_TYPE_TQ2_0
-        //   "turbo3" -> GGML_TYPE_TQ3_0
-        //   "turbo4" -> GGML_TYPE_TQ4_0
-        //
-        // cp.type_k = map_kv_type(kv_.type_k);
-        // cp.type_v = map_kv_type(kv_.type_v);
-        // ctx_ = llama_init_from_model(model_, cp);
-        // if (!ctx_) { llama_model_free(model_); return false; }
-
         loaded = true;
-        std::cout << "[" << name() << "] loaded: " << alias
+        std::cout << "[" << name() << "] loaded (placeholder): " << alias
                   << " kv=" << kv_.type_k << "/" << kv_.type_v
                   << " ctx=" << kv_.n_ctx << std::endl;
         return true;
@@ -75,41 +280,9 @@ public:
         auto t0 = std::chrono::steady_clock::now();
         InferenceResult r;
         r.model = alias;
-
-        // ── llama.cpp inference loop ──
-        // 1. Tokenize prompt:
-        //    auto tokens = llama_tokenize(model_, prompt.c_str(), true);
-        //
-        // 2. Create batch and decode:
-        //    llama_batch batch = llama_batch_init(tokens.size(), 0, 1);
-        //    for (size_t i = 0; i < tokens.size(); i++)
-        //        llama_batch_add(batch, tokens[i], i, {0}, false);
-        //    batch.logits[batch.n_tokens - 1] = true;
-        //    llama_decode(ctx_, batch);
-        //
-        // 3. Sampling loop:
-        //    auto sampler = llama_sampler_chain_init({});
-        //    llama_sampler_chain_add(sampler, llama_sampler_init_temp(s.temperature));
-        //    llama_sampler_chain_add(sampler, llama_sampler_init_top_p(s.top_p, 1));
-        //    llama_sampler_chain_add(sampler, llama_sampler_init_top_k(s.top_k));
-        //    llama_sampler_chain_add(sampler, llama_sampler_init_dist(0));
-        //
-        //    std::string output;
-        //    for (int i = 0; i < s.max_tokens; i++) {
-        //        llama_token id = llama_sampler_sample(sampler, ctx_, -1);
-        //        if (llama_token_is_eog(model_, id)) break;
-        //        output += llama_token_to_piece(ctx_, id);
-        //        llama_batch_clear(batch);
-        //        llama_batch_add(batch, id, tokens.size() + i, {0}, true);
-        //        llama_decode(ctx_, batch);
-        //        r.tokens++;
-        //    }
-        //    r.text = output;
-
         r.text = "[" + alias + " response to: " + prompt.substr(0, 50) + "...]";
         r.tokens = 42;
         r.ok = true;
-
         auto t1 = std::chrono::steady_clock::now();
         r.latency_ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
         return r;
@@ -122,8 +295,6 @@ public:
     }
 
     void unload() override {
-        // llama_free(ctx_); ctx_ = nullptr;
-        // llama_model_free(model_); model_ = nullptr;
         loaded = false;
         std::cout << "[" << name() << "] unloaded: " << alias << std::endl;
     }
@@ -131,12 +302,11 @@ public:
     bool adaptKv(const KvConfig& kv) override {
         std::cout << "[" << name() << "] adapt KV " << kv_.type_v << " -> " << kv.type_v << std::endl;
         kv_ = kv;
-        // In production: reallocate KV cache with new quantization
-        // llama_kv_cache_clear(ctx_);
-        // Reconfigure cache type without reloading weights
         return true;
     }
 };
+
+#endif // EIE_HAS_LLAMA
 
 // ═══════════════════════════════════════════════
 // CUDA Backend — inherits CPU, overrides GPU-specific

@@ -39,6 +39,7 @@ struct ModelParams {
 struct SamplingParams {
     float temperature = 0.7f, top_p = 0.9f;
     int top_k = 40, max_tokens = 2048;
+    std::vector<std::string> stop; // arrêt de génération sur ces séquences
 };
 
 struct InferenceResult {

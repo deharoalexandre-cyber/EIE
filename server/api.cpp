@@ -13,11 +13,50 @@
 #include <thread>
 #include <chrono>
 
-// If httplib available (from llama.cpp vendor):
-// #include "httplib.h"
-// #define HAS_HTTPLIB 1
+// httplib + nlohmann/json come from the llama.cpp vendor tree;
+// HAS_HTTPLIB is defined by CMake when the submodule is present.
+#if defined(HAS_HTTPLIB) && HAS_HTTPLIB
+#include "httplib.h"
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+#endif
 
 namespace eie {
+
+#if defined(HAS_HTTPLIB) && HAS_HTTPLIB
+// Flatten an OpenAI-style messages[] array into a single prompt.
+static std::string promptFromMessages(const json& body) {
+    std::ostringstream ss;
+    if (body.contains("messages") && body["messages"].is_array()) {
+        for (auto& m : body["messages"]) {
+            std::string role = m.value("role", "user");
+            std::string content = m.value("content", "");
+            if (role == "system")      ss << content << "\n\n";
+            else if (role == "user")   ss << "User: " << content << "\n";
+            else                       ss << "Assistant: " << content << "\n";
+        }
+        ss << "Assistant:";
+    } else {
+        ss << body.value("prompt", "");
+    }
+    return ss.str();
+}
+
+static SamplingParams samplingFromJson(const json& body) {
+    SamplingParams sp;
+    sp.temperature = body.value("temperature", sp.temperature);
+    sp.top_p       = body.value("top_p", sp.top_p);
+    sp.top_k       = body.value("top_k", sp.top_k);
+    sp.max_tokens  = body.value("max_tokens", 256);
+    if (body.contains("stop")) {
+        if (body["stop"].is_string()) sp.stop.push_back(body["stop"]);
+        else if (body["stop"].is_array())
+            for (auto& s : body["stop"])
+                if (s.is_string()) sp.stop.push_back(s);
+    }
+    return sp;
+}
+#endif
 
 // ═══════════════════════════════════════════
 // JSON Helpers
@@ -96,13 +135,22 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
     // POST /v1/chat/completions
     svr.Post("/v1/chat/completions", [&](const httplib::Request& req, httplib::Response& res) {
-        // TODO: parse JSON body for model, messages, temperature, max_tokens
-        // For now: extract model name, concatenate messages as prompt
-        std::string model = "default";
-        std::string prompt = req.body; // simplified
-        SamplingParams sp;
+        json body = json::parse(req.body, nullptr, false);
+        if (body.is_discarded()) {
+            res.status = 400;
+            res.set_content("{\"error\":\"invalid JSON\"}", "application/json");
+            return;
+        }
+        std::string model = body.value("model", "default");
+        std::string prompt = promptFromMessages(body);
+        SamplingParams sp = samplingFromJson(body);
 
         auto* backend = models.get(model);
+        if (!backend) {
+            // single-model convenience: route to the only loaded model
+            auto all = models.loaded();
+            if (all.size() == 1) { model = all[0]; backend = models.get(model); }
+        }
         if (!backend) {
             res.status = 404;
             res.set_content("{\"error\":\"model not found\"}", "application/json");
@@ -130,10 +178,15 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
     // POST /v1/batch/execute — parallel group execution
     svr.Post("/v1/batch/execute", [&](const httplib::Request& req, httplib::Response& res) {
-        // TODO: parse group name and messages from JSON body
-        std::string group_name = "core"; // simplified
-        std::string prompt = req.body;
-        SamplingParams sp;
+        json body = json::parse(req.body, nullptr, false);
+        if (body.is_discarded()) {
+            res.status = 400;
+            res.set_content("{\"error\":\"invalid JSON\"}", "application/json");
+            return;
+        }
+        std::string group_name = body.value("group", "core");
+        std::string prompt = promptFromMessages(body);
+        SamplingParams sp = samplingFromJson(body);
 
         auto it = policy->groups.find(group_name);
         if (it == policy->groups.end()) {
@@ -151,9 +204,15 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
     // POST /v1/chain/execute — sequential chain
     svr.Post("/v1/chain/execute", [&](const httplib::Request& req, httplib::Response& res) {
-        std::string group_name = "chain"; // simplified
-        std::string prompt = req.body;
-        SamplingParams sp;
+        json body = json::parse(req.body, nullptr, false);
+        if (body.is_discarded()) {
+            res.status = 400;
+            res.set_content("{\"error\":\"invalid JSON\"}", "application/json");
+            return;
+        }
+        std::string group_name = body.value("group", "chain");
+        std::string prompt = promptFromMessages(body);
+        SamplingParams sp = samplingFromJson(body);
 
         auto it = policy->groups.find(group_name);
         if (it == policy->groups.end()) {
