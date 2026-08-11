@@ -136,6 +136,8 @@ public:
             in.messages.push_back(cm);
         }
         in.add_generation_prompt = true;
+        // Pas de canal de "réflexion" par défaut : la réponse est la réponse.
+        in.enable_thinking = false;
         try {
             return common_chat_templates_apply(tmpls_.get(), in).prompt;
         } catch (const std::exception& e) {
