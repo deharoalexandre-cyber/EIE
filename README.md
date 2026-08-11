@@ -236,9 +236,21 @@ curl http://localhost:8090/v1/chat/completions \
 curl http://localhost:8090/v1/models
 ```
 
+**Native chat template.** `messages[]` is rendered with the model's **own chat
+template**, read from the GGUF metadata (`<start_of_turn>` for Gemma, ChatML for
+Qwen, etc.). EIE never injects a persona or extra prompt text — the substrate
+receives the conversation in its native syntax, nothing more. Models without a
+usable template fall back to a generic `User:/Assistant:` layout.
+
+Two escape hatches:
+- `"prompt"` (string) — raw completion passthrough, no template applied. Full
+  control for clients that assemble their own context.
+- `"stop"` (string or array) — cut generation on custom sequences, in addition
+  to the model's native end-of-generation token.
+
 | Endpoint | Method | Description |
 | --- | --- | --- |
-| `/v1/chat/completions` | POST | Chat completion (streaming supported) |
+| `/v1/chat/completions` | POST | Chat completion (native template, `prompt` passthrough, `stop`) |
 | `/v1/completions` | POST | Text completion |
 | `/v1/models` | GET | List available models |
 | `/v1/embeddings` | POST | Embeddings |
@@ -307,7 +319,7 @@ See `presets/` for ready-to-use configurations.
 | Windows 11 | RTX 4090 Laptop 16 GB | CUDA | Gemma 4 26B A4B QAT Q4_0, 16k context | 15.3-15.6 GB | ✅ |
 | Ubuntu 24 | RTX 4090 24 GB | CUDA 12.x | Various | — | ✅ |
 | Linux | AMD GPUs | ROCm 6.x | — | — | 🎯 Target |
-| macOS 15 (Intel) | CPU (Metal off) | N/A | Gemma 4 E2B QAT Q4_0 | RAM | ✅ |
+| macOS 15 (Intel x86_64) | CPU (Metal off) | N/A | Gemma 4 E2B QAT Q4_0, native chat template, Android-emulator client | RAM | ✅ |
 | Any | CPU only | N/A | Any GGUF | RAM | ✅ |
 
 ## VRAM Budget Examples
