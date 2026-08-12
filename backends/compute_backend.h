@@ -50,6 +50,7 @@ struct ChatMessage {
 struct InferenceResult {
     std::string model, text, error;
     int tokens = 0;
+    int reused_tokens = 0; // préfixe KV réutilisé (0 = préfill complet)
     float latency_ms = 0;
     bool ok = true;
 };

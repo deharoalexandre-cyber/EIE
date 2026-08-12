@@ -58,6 +58,9 @@ protected:
     common_chat_templates_ptr tmpls_;
     std::mutex infer_mutex_;
     bool embed_mode_ = false;
+    // KV-reuse : tokens (prompt + génération) encore présents dans le cache KV.
+    // Le préfixe commun avec la requête suivante n'est pas re-préfillé.
+    std::vector<llama_token> cache_tokens_;
 
     // (Re)crée le contexte en mode génération ou embedding (mêmes poids).
     llama_context* makeContext(bool embeddings) {
@@ -85,6 +88,7 @@ protected:
         if (ctx_) llama_free(ctx_);
         ctx_ = nctx;
         embed_mode_ = embeddings;
+        cache_tokens_.clear(); // nouveau contexte : cache KV perdu
         return true;
     }
 
@@ -196,14 +200,13 @@ public:
             return r;
         }
 
-        // Fresh KV cache per request (stateless completions)
-        llama_memory_clear(llama_get_memory(ctx_), true);
-
         auto tokens = common_tokenize(ctx_, prompt, true, true);
         int n_ctx = (int)llama_n_ctx(ctx_);
+        bool truncated = false;
         if ((int)tokens.size() >= n_ctx - 8) {
             // keep the tail of the prompt if it does not fit
             tokens.erase(tokens.begin(), tokens.end() - (n_ctx - 8));
+            truncated = true;
         }
         if (tokens.empty()) {
             r.ok = false;
@@ -211,13 +214,28 @@ public:
             return r;
         }
 
+        // KV-reuse (D12 du mobile, porté serveur) : le préfixe commun avec la
+        // requête précédente reste dans le cache KV ; seul le delta est préfillé.
+        size_t prefix = 0;
+        if (!truncated) {
+            while (prefix < cache_tokens_.size() && prefix < tokens.size() - 1 &&
+                   cache_tokens_[prefix] == tokens[prefix]) prefix++;
+        }
+        auto* mem = llama_get_memory(ctx_);
+        if (prefix > 0 && llama_memory_seq_rm(mem, 0, (llama_pos)prefix, -1)) {
+            // cache conservé jusqu'à `prefix` (seq_rm peut échouer sur SWA -> repli)
+        } else {
+            llama_memory_clear(mem, true);
+            prefix = 0;
+        }
+
         const llama_vocab* vocab = llama_model_get_vocab(model_);
         const int chunk = 512;
-        llama_batch batch = llama_batch_init(std::max((int)tokens.size(), chunk), 0, 1);
+        llama_batch batch = llama_batch_init(chunk, 0, 1);
 
-        // Prompt evaluation (chunked)
+        // Prompt evaluation (chunked), à partir du préfixe réutilisé
         bool decode_ok = true;
-        for (size_t off = 0; off < tokens.size(); off += chunk) {
+        for (size_t off = prefix; off < tokens.size(); off += chunk) {
             size_t end = std::min(tokens.size(), off + chunk);
             common_batch_clear(batch);
             for (size_t i = off; i < end; i++) {
@@ -226,6 +244,7 @@ public:
             }
             if (llama_decode(ctx_, batch) != 0) { decode_ok = false; break; }
         }
+        r.reused_tokens = (int)prefix;
         if (!decode_ok) {
             llama_batch_free(batch);
             r.ok = false;
@@ -244,11 +263,13 @@ public:
 
         // Generation loop
         std::string output;
+        cache_tokens_ = tokens; // les tokens générés s'y ajoutent au fil de l'eau
         int n_past = (int)tokens.size();
         for (int i = 0; i < s.max_tokens && n_past < n_ctx; i++) {
             llama_token id = llama_sampler_sample(smpl, ctx_, -1);
             if (llama_vocab_is_eog(vocab, id)) break;
             output += common_token_to_piece(ctx_, id);
+            cache_tokens_.push_back(id);
             r.tokens++;
             // Séquences d'arrêt : coupe dès qu'une apparaît en fin de sortie
             bool stopped = false;
