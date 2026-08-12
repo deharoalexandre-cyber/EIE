@@ -12,3 +12,10 @@ flash_attn: false
 n_ctx: 4096
 reserve_mb: 256
 log_level: info
+
+# Groupe de test (parseur YAML des groupes — commit 33be1a1)
+groups:
+  - name: core
+    models: [gemma-4-E2B-it-QAT-Q4_0]
+    required_responses: 1
+    type: parallel
