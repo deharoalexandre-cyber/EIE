@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <ctime>
+#include <csignal>
 #include <thread>
 #include <chrono>
 
@@ -146,7 +147,14 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
                  Metrics& metrics, AuditTrail& audit) {
 
 #if defined(HAS_HTTPLIB) && HAS_HTTPLIB
-    httplib::Server svr;
+    // Arrêt propre : SIGTERM/SIGINT doivent STOPPER le serveur, pas juste
+    // lever un drapeau que personne ne lit (les processus survivaient aux
+    // kills et s'accumulaient). Le handler appelle svr.stop() -> listen()
+    // rend la main -> shutdown normal.
+    static httplib::Server svr;
+    static auto stopHandler = [](int) { svr.stop(); };
+    signal(SIGINT, stopHandler);
+    signal(SIGTERM, stopHandler);
 
     // ════════════════════════════════════
     // LAYER 1 — OpenAI Compatible
