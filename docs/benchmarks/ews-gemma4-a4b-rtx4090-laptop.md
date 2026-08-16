@@ -8,6 +8,12 @@ Runtime: llama.cpp `fae3a28` (upstream), MSVC 14.44, CUDA. All artifacts,
 thresholds and holdouts SHA-256-hashed *before* the data they govern
 (manifests in [`data/ews/HASHES.txt`](data/ews/HASHES.txt)).
 
+The initial investigation was triggered by
+[AirLLM](https://github.com/lyogavin/airllm)'s weight-streaming approach; the
+resulting EWS architecture was developed independently (clean-room C++17, no
+code reused) and diverged substantially during measurement. See
+[Prior art](../ews/README.md#prior-art--inspirations).
+
 ## Method in one line
 
 Every threshold was written and hashed before the first measured token; two

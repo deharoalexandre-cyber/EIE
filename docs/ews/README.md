@@ -60,6 +60,24 @@ bandwidth-bound).
 above 4096 tokens.** Mixtral-class coarse MoE is explicitly out of scope
 (published negative control).
 
+## Prior art / inspirations
+
+EWS was initially inspired by [AirLLM](https://github.com/lyogavin/airllm)'s
+work on weight streaming (layer-wise streaming in 2023–2024, then per-expert
+streaming in its 2026 revival). **AirLLM is credited for the general streaming
+approach.** EWS is an independent clean-room C++17 implementation with a
+different execution model (slot-arena substitution inside `ggml_mul_mat_id`),
+cache policy (calibrated hotset + SLRU), integrity layer (fail-closed
+per-chunk SHA-256 against a signed digest table) and empirical eligibility
+criteria (routing-profile measurement). **No AirLLM code has been reused.**
+
+Related work also includes expert-offloading approaches such as
+PowerInfer (SJTU) and the Mixtral offloading research by Eliseev & Mazur
+(LRU expert cache + speculative prediction). llama.cpp's mmap/layer offload
+serves as the comparison baseline.
+
+## Reports and artifacts
+
 Full campaign report, including the failures that shaped the design:
 [`docs/benchmarks/ews-gemma4-a4b-rtx4090-laptop.md`](../benchmarks/ews-gemma4-a4b-rtx4090-laptop.md).
 Raw protocols, manifests, verdict and reproduction scripts:
