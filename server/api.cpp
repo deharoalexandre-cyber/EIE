@@ -68,6 +68,7 @@ static SamplingParams samplingFromJson(const json& body) {
     sp.top_p       = body.value("top_p", sp.top_p);
     sp.top_k       = body.value("top_k", sp.top_k);
     sp.max_tokens  = body.value("max_tokens", 256);
+    sp.one_shot    = body.value("one_shot", false);
     if (body.contains("stop")) {
         if (body["stop"].is_string()) sp.stop.push_back(body["stop"]);
         else if (body["stop"].is_array())
@@ -191,6 +192,9 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
         }
 
         auto result = backend->chat(prompt, sp);
+        std::cout << "[KV] reused=" << result.reused_tokens
+                  << " gen=" << result.tokens
+                  << " total_ms=" << (int)result.latency_ms << std::endl;
         metrics.recordModel(model, result.latency_ms, result.tokens);
         res.set_content(chatCompletionJson(result, model), "application/json");
     });

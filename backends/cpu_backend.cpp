@@ -200,8 +200,20 @@ public:
             return r;
         }
 
-        auto tokens = common_tokenize(ctx_, prompt, true, true);
-        int n_ctx = (int)llama_n_ctx(ctx_);
+        // One-shot : contexte éphémère, le cache KV du chat reste intact
+        // (fix « bug n°1 » d'Elyne Mobile, version serveur).
+        llama_context* run_ctx = ctx_;
+        if (s.one_shot) {
+            run_ctx = makeContext(false);
+            if (!run_ctx) {
+                r.ok = false;
+                r.error = "one-shot context failed";
+                return r;
+            }
+        }
+
+        auto tokens = common_tokenize(run_ctx, prompt, true, true);
+        int n_ctx = (int)llama_n_ctx(run_ctx);
         bool truncated = false;
         if ((int)tokens.size() >= n_ctx - 8) {
             // keep the tail of the prompt if it does not fit
@@ -209,6 +221,7 @@ public:
             truncated = true;
         }
         if (tokens.empty()) {
+            if (s.one_shot) llama_free(run_ctx);
             r.ok = false;
             r.error = "empty prompt";
             return r;
@@ -216,12 +229,13 @@ public:
 
         // KV-reuse (D12 du mobile, porté serveur) : le préfixe commun avec la
         // requête précédente reste dans le cache KV ; seul le delta est préfillé.
+        // Jamais en one-shot : contexte vierge, cache du chat non consulté.
         size_t prefix = 0;
-        if (!truncated) {
+        if (!truncated && !s.one_shot) {
             while (prefix < cache_tokens_.size() && prefix < tokens.size() - 1 &&
                    cache_tokens_[prefix] == tokens[prefix]) prefix++;
         }
-        auto* mem = llama_get_memory(ctx_);
+        auto* mem = llama_get_memory(run_ctx);
         if (prefix > 0 && llama_memory_seq_rm(mem, 0, (llama_pos)prefix, -1)) {
             // cache conservé jusqu'à `prefix` (seq_rm peut échouer sur SWA -> repli)
         } else {
@@ -242,11 +256,12 @@ public:
                 common_batch_add(batch, tokens[i], (llama_pos)i, {0},
                                  i == tokens.size() - 1);
             }
-            if (llama_decode(ctx_, batch) != 0) { decode_ok = false; break; }
+            if (llama_decode(run_ctx, batch) != 0) { decode_ok = false; break; }
         }
-        r.reused_tokens = (int)prefix;
+        r.reused_tokens = s.one_shot ? -1 : (int)prefix;
         if (!decode_ok) {
             llama_batch_free(batch);
+            if (s.one_shot) llama_free(run_ctx);
             r.ok = false;
             r.error = "prompt decode failed";
             return r;
@@ -263,13 +278,13 @@ public:
 
         // Generation loop
         std::string output;
-        cache_tokens_ = tokens; // les tokens générés s'y ajoutent au fil de l'eau
+        if (!s.one_shot) cache_tokens_ = tokens; // les tokens générés s'y ajoutent
         int n_past = (int)tokens.size();
         for (int i = 0; i < s.max_tokens && n_past < n_ctx; i++) {
-            llama_token id = llama_sampler_sample(smpl, ctx_, -1);
+            llama_token id = llama_sampler_sample(smpl, run_ctx, -1);
             if (llama_vocab_is_eog(vocab, id)) break;
-            output += common_token_to_piece(ctx_, id);
-            cache_tokens_.push_back(id);
+            output += common_token_to_piece(run_ctx, id);
+            if (!s.one_shot) cache_tokens_.push_back(id);
             r.tokens++;
             // Séquences d'arrêt : coupe dès qu'une apparaît en fin de sortie
             bool stopped = false;
@@ -284,11 +299,12 @@ public:
             if (stopped) break;
             common_batch_clear(batch);
             common_batch_add(batch, id, n_past++, {0}, true);
-            if (llama_decode(ctx_, batch) != 0) break;
+            if (llama_decode(run_ctx, batch) != 0) break;
         }
 
         llama_sampler_free(smpl);
         llama_batch_free(batch);
+        if (s.one_shot) llama_free(run_ctx);
 
         r.text = output;
         r.ok = true;

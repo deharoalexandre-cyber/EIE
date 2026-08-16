@@ -40,6 +40,10 @@ struct SamplingParams {
     float temperature = 0.7f, top_p = 0.9f;
     int top_k = 40, max_tokens = 2048;
     std::vector<std::string> stop; // arrêt de génération sur ces séquences
+    // One-shot (consolidations, rêves, tâches annexes) : contexte ÉPHÉMÈRE,
+    // le cache KV de la conversation principale est préservé.
+    // (Fix « bug n°1 » d'Elyne Mobile, porté serveur : 2e contexte, KV du chat intact.)
+    bool one_shot = false;
 };
 
 struct ChatMessage {
