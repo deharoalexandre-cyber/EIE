@@ -1,0 +1,118 @@
+Figé le 2026-08-16, AVANT le premier token des traces de mesure.
+SHA-256 (certutil):
+
+KILL-THRESHOLD.md (v2 + amendement v2.1 prédicteur/stall-bytes):
+03fc662cba23ec2db108e60dfa11965c4b7c51a9e5026591f4caa4ff8876e697
+
+replay.py (simulateurs C0/static/online/LRU/LRU-K/pred/Bélády, verdict S1/S2/GO):
+04aae06185e8881ab99f378b65e4b085c46845faae1737769e1d90f1789754bf
+
+Traces prévues (greedy argmax, déterministe):
+  W1 code C++        Mixtral Q4_K_M  n_predict=512  n_gpu=14  n_ctx=6144
+  W2 prose FR        Mixtral Q4_K_M  n_predict=512  n_gpu=14  n_ctx=4096
+  W3 NMM proxy       Mixtral Q4_K_M  n_predict=512  n_gpu=14  n_ctx=4096
+  W4 contexte long   Mixtral Q4_K_M  n_predict=256  n_gpu=14  n_ctx=10240
+  W5 prose FR        Gemma-4-26B-A4B Q4_0 (128 exp, top-8) n_predict=512 n_gpu=24 n_ctx=4096  [diagnostic, hors verdict]
+
+Annotations d'exécution (2026-08-16, AVANT toute lecture des résultats de rejeu;
+ajustements de collecte, aucun seuil modifié):
+  - W1: prompt réel 6517 tokens > n_ctx 6144 -> relancé avec n_ctx=8192.
+  - W3: EOS après 168 tokens décodés (< 512 requis par le protocole) -> prompt
+    enrichi de 10 à 25 questions + consigne de réponses détaillées, relancé.
+    Le choix de re-prompt plutôt que de forcer la génération après EOS est
+    délibéré: continuer après EOS produirait du routage hors-distribution.
+  - W4: prompt réel 12214 tokens > n_ctx 10240 -> extrait source réduit de
+    30000 à 20000 caractères (~8k tokens), relancé même n_ctx.
+  - W2 et W5: complètes au premier passage (512 tokens décodés chacune).
+
+Post-verdict v2 (2026-08-16, APRÈS le rendu du verdict S1 Mixtral, AVANT tout
+gate v3): replay.py étendu de colonnes additives pour le diagnostic P0.4
+(entropie normalisée par couche = pré-filtre v0.4; indicateur descriptif de
+concentration (H_static−F)/(1−F), hors critères GO/KILL). Le verdict v2 rendu
+n'est pas recalculé; le hash de replay.py sera re-consigné au gate v3.
+
+================================================================================
+GATE v3 — MANIFEST FIGÉ (2026-08-16, go GPT + go Alex reçus, AVANT le premier
+token des traces de verdict G1-G4). À partir de cet instant: aucune
+modification de seuil, input ou analyseur. Verdict appliqué mécaniquement.
+SHA-256 (certutil):
+
+KILL-THRESHOLD-v3.md (finale, 7 corrections audit GPT):
+  7ee481219f42c720d419ec20fdadaefcb2d4a38fe4198d4a78e6621148d39254
+g1_code_holdout.txt   (512 tok, n_ctx 8192):
+  cb3b31080b2bc39430034afc772e3b53c6faa28dadbf573a47ae3469341e9f33
+g2_prose_holdout.txt  (512 tok, n_ctx 4096):
+  b1a5b8faecbb6ae6c83094445a87701b2309ffaa37e34b82a0c10cdc41599363
+g3_nmm_holdout.txt    (512 tok, n_ctx 4096):
+  96049b78b5fb175f011c9a49a7e59b5dc052526d0c107b611389a20f447432dd
+g4_longctx_holdout.txt (256 tok, n_ctx 10240):
+  7fad7c1ae8588ed932f95b8d778f62608d470d8330c40a2a133be8732ad1670f
+replay.py (sim_hybrid, C_v1_total octets totaux, S1 tri-état, GO absolu):
+  ae039126eaf9bbb9ef1774ed5261cea3ff64642fa02ee925b4bb35126dd565af
+tracer/main.cpp:
+  846d0b6b5cbd23ab1e107e6cfa60a30120d392f100da89f0c5750bb681123784
+
+Véhicule: google_gemma-4-26B-A4B-it-Q4_0.gguf, 14 439 363 584 octets,
+  SHA-256 3eca3b8f6d7baf218a7dd6bba5fb59a56ee25fe2d567b6f5f589b4f697eca51d
+  30 blocs tous MoE, 128 experts top-8, slab moyen 3,345 Mo, C0 0,8029 Go/token
+Runtime: llama.cpp ggml-org master fae3a28070fe4026f87bd6a544aba1b2d1896566,
+  build MSVC 14.44.35207 Release CUDA
+Génération: greedy argmax, n_gpu_layers=24, n_predict/n_ctx par fichier ci-dessus
+
+================================================================================
+GATE C+ END-TO-END — PROTOCOLE ET OUTIL FIGÉS (2026-08-16, après gel moteur
+ENGINE-FREEZE.md et audit GPT des 7 clarifications; AVANT création G5-G8).
+SHA-256 (certutil):
+
+VERDICT-CPLUS-PROTOCOL.md (final: CAL/EVAL, ordre anti-fuite, différentiel
+R1/R2/R3, octets physiques, pire-des-deux-runs, INVALID, classes G5-G8 figées):
+  1d530b8d84447820f93223b188d5718142d44cfd5858dbf8fa5d63d805f2efc5
+verdict_cplus.py (hotset/cstatic/cengine, réplique SLRU gelée validée sur
+données brûlées: hit sim 0,8891 vs moteur 0,888):
+  2d424557c27364371d55d325f0ec5eab50c5df0be3d2d65f4e56e5248bfd9704
+Moteur gelé: voir ENGINE-FREEZE.md (source 45db589b…, binaire 15f43583…).
+
+Prochaine étape au go d'Alex: création des CONTENUS G5-G8 (classes déjà
+figées au protocole), hash, puis exécution dans l'ordre anti-fuite.
+
+--------------------------------------------------------------------------------
+GO ALEX REÇU. CONTENUS G5-G8 CRÉÉS ET HASHÉS (2026-08-16, avant toute trace):
+  g5_code_holdout2.txt   (p1a_pipeline/main.cpp[0:18000], jamais employé):
+    8d7eb36947a4c5bcf4c7f92203ee173a10f58e2de28482c673576c9fa1149e5f
+  g6_prose_holdout2.txt  (récit inédit «l'accordeuse»):
+    60092e4af72204e4f3f59bc591d4010aeca803ad5a0c38f9e50189dbe75d1353
+  g7_nmm_holdout2.txt    (25 questions inédites):
+    e7ac92b0abb50de1bcb121678ed1a8248f746022f5c0b56215ac621b4af3c85e
+  g8_longctx_holdout2.txt (llama-context.cpp[0:20000], jamais employé):
+    b1ad47425140c0ce74fc2851dc63f65fe88c3c46610f7e36319248656911872c
+
+TRACES CAL FAITES (quotas pleins 256/256/256/128, aucun ajustement de prompt).
+ARTEFACTS HOTSET HASHÉS (AVANT tout run moteur):
+  g5_hotset.json: d070f32d8a8c6af04fa2130a42d18a11263f82c8e2ff107db27a52fca7142948
+  g6_hotset.json: d67555dba7bbe9d3c7f84aae51bb20291e2fe62afc072fa5938607f27de94129
+  g7_hotset.json: 8065824d658b98560306d81bbd2589255df928eb4ef77f23d9fe1b0513756c37
+  g8_hotset.json: 9bef51fc507a401d54b54e32d38999bdc9bde3a9a1b6814dda39905438c10bd7
+
+Opérationnalisation de la fermeture comptable (notée AVANT toute trace/run;
+clarification de calcul, aucun seuil modifié): T_compute par holdout = run
+mode 0 dédié; T_drain+T_contention mesurés conjointement comme
+T_other = T_total − T_compute − vis − pol − stall; le critère <3 ms s'applique
+à |T_other(R1) − T_other(R2)| et T_other doit être ≥ 0; le split drain vs
+contention est publié à titre informatif via un run no_wait par holdout.
+
+--------------------------------------------------------------------------------
+INCIDENT P1-C+-CTX-01 (2026-08-16): G5/G8 originaux INVALID — n_ctx=4096
+compilé dans le candidat gelé < prompts (6282/7144 tok). Runs échoués sans
+decode valide ni exposition EVAL. Historique conservé. G6/G7 ACQUIS (identité
+R1/R2 exacte, T_other stable <3ms). Arbitrage GPT: option A amendée.
+
+AMENDEMENT C+ v1.1 hashé AVANT création des contenus de remplacement:
+  AMENDMENT-CPLUS-v1.1.md:
+    6727ad548cedda836d95671f1de8001b1f79ee89f6fc4bbdd1741112ba0d148f
+Contenus G5'/G8' (troncature MÉCANIQUE des matériaux originaux, règles dans
+l'amendement), créés puis hashés:
+  g5p_code_holdout2.txt (p1a main.cpp[0:8500], préfixe strict de G5):
+    c1c69383b9e3402007e6da909fc3455ccda5c1caa02e91002e072144c6899f06
+  g8p_longctx_holdout2.txt (llama-context.cpp[0:9200], préfixe strict de G8):
+    5acfff1d6d9c483f2a036406af81c7e80b965ffea359c4c7a5bf3ec3f67a7cf6
+Portée: tout PASS borné à n_ctx ≤ 4096 (limitation documentée du candidat).

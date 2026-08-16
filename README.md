@@ -32,6 +32,27 @@ Compared to Ollama with the same models on the same hardware:
 - **2x faster generation** (126 t/s vs ~60 t/s on E2B)
 - Prompt cache active: `sim_best = 0.876` — subsequent requests are faster
 
+## Experimental: Expert-Aware Weight Streaming (EWS)
+
+Streaming MoE expert weights from NVMe at expert granularity, with a
+calibrated hotset + SLRU cache and fail-closed per-chunk SHA-256 verification.
+A frozen v1 candidate passed a pre-registered end-to-end gate on **four unseen
+holdout workloads**:
+
+> Gemma 4 26B-A4B Q4_0 — 4/4 unseen holdouts passed —
+> **6.55–11.10 tok/s end-to-end** — **40–48% fewer cold bytes/token vs static
+> hotset** — SHA-256 chunk verification fail-closed enabled.
+> Scope: Gemma-4-A4B, n_ctx ≤ 4096, tested hardware only.
+> *No claim is made for K3-class models, other MoE architectures, or contexts
+> above 4096 tokens.*
+
+The campaign includes two pre-registered negative results (Mixtral-class
+coarse MoE killed as a target; a first cache policy rejected on holdouts) —
+kept published because they define the eligibility rule: *EWS eligibility is
+governed by the cold working set induced by routing, not by model size.*
+Design: [docs/ews/README.md](docs/ews/README.md) · Field report:
+[docs/benchmarks/ews-gemma4-a4b-rtx4090-laptop.md](docs/benchmarks/ews-gemma4-a4b-rtx4090-laptop.md)
+
 ## Why EIE?
 
 |  | Ollama | vLLM | llama.cpp server | **EIE** |
