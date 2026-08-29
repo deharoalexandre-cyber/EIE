@@ -12,6 +12,10 @@
 
 EIE is a local inference server that loads GGUF models, serves them via an OpenAI-compatible REST API, and manages GPU memory. It is designed as **infrastructure** — it serves completions, nothing more. Orchestrators, agents, and domain-specific logic are clients of this server.
 
+EIE also ships an **embedded Android flavor** — same TurboQuant fork compiled for arm64,
+with runtime CPU-variant dispatch (ARMv8.2 → v9), OpenCL/Adreno and Hexagon NPU (HTP)
+backends, and KV-reuse incremental generation. See [`mobile/`](mobile/README.md).
+
 ## Performance
 
 Benchmarked on NVIDIA GeForce RTX 4090 Laptop GPU (16 GB VRAM), Windows 11:
