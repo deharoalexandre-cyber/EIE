@@ -36,6 +36,30 @@ Compared to Ollama with the same models on the same hardware:
 - **2x faster generation** (126 t/s vs ~60 t/s on E2B)
 - Prompt cache active: `sim_best = 0.876` — subsequent requests are faster
 
+## EIE Mobile (Android)
+
+The same engine, embedded. [`mobile/`](mobile/README.md) ships a JNI wrapper and Docker
+build recipes that put the TurboQuant fork on Android arm64 — one APK covering ARMv8.2
+(Snapdragon 888) through ARMv9, with the best CPU variant selected at runtime, plus
+OpenCL/Adreno and Hexagon NPU (HTP) offload, and KV-reuse incremental generation
+(O(new tokens) instead of O(history) per turn).
+
+Measured on-device (Gemma 4 E2B, QAT Q4_0 unless noted):
+
+| SoC | Backend | Generation | Prompt eval |
+|---|---|---|---|
+| Snapdragon 8 Elite | Hexagon HTP v79 | **19.6–20.6 t/s** | **860–959 t/s** |
+| Snapdragon 8 Gen 3 | Hexagon HTP v75 | 13.4–17.8 t/s | 600–664 t/s |
+| Snapdragon 8 Gen 3 | CPU i8mm (Q4_K_M) | 17.4–18.7 t/s | 43–53 t/s |
+| Snapdragon 8 Gen 3 | Adreno 750 (Q4_0) | 8.0–9.7 t/s | 204–229 t/s |
+| Snapdragon 888 | CPU dotprod variant | 7.0–8.7 t/s | ~31 t/s |
+| Dimensity 9000+ | CPU i8mm | ~6 t/s | ~27 t/s |
+
+On phones, generation is DRAM-bandwidth-bound while prompt eval is compute-bound:
+matrix accelerators win prompt eval 4–20×, and QAT Q4_0 + HTP repack shrink the
+per-token working set enough that the NPU also wins generation on recent SoCs.
+Constraints, known limitations and build recipes: [`mobile/README.md`](mobile/README.md).
+
 ## Experimental: Expert-Aware Weight Streaming (EWS)
 
 Streaming MoE expert weights from NVMe at expert granularity, with a
@@ -68,6 +92,7 @@ Design: [docs/ews/README.md](docs/ews/README.md) · Field report:
 | **Adaptive KV** | No | No | No | Health-check → auto downgrade |
 | **Multi-model** | Sequential (swap) | Single model | Single model | **Simultaneous under constraints** |
 | **Windows** | Yes | No | Yes | **Yes (CUDA 13.2 validated)** |
+| **On-device (Android)** | No | No | CLI via Termux | **Embedded engine (CPU / Adreno / Hexagon NPU)** |
 | **NVIDIA** | CUDA | CUDA | CUDA | CUDA (native) |
 | **AMD** | Experimental | Partial | Partial | **ROCm first-class** |
 | **VRAM mgmt** | Opaque | Per-request | None | Per-group budgets + watermarks |
@@ -363,6 +388,9 @@ configurations.
 | Ubuntu 24 | RTX 4090 24 GB | CUDA 12.x | Various | — | ✅ |
 | Linux | AMD GPUs | ROCm 6.x | — | — | 🎯 Target |
 | macOS 15 (Intel x86_64) | CPU (Metal off) | N/A | Gemma 4 E2B QAT Q4_0, native chat template, Android-emulator client | RAM | ✅ |
+| Android 15 | Snapdragon 8 Elite — Hexagon HTP v79 | N/A | Gemma 4 E2B QAT Q4_0 | ~2.5 GB RAM | ✅ |
+| Android 14 | Snapdragon 8 Gen 3 — HTP v75 / Adreno 750 / CPU i8mm | N/A | Gemma 4 E2B QAT Q4_0 + Q4_K_M | ~3 GB RAM | ✅ |
+| Android 13/15 | Snapdragon 888, Dimensity 9000+ — CPU | N/A | Gemma 4 E2B, Ministral 3 3B | RAM | ✅ |
 | Any | CPU only | N/A | Any GGUF | RAM | ✅ |
 
 ## VRAM Budget Examples
@@ -408,6 +436,7 @@ eie/
 ├── scripts/            # Build scripts (Linux + Windows)
 ├── contrib/            # Community extensions
 ├── docker/             # Dockerfiles (CUDA + ROCm)
+├── mobile/             # EIE Mobile: embedded Android engine (JNI wrapper + arm64 build recipes)
 ├── tests/              # API tests
 ├── llama.cpp/          # Git submodule
 ├── CMakeLists.txt
