@@ -12,6 +12,8 @@
 
 EIE is a local inference server that loads GGUF models, serves them via an OpenAI-compatible REST API, and manages GPU memory. It is designed as **infrastructure** — it serves completions, nothing more. Orchestrators, agents, and domain-specific logic are clients of this server.
 
+**Production status (September 2026).** EIE runs the Elyne lineage in **single-model** mode (one generation model per instance, plus a separate embedding instance). Elyne Core Origin converges **two** LLMs through two dedicated single-model server processes orchestrated by the application, not through EIE model groups. The group scheduler below (parallel / sequential / fan-out) is **implemented and API-tested, but not yet exercised in production nor load-benchmarked**. Two-model co-residency is measured (Gemma 4 E2B + E4B, ~7.5 GB); larger groups are projections. Each feature table in this document states what is measured, what is implemented, and what is planned — we describe what ships.
+
 EIE also ships an **embedded Android flavor** — same TurboQuant fork compiled for arm64,
 with runtime CPU-variant dispatch (ARMv8.2 → v9), OpenCL/Adreno and Hexagon NPU (HTP)
 backends, and KV-reuse incremental generation. See [`mobile/`](mobile/README.md).
@@ -86,16 +88,16 @@ Design: [docs/ews/README.md](docs/ews/README.md) · Field report:
 |  | Ollama | vLLM | llama.cpp server | **EIE** |
 | --- | --- | --- | --- | --- |
 | **Scheduling** | None (FIFO) | Continuous batching | None (FIFO) | Policy-driven (pluggable) |
-| **Model Groups** | No | No | No | Parallel, Sequential, Fan-out |
+| **Model Groups** | No | No | No | Parallel, Sequential, Fan-out (implemented, API-tested; not load-benchmarked) |
 | **Fallback** | No | No | No | strict / partial / retry / replace |
 | **KV Cache** | f16 / q8 / q4 | f16 / FP8 | f16 / q8 / q4 + TurboQuant | All legacy + **TurboQuant turbo2/3/4** |
 | **Adaptive KV** | No | No | No | Health-check → auto downgrade |
-| **Multi-model** | Sequential (swap) | Single model | Single model | **Simultaneous under constraints** |
+| **Multi-model** | Sequential (swap) | Single model | Single model | **Simultaneous** (two models measured co-resident; eviction under VRAM pressure planned) |
 | **Windows** | Yes | No | Yes | **Yes (CUDA 13.2 validated)** |
 | **On-device (Android)** | No | No | CLI via Termux | **Embedded engine (CPU / Adreno / Hexagon NPU)** |
 | **NVIDIA** | CUDA | CUDA | CUDA | CUDA (native) |
 | **AMD** | Experimental | Partial | Partial | **ROCm first-class** |
-| **VRAM mgmt** | Opaque | Per-request | None | Per-group budgets + watermarks |
+| **VRAM mgmt** | Opaque | Per-request | None | Reserve + watermarks parsed; enforcement and per-group budgets planned |
 | **Audit** | No | No | No | Hash-chained audit trail |
 | **License** | MIT | Apache 2.0 | MIT | **Apache 2.0** |
 
@@ -111,9 +113,9 @@ strategy: pinned-group          # or: generic, multi-group, fixed-appliance
 
 | Strategy | Behavior | Use case |
 | --- | --- | --- |
-| `generic` | On-demand loading, LRU eviction, FIFO | Ollama replacement |
+| `generic` | Boot-time loading, FIFO; on-demand loading and LRU eviction **planned** (policy hooks exist, not wired) | Ollama replacement (partial today) |
 | `pinned-group` | N models pinned, multi-response required | Multi-model deliberation |
-| `multi-group` | Multiple pinned groups, each with own rules | Dual-core architectures |
+| `multi-group` | Today an alias of `pinned-group`; distinct per-group rules **planned** | Dual-core architectures (target) |
 | `fixed-appliance` | Pre-loaded at boot, no dynamic loading | Embedded / edge devices |
 
 ### Model Groups
@@ -132,7 +134,7 @@ groups:
 
 **Parallel** — Same prompt to N models simultaneously. All responses returned.
 **Sequential** — Output of model N becomes input of model N+1 (pipeline).
-**Fan-out** — Same prompt to N models, best response selected.
+**Fan-out** — Same prompt to N models; the **longest** successful response is selected (placeholder heuristic — quality-based selection planned).
 
 ### Adaptive KV Cache (TurboQuant)
 
@@ -151,6 +153,8 @@ The health-check mechanism can trigger **runtime KV downgrade** (e.g., turbo3 �
 
 ### VRAM Quality of Service
 
+> **Status:** `reserve_mb` is honored at load time. Watermarks, `group_isolation` and per-group budgets are parsed but **not enforced yet** — the VRAM manager is not wired into the request path. Read the block below as the target contract, not current behavior.
+
 ```yaml
 vram:
   reserve_mb: 512           # always keep free
@@ -161,7 +165,7 @@ vram:
 
 ### Compute Backend Abstraction
 
-One codebase. CUDA, ROCm, and CPU detected automatically at runtime.
+One codebase. The backend is selected at build time (`GGML_CUDA` / `GGML_HIP`, otherwise CPU) and initialized at runtime; all three wrap the same llama.cpp fork.
 
 ## Build
 
@@ -317,8 +321,8 @@ native template of **its own** GGUF before generating.
 
 | Endpoint | Method | Status | Description |
 | --- | --- | --- | --- |
-| `/v1/batch/execute` | POST | ✅ | Execute a model group (N parallel responses, per-model native template) |
-| `/v1/chain/execute` | POST | ✅ | Execute a sequential chain (pipeline) |
+| `/v1/batch/execute` | POST | ✅ API-tested, not load-benchmarked | Execute a model group (N parallel responses, per-model native template) |
+| `/v1/chain/execute` | POST | ✅ API-tested, not load-benchmarked | Execute a sequential chain (pipeline) |
 | `/v1/admin/models/discover` | GET | ✅ | Scan model directory |
 | `/v1/admin/scheduling/status` | GET | ✅ | Active policy and groups |
 | `/metrics` | GET | ✅ | Prometheus-compatible metrics |
@@ -376,7 +380,8 @@ groups:
 
 The parser is a minimal YAML subset: flat `key: value` entries, a `groups:`
 list, and a `models:` map (alias → path). See `presets/` for ready-to-use
-configurations.
+configurations (`dual-core-six.yaml` is a **skeleton**: strategy only, no groups or
+models defined yet).
 
 ## Tested Configurations
 
@@ -393,7 +398,9 @@ configurations.
 | Android 13/15 | Snapdragon 888, Dimensity 9000+ — CPU | N/A | Gemma 4 E2B, Ministral 3 3B | RAM | ✅ |
 | Any | CPU only | N/A | Any GGUF | RAM | ✅ |
 
-## VRAM Budget Examples
+## VRAM Budget Estimates
+
+> **Not measured.** Only two-model co-residency has been measured to date (Gemma 4 E2B + E4B, ~7.5 GB — see Performance). The rows below are projections from per-model footprints, not benchmark results.
 
 With TurboQuant turbo3 (Q4_K_M weights, 4096 context):
 

@@ -1,4 +1,24 @@
-# EIE Preset: Dual-core 6-model (2x3)
+# EIE Preset: Dual-core 6-model (2x3) — SKELETON
+#
+# STATUS: this preset defines the strategy only. No `groups:` and no `models:`
+# are declared, so it loads nothing as-is. The 2x3 dual-core layout is a target
+# configuration; it has not been measured (see README "VRAM Budget Estimates").
+# To use it, add two groups of three aliases matching GGUF files in model_dir,
+# e.g.:
+#
+# groups:
+#   - name: core-a
+#     models: [model-a1, model-a2, model-a3]
+#     required_responses: 3
+#     type: parallel
+#     pinned: true
+#     fallback: partial
+#   - name: core-b
+#     models: [model-b1, model-b2, model-b3]
+#     required_responses: 3
+#     type: parallel
+#     pinned: true
+#     fallback: partial
 host: 0.0.0.0
 port: 8080
 strategy: multi-group
