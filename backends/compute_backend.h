@@ -6,6 +6,7 @@
 #include <memory>
 #include <cstdint>
 #include <map>
+#include <functional>
 
 namespace eie {
 
@@ -44,6 +45,9 @@ struct SamplingParams {
     // le cache KV de la conversation principale est préservé.
     // (Fix « bug n°1 » d'Elyne Mobile, porté serveur : 2e contexte, KV du chat intact.)
     bool one_shot = false;
+    // Streaming : appelé pour chaque morceau de texte généré (SSE côté API).
+    // Retourne false pour interrompre la génération (client parti).
+    std::function<bool(const std::string&)> on_token;
 };
 
 struct ChatMessage {

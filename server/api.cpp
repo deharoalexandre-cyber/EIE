@@ -191,6 +191,45 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
             return;
         }
 
+        if (body.value("stream", false)) {
+            // SSE : chunks OpenAI (chat.completion.chunk) au fil de la génération.
+            std::string prompt_copy = prompt, model_copy = model;
+            SamplingParams sp_copy = sp;
+            res.set_header("Cache-Control", "no-cache");
+            res.set_chunked_content_provider("text/event-stream",
+                [&, backend, prompt_copy, model_copy, sp_copy](size_t, httplib::DataSink& sink) mutable {
+                    long id = (long)std::time(nullptr);
+                    auto emit = [&](const json& j) {
+                        std::string line = "data: " + j.dump() + "\n\n";
+                        return sink.write(line.data(), line.size());
+                    };
+                    sp_copy.on_token = [&](const std::string& piece) {
+                        return emit({{"id", "eie-" + std::to_string(id)},
+                                     {"object", "chat.completion.chunk"},
+                                     {"model", model_copy},
+                                     {"choices", {{{"index", 0},
+                                                   {"delta", {{"content", piece}}},
+                                                   {"finish_reason", nullptr}}}}});
+                    };
+                    auto result = backend->chat(prompt_copy, sp_copy);
+                    std::cout << "[KV] reused=" << result.reused_tokens
+                              << " gen=" << result.tokens
+                              << " total_ms=" << (int)result.latency_ms << " (stream)" << std::endl;
+                    metrics.recordModel(model_copy, result.latency_ms, result.tokens);
+                    emit({{"id", "eie-" + std::to_string(id)},
+                          {"object", "chat.completion.chunk"},
+                          {"model", model_copy},
+                          {"choices", {{{"index", 0}, {"delta", json::object()},
+                                        {"finish_reason", "stop"}}}},
+                          {"usage", {{"completion_tokens", result.tokens}}}});
+                    std::string done = "data: [DONE]\n\n";
+                    sink.write(done.data(), done.size());
+                    sink.done();
+                    return true;
+                });
+            return;
+        }
+
         auto result = backend->chat(prompt, sp);
         std::cout << "[KV] reused=" << result.reused_tokens
                   << " gen=" << result.tokens

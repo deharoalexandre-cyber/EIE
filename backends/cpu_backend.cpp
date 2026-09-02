@@ -283,9 +283,11 @@ public:
         for (int i = 0; i < s.max_tokens && n_past < n_ctx; i++) {
             llama_token id = llama_sampler_sample(smpl, run_ctx, -1);
             if (llama_vocab_is_eog(vocab, id)) break;
-            output += common_token_to_piece(run_ctx, id);
+            std::string piece = common_token_to_piece(run_ctx, id);
+            output += piece;
             if (!s.one_shot) cache_tokens_.push_back(id);
             r.tokens++;
+            if (s.on_token && s.stop.empty() && !s.on_token(piece)) break; // flux (sans stop-sequences)
             // Séquences d'arrêt : coupe dès qu'une apparaît en fin de sortie
             bool stopped = false;
             for (auto& st : s.stop) {
