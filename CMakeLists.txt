@@ -8,8 +8,10 @@ option(GGML_HIP  "ROCm/HIP backend" OFF)
 
 # llama.cpp submodule
 if(EXISTS "${CMAKE_SOURCE_DIR}/llama.cpp/src")
-    # Metal is only reliable on Apple Silicon; Intel iGPUs produce wrong results
-    if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+    # Metal is only reliable on Apple Silicon; Intel iGPUs produce wrong results.
+    # (Cross-compiling for arm64 from an Intel Mac keeps Metal: see CMAKE_OSX_ARCHITECTURES.)
+    if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64"
+       AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
         set(GGML_METAL OFF CACHE BOOL "" FORCE)
     endif()
     set(LLAMA_BUILD_COMMON   ON  CACHE BOOL "" FORCE)

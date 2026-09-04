@@ -113,9 +113,14 @@ public:
         kv_ = p.kv;
 
         llama_model_params mp = llama_model_default_params();
-        // CPU backend: never offload. On Intel Macs ggml would otherwise pick
-        // the Metal backend, which produces garbage on non-Apple-Silicon GPUs.
-        mp.n_gpu_layers = (type() == BackendType::CPU) ? 0 : p.n_gpu_layers;
+        // Mac Intel : jamais d'offload — ggml choisirait Metal, qui produit du
+        // bruit sur les iGPU non-Apple-Silicon. Ailleurs (Apple Silicon inclus,
+        // Metal fiable), on respecte n_gpu_layers demandé.
+#if defined(__APPLE__) && defined(__x86_64__)
+        mp.n_gpu_layers = 0;
+#else
+        mp.n_gpu_layers = p.n_gpu_layers;
+#endif
         model_ = llama_model_load_from_file(path_.c_str(), mp);
         if (!model_) {
             std::cerr << "[" << name() << "] failed to load model: " << path_ << std::endl;
