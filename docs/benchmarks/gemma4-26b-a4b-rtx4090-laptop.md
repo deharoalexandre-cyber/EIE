@@ -1,16 +1,35 @@
 # Gemma 4 26B A4B on a 16 GB RTX 4090 Laptop
 
+## Evidence status - 7 September 2026
+
+Historical maintainer-reported field results, dated 27 July below. The runtime
+was an earlier EIE router spawning `llama-server`, not a measurement of the
+current native C++ server. The JSON is a summary; complete raw logs, prompts
+and the 12-task rubric/answers are not published. This audit did not rerun it.
+
+The 16k decode samples are **78.68-81.70 t/s**. The **99.63 t/s** sample is a
+separate 8k run. A CPU-mapped weight buffer remains; "fully GPU" must not be
+read as every model byte resident on GPU. Reported used/free sums differ from
+the reported device total; this accounting difference is not resolved here.
+The model's advertised maximum context is not a tested deployment capacity.
+
+The unequal-information/tool 12-task comparison is exploratory, not evidence
+of improved intrinsic reasoning, universal quality or zero degradation.
+
+## Historical deployment
+
 This is a single-system field report for running Google's
 [Gemma 4 26B A4B instruction model](https://huggingface.co/google/gemma-4-26B-A4B-it)
 through EIE's GGUF router on a 16 GB laptop GPU. It is intended as a
-reproducible deployment reference, not as a standardized model-quality
-benchmark.
+configuration reference, not a complete reproduction bundle or standardized
+model-quality benchmark.
 
 ## Result
 
-The QAT Q4_0 model fits fully on the GPU with a 16,384-token context when
-both KV caches use Q4_0. In this configuration, observed generation speed
-was 79-100 tokens/s and long-prompt evaluation was 2,442-2,614 tokens/s.
+The reported QAT Q4_0 deployment offloads GPU-eligible layers with a 16,384-token
+context and Q4_0 KV caches; a CPU-mapped buffer remains. At 16k, generation
+was 78.68-81.70 tokens/s and prompt evaluation was 2,442-2,614 tokens/s.
+A separate 8k sample reached 99.63 tokens/s.
 
 | Metric | Observed result |
 | --- | ---: |
@@ -97,7 +116,7 @@ non-SWA KV buffer = 90.00 MiB (K q4_0: 45.00, V q4_0: 45.00)
 SWA KV buffer = 84.38 MiB
 ```
 
-## Raw EIE measurements
+## Reported EIE measurements (summary, not raw logs)
 
 The most stable 16k samples used prompts of roughly 4,000 tokens:
 

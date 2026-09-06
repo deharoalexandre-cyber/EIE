@@ -21,6 +21,7 @@ struct ServerConfig {
     VramConfig vram;
     std::map<std::string, GroupConfig> groups;
     std::map<std::string, std::string> models; // alias -> path
+    std::map<std::string, int> ews_slots;      // alias -> physical expert slots
     std::vector<std::string> preload;          // aliases to load at boot ("all" = every discovered model)
     bool audit_enabled = false;
     std::string audit_path = "/var/log/eie/audit.chain";
@@ -38,7 +39,7 @@ inline ServerConfig loadConfig(const std::string& path) {
         return cfg;
     }
 
-    enum class Section { TOP, GROUPS, MODELS };
+    enum class Section { TOP, GROUPS, MODELS, EWS_SLOTS };
     Section section = Section::TOP;
     GroupConfig cur;
     bool has_cur = false;
@@ -91,6 +92,7 @@ inline ServerConfig loadConfig(const std::string& path) {
         if (indent == 0) {
             if (key == "groups" && val.empty()) { section = Section::GROUPS; continue; }
             if (key == "models" && val.empty()) { section = Section::MODELS; continue; }
+            if (key == "ews_slots" && val.empty()) { section = Section::EWS_SLOTS; continue; }
 
             if (key == "host") cfg.host = val;
             else if (key == "port") cfg.port = std::stoi(val);
@@ -125,6 +127,8 @@ inline ServerConfig loadConfig(const std::string& path) {
             else if (key == "max_latency_ms") cur.max_latency_ms = std::stof(val);
         } else if (section == Section::MODELS) {
             if (!key.empty() && !val.empty()) cfg.models[key] = val;
+        } else if (section == Section::EWS_SLOTS) {
+            if (!key.empty() && !val.empty()) cfg.ews_slots[key] = std::stoi(val);
         }
     }
     if (section == Section::GROUPS) flush();

@@ -1,73 +1,84 @@
-# EIE Mobile — embedded Android engine
+# EIE Mobile - embedded Android components
 
-The on-device flavor of EIE: the same TurboQuant llama.cpp fork, compiled for `arm64-v8a`
-and embedded in an Android app as a set of shared libraries driven by a thin JNI wrapper.
-Same philosophy as the server: **this is infrastructure** — it loads GGUF models and serves
-tokens. Orchestration, identity and product logic live in the client app, not here.
+The Android arm64 flavor of EIE uses a TurboQuant llama.cpp fork and a JNI
+wrapper. It loads GGUF models and emits tokens; memory, identity, orchestration
+and application behavior belong to the client.
 
-## Contents
+**Publication status, 7 September 2026:** wrapper code and build recipes,
+not a complete APK. Device numbers below are maintainer-reported; no complete
+app, raw device logs or pinned build/model evidence bundle is published here.
 
-| Path | What it is |
+## Contents and prerequisites
+
+| Path | Purpose |
 |---|---|
-| `jni/native_inference.cpp` | The complete JNI wrapper (single `.so`, dual-package forwarders) |
-| `jni/CMakeLists.txt` | Wrapper build — links the prebuilt fork libraries as IMPORTED |
-| `scripts/build_cpu_variants.sh` | Docker recipe: multi-variant CPU backends (runtime dispatch) |
-| `scripts/build_hexagon_skels.sh` | Docker recipe: Hexagon NPU backend + HTP DSP skels (v68/v75/v79) |
+| `jni/native_inference.cpp` | JNI wrapper and package forwarders |
+| `jni/CMakeLists.txt` | Links externally supplied prebuilt fork libraries |
+| `scripts/build_cpu_variants.sh` | Android CPU-variant build recipe |
+| `scripts/build_hexagon_skels.sh` | Hexagon backend / HTP skel build recipe |
 
-Both build scripts run inside the `ghcr.io/snapdragon-toolchain/arm64-android` image
-(NDK + OpenCL SDK + Hexagon SDK) against the TurboQuant fork
-([`llama-cpp-turboquant`](https://github.com/TheTom/llama-cpp-turboquant), same submodule
-as the server).
+The recipes refer to external build paths and the
+`ghcr.io/snapdragon-toolchain/arm64-android` image (NDK, OpenCL, Hexagon SDK).
+The JNI include paths, libraries, application/Kotlin code and app manifest
+must be supplied/adapted. An image name is not a frozen image digest.
+The desktop EWS patch/campaign is not Android EWS qualification.
 
-## What the wrapper provides
+## Implemented wrapper paths
 
-- **Incremental generation with KV reuse.** The prompt is compared token-wise against the
-  previously evaluated state; only the new suffix is decoded (`generate: reuse=N` logging).
-  Contract with the client: the transcript must be **immutable** — anything already rendered
-  into history is never modified or moved, and volatile context (timestamps, retrieved
-  memory) is appended strictly at the tail. Cost drops from O(history) to O(new tokens).
-- **Runtime CPU dispatch.** Built with `GGML_CPU_ALL_VARIANTS` + `GGML_BACKEND_DL`: one APK
-  carries `libggml-cpu-android_armv8.x/v9.x` variants; the best one is selected at runtime.
-  One binary covers ARMv8.2 (no i8mm — e.g. Snapdragon 888) through ARMv9 (i8mm/SVE2).
-  Note: `ggml_backend_load_all()` scans the *executable* directory, which is empty on
-  Android — the wrapper falls back to `ggml_backend_load_all_from_path(nativeLibraryDir)`
-  when no device registered.
-- **GPU (OpenCL / Adreno).** Full-graph offload works with two constraints discovered the
-  hard way: quantized KV caches and forced flash-attention are not executable by the OpenCL
-  backend (scheduler abort on pre-allocated tensors) — when offloading, the wrapper forces
-  **KV f16 + flash-attn AUTO**. Requires OpenCL 3.0 drivers (`clCreateBufferWithProperties`).
-- **NPU (Hexagon HTP).** FastRPC session against the bundled `libggml-htp-vXX.so` skels.
-  Requires `<uses-native-library android:name="libcdsprpc.so" android:required="false"/>`
-  in the app manifest (Android namespace isolation otherwise hides the vendor lib).
-  With both Adreno and HTP registered, llama.cpp will **split the model across both** —
-  catastrophic at batch 1 — so the wrapper exposes a device filter.
-- **Live tuning via system properties** (no rebuild, `setprop` + app restart):
-  `debug.elyne.model` / `debug.elyne.mmproj` (artifact override), `debug.elyne.ngl`,
-  `debug.elyne.ndev` (Hexagon sessions), `debug.elyne.dev` (`htp`|`gpu` filter),
-  `debug.elyne.temp/topp/topk` (sampling).
+- **KV prefix reuse:** compares tokens with retained state and avoids
+  re-evaluating an identical prefix. Changing earlier history invalidates reuse.
+  This does not make tokenization, attention or the whole request O(new tokens).
+- **CPU backend discovery:** loads libraries from `nativeLibraryDir` when
+  normal backend discovery registers no devices. The supplied build recipe
+  targets multiple CPU variants; actual coverage depends on packaged libraries.
+- **OpenCL / Adreno:** when offloading, the wrapper selects F16 KV and
+  flash-attention AUTO. Maintainers report incompatibility of quantized KV or
+  forced flash-attention in the tested OpenCL profile; this is not a universal
+  claim about every upstream version. Required entry points include
+  `clCreateBufferWithProperties`.
+- **Hexagon HTP:** device selection and FastRPC/skel integration paths exist.
+  The app needs the vendor native-library declaration, including
+  `libcdsprpc.so`, and compatible DSP libraries. Combined-device scheduling
+  was problematic in the reported profile; use the exposed device filter.
+- **One-shot generation:** attempts a dedicated secondary context. Allocation
+  failure falls back to the primary context; concurrent use is not proven
+  race-free and may affect retained chat state.
+- **System-property tuning:** `debug.elyne.model`, `mmproj`, `ngl`,
+  `ndev`, `dev`, `temp`, `topp`, `topk` under the same
+  `debug.elyne.` prefix. Inspect the wrapper and restart the client after
+  changing the intended profile.
 
-## Measured performance (Gemma 4 E2B, QAT Q4_0 unless noted)
+CPU/NEON quantized-cache selection also depends on client-side code not
+bundled here. Do not infer that every desktop KV mode is available on mobile.
 
-| SoC | Backend | Decode (tok/s) | Prefill (tok/s) |
-|---|---|---|---|
-| Snapdragon 8 Elite | HTP v79 | **19.6–20.6** | **860–959** |
-| Snapdragon 8 Gen 3 | HTP v75 | 13.4–17.8 | 600–664 |
-| Snapdragon 8 Gen 3 | CPU i8mm (Q4_K_M) | 17.4–18.7 | 43–53 |
-| Snapdragon 8 Gen 3 | Adreno 750 (Q4_0) | 8.0–9.7 | 204–229 |
-| Snapdragon 888 | CPU dotprod variant | 7.0–8.7 | ~31 |
+## Reported performance
+
+Gemma 4 E2B, QAT Q4_0 unless noted. These are field figures, not independently
+verified results of this audit or a controlled cross-backend comparison.
+
+| SoC | Backend | Decode tok/s | Prefill tok/s |
+|---|---|---:|---:|
+| Snapdragon 8 Elite | HTP v79 | 19.6-20.6 | 860-959 |
+| Snapdragon 8 Gen 3 | HTP v75 | 13.4-17.8 | 600-664 |
+| Snapdragon 8 Gen 3 | CPU i8mm, Q4_K_M | 17.4-18.7 | 43-53 |
+| Snapdragon 8 Gen 3 | Adreno 750, Q4_0 | 8.0-9.7 | 204-229 |
+| Snapdragon 888 | CPU dotprod | 7.0-8.7 | ~31 |
 | Dimensity 9000+ | CPU i8mm | ~6 | ~27 |
 
-Rule of thumb on phones: **decode is DRAM-bandwidth-bound** (every token re-reads the
-weights; a strong CPU already saturates the bus), while **prefill is compute-bound**
-(matrix accelerators win 4–20×). QAT Q4_0 checkpoints + HTP repack shrink the per-token
-working set enough that the NPU also wins decode on recent SoCs.
+Bandwidth and compute bottlenecks are possible explanations, not causal
+measurements in this table. Different quantizations, absent sample distributions
+and incomplete device/build details preclude a general NPU/GPU/CPU ranking.
 
-## Known limitations
+## Known limitations and next qualification
 
-- Hexagon HTP: v68 (SD888) opens a session but rejects `q6_K` tensors at repack; a wedged
-  DSP queue blocks the calling thread outside any abortable loop (recovery: kill the client
-  process; the driver tears the session down). Watchdog/timeout hardening is on the list.
-- OpenCL backend requires CL 3.0; older vendor drivers (e.g. Adreno 660 on some ROMs)
-  expose only CL 2.x and are rejected cleanly at probe.
-- One llama context is shared by all callers; concurrent one-shot generations clobber the
-  chat KV state. A dedicated secondary context is the planned fix.
+- Maintainer-reported HTP v68 behavior: session opens but q6_K tensors fail
+  repacking; a stalled DSP queue can block outside an abortable loop.
+- Older OpenCL drivers may lack required entry points. The reported device
+  matrix does not guarantee operation on every ROM or SoC revision.
+- No general concurrent-caller / secondary-context allocation-failure gate
+  is provided. Do not describe one-shot isolation as unconditional.
+- Reproducibility needs pinned image/library/model hashes, a minimal buildable
+  client, raw device runs, context/sampling/thermal settings and repeat statistics.
+
+See the [repository audit](../docs/CLAIMS_AUDIT.md). Hardware availability
+and a build recipe alone do not certify production operation.

@@ -34,6 +34,7 @@ struct KvConfig {
 struct ModelParams {
     std::string path, alias;
     int n_gpu_layers = 99, n_threads = 2;
+    int ews_slots = 0; // Per-model Gemma4 expert cache; 0 preserves normal loading.
     KvConfig kv;
 };
 
@@ -45,9 +46,13 @@ struct SamplingParams {
     // le cache KV de la conversation principale est préservé.
     // (Fix « bug n°1 » d'Elyne Mobile, porté serveur : 2e contexte, KV du chat intact.)
     bool one_shot = false;
+    bool truncate_prompt = true; // legacy default; callers can request an intact task
     // Streaming : appelé pour chaque morceau de texte généré (SSE côté API).
     // Retourne false pour interrompre la génération (client parti).
     std::function<bool(const std::string&)> on_token;
+    // Optional synchronous cancellation probe, including before the first token.
+    // Return false to abandon this request; an empty callback keeps running.
+    std::function<bool()> should_continue;
 };
 
 struct ChatMessage {
@@ -57,6 +62,7 @@ struct ChatMessage {
 
 struct InferenceResult {
     std::string model, text, error;
+    std::string finish_reason = "stop";
     int tokens = 0;
     int reused_tokens = 0; // préfixe KV réutilisé (0 = préfill complet)
     float latency_ms = 0;
@@ -79,6 +85,7 @@ public:
     virtual std::vector<float> embed(const std::string& text) { return {}; }
     virtual VramStatus vram() = 0;
     virtual HealthStatus health() = 0;
+    virtual std::map<std::string, uint64_t> streamingStats() { return {}; }
     virtual void unload() = 0;
     virtual bool adaptKv(const KvConfig& kv) { return false; }
     bool loaded = false;

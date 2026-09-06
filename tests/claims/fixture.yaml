@@ -1,0 +1,14 @@
+type_k: f16
+type_v: f16
+n_ctx: 8192
+reserve_mb: 123
+low_watermark: 42
+critical_watermark: 77
+group_isolation: true
+groups:
+  - name: core
+    models: [primary]
+    required_responses: 1
+    type: parallel
+    pinned: true
+    fallback: retry_once

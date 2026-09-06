@@ -69,6 +69,7 @@ static SamplingParams samplingFromJson(const json& body) {
     sp.top_k       = body.value("top_k", sp.top_k);
     sp.max_tokens  = body.value("max_tokens", 256);
     sp.one_shot    = body.value("one_shot", false);
+    sp.truncate_prompt = body.value("truncate_prompt", true);
     if (body.contains("stop")) {
         if (body["stop"].is_string()) sp.stop.push_back(body["stop"]);
         else if (body["stop"].is_array())
@@ -105,7 +106,7 @@ static std::string chatCompletionJson(const InferenceResult& r, const std::strin
        << "\"model\":\"" << model << "\","
        << "\"choices\":[{\"index\":0,"
        << "\"message\":{\"role\":\"assistant\",\"content\":\"" << escapeJson(r.text) << "\"},"
-       << "\"finish_reason\":\"stop\"}],"
+       << "\"finish_reason\":\"" << r.finish_reason << "\"}],"
        << "\"usage\":{\"prompt_tokens\":0,\"completion_tokens\":" << r.tokens
        << ",\"total_tokens\":" << r.tokens << "}}";
     return ss.str();
@@ -173,7 +174,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
         SamplingParams sp = samplingFromJson(body);
 
         auto* backend = models.get(model);
-        if (!backend) {
+        if (!backend && !body.value("strict_model", false)) {
             // repli : l'unique modèle de GÉNÉRATION chargé (les embedders sont exclus)
             std::vector<std::string> gen;
             for (auto& a : models.loaded())
@@ -203,6 +204,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
                         std::string line = "data: " + j.dump() + "\n\n";
                         return sink.write(line.data(), line.size());
                     };
+                    sp_copy.should_continue = [&sink] { return sink.is_writable(); };
                     sp_copy.on_token = [&](const std::string& piece) {
                         return emit({{"id", "eie-" + std::to_string(id)},
                                      {"object", "chat.completion.chunk"},
@@ -212,6 +214,16 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
                                                    {"finish_reason", nullptr}}}}});
                     };
                     auto result = backend->chat(prompt_copy, sp_copy);
+                    // The sink only lives for this provider invocation.
+                    sp_copy.on_token = {};
+                    sp_copy.should_continue = {};
+                    if (result.finish_reason == "cancelled") return false;
+                    if (!result.ok) {
+                        emit({{"error", {{"message", result.error}, {"type", "inference_error"},
+                              {"code", result.error == "context_length_exceeded" ? "context_length_exceeded" : "inference_error"}}}});
+                        sink.done();
+                        return true;
+                    }
                     std::cout << "[KV] reused=" << result.reused_tokens
                               << " gen=" << result.tokens
                               << " total_ms=" << (int)result.latency_ms << " (stream)" << std::endl;
@@ -220,7 +232,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
                           {"object", "chat.completion.chunk"},
                           {"model", model_copy},
                           {"choices", {{{"index", 0}, {"delta", json::object()},
-                                        {"finish_reason", "stop"}}}},
+                                        {"finish_reason", result.finish_reason}}}},
                           {"usage", {{"completion_tokens", result.tokens}}}});
                     std::string done = "data: [DONE]\n\n";
                     sink.write(done.data(), done.size());
@@ -231,6 +243,11 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
         }
 
         auto result = backend->chat(prompt, sp);
+        if (!result.ok) {
+            res.status = 500;
+            res.set_content(json({{"error", {{"message", result.error}, {"type", "inference_error"}}}}).dump(), "application/json");
+            return;
+        }
         std::cout << "[KV] reused=" << result.reused_tokens
                   << " gen=" << result.tokens
                   << " total_ms=" << (int)result.latency_ms << std::endl;
@@ -366,8 +383,19 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
     // GET /v1/admin/vram/status
     svr.Get("/v1/admin/vram/status", [&](const httplib::Request&, httplib::Response& res) {
-        // TODO: serialize VramStatus for each GPU
-        res.set_content("{\"status\":\"ok\"}", "application/json");
+        json data = json::array();
+        for (auto & [alias, backend] : models.getAll()) {
+            auto v = backend->vram();
+            data.push_back({{"model", alias}, {"gpu_id", v.gpu_id}, {"total_bytes", v.total_bytes},
+                {"used_bytes", v.used_bytes}, {"free_bytes", v.free_bytes}});
+        }
+        res.set_content(json({{"devices_by_model", data}}).dump(), "application/json");
+    });
+
+    svr.Get("/v1/admin/ews/status", [&](const httplib::Request&, httplib::Response& res) {
+        json data = json::object();
+        for (auto & [alias, backend] : models.getAll()) data[alias] = backend->streamingStats();
+        res.set_content(data.dump(), "application/json");
     });
 
     // GET /v1/admin/scheduling/status

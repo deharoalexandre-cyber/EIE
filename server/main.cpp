@@ -80,6 +80,8 @@ int main(int argc, char** argv) {
         cfg.preload.push_back(stem);
     }
 
+    for (const auto & [alias, count] : cfg.ews_slots) models.setExpertSlots(alias, count);
+
     // Pre-load pinned models from groups
     for (auto& [gname, group] : cfg.groups) {
         for (auto& alias : group.models) {

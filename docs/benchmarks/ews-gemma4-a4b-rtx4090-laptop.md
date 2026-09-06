@@ -1,5 +1,29 @@
 # EWS field report — Gemma 4 26B-A4B on RTX 4090 Laptop (16 GB)
 
+## Scope correction - 7 September 2026
+
+This is a **historical author-reported timing campaign**, not the current
+consumed-weight EIE runtime. The frozen C+ engine's FFNs consume resident
+weights while streamed bytes enter a side arena. Its timer covers decode
+with I/O, not loading/prefill/whole-request latency. The earlier slot-arena
+microtest does not change the final timing engine's data path.
+
+The policy cache is simulated per layer; its 25% budget is not a physical
+VRAM measurement. The static comparator has only the pinned portion's
+capacity, not the combined cache's full capacity. SHA digests are first
+populated from the first read; no pre-trusted signed index is checked.
+
+Seven tracked files match their announced hashes, but raw run/trace files
+and ten manifest prompts are absent. Full independent score recomputation
+and pre-registration chronology are not established by the public archive.
+The figures and failed stages below are retained as historical statements
+with these qualifications, which take precedence over the original wording.
+
+For **actual consumed streaming and weight-byte measurements**, read the
+[September report](ews-consumed-20260905.md).
+
+## Historical report
+
 **Expert-Aware Weight Streaming, de-risking → real engine → pre-registered
 holdout verdict. One machine, one day (2026-08-16). Verdict: PASS, bounded.**
 
@@ -16,8 +40,8 @@ code reused) and diverged substantially during measurement. See
 
 ## Method in one line
 
-Every threshold was written and hashed before the first measured token; two
-verdicts killed our own designs before one candidate survived on unseen data.
+The campaign records report thresholds written and hashed before measurement;
+two verdicts rejected designs before a timing candidate passed unseen holdouts.
 
 ## Campaign timeline (failures included — they carry the information)
 

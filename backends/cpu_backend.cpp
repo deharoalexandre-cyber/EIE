@@ -13,6 +13,8 @@
 #include "llama.h"
 #include "common.h"
 #include "chat.h"
+#include "expert_stream.h"
+#include "ggml-backend.h"
 #include <mutex>
 #include <thread>
 #include <algorithm>
@@ -40,9 +42,9 @@ static ggml_type mapKvType(const std::string& t) {
     if (t == "f16")    return GGML_TYPE_F16;
     if (t == "q8_0")   return GGML_TYPE_Q8_0;
     if (t == "q4_0")   return GGML_TYPE_Q4_0;
-    if (t == "turbo2") return GGML_TYPE_TQ2_0;
-    if (t == "turbo3") return GGML_TYPE_TQ3_1S;
-    if (t == "turbo4") return GGML_TYPE_TQ4_1S;
+    if (t == "turbo2") return GGML_TYPE_TURBO2_0;
+    if (t == "turbo3") return GGML_TYPE_TURBO3_0;
+    if (t == "turbo4") return GGML_TYPE_TURBO4_0;
     std::cerr << "[KV] unknown type '" << t << "', using f16" << std::endl;
     return GGML_TYPE_F16;
 }
@@ -57,6 +59,7 @@ protected:
     llama_context * ctx_ = nullptr;
     common_chat_templates_ptr tmpls_;
     std::mutex infer_mutex_;
+    std::unique_ptr<ExpertStream> expert_stream_;
     bool embed_mode_ = false;
     // KV-reuse : tokens (prompt + génération) encore présents dans le cache KV.
     // Le préfixe commun avec la requête suivante n'est pas re-préfillé.
@@ -64,6 +67,7 @@ protected:
 
     // (Re)crée le contexte en mode génération ou embedding (mêmes poids).
     llama_context* makeContext(bool embeddings) {
+        if (embeddings && expert_stream_) return nullptr;
         llama_context_params cp = llama_context_default_params();
         cp.n_ctx = kv_.n_ctx;
         cp.n_threads = threads_;
@@ -78,6 +82,7 @@ protected:
             cp.type_k = mapKvType(kv_.type_k);
             cp.type_v = mapKvType(kv_.type_v);
         }
+        if (expert_stream_) expert_stream_->configure(cp);
         return llama_init_from_model(model_, cp);
     }
 
@@ -106,6 +111,7 @@ public:
     }
 
     bool load(const ModelParams& p) override {
+        ensureBackendInit();
         path_ = p.path;
         alias = p.alias;
         threads_ = p.n_threads > 0 ? p.n_threads
@@ -121,10 +127,21 @@ public:
 #else
         mp.n_gpu_layers = p.n_gpu_layers;
 #endif
+        if (p.ews_slots != 0) {
+            try { expert_stream_ = std::make_unique<ExpertStream>(path_, p.ews_slots); }
+            catch (const std::exception & e) { std::cerr << e.what() << std::endl; return false; }
+            mp.ews_n_slots = p.ews_slots;
+            mp.load_mode = LLAMA_LOAD_MODE_NONE;
+            mp.use_extra_bufts = false;
+        }
         model_ = llama_model_load_from_file(path_.c_str(), mp);
         if (!model_) {
             std::cerr << "[" << name() << "] failed to load model: " << path_ << std::endl;
             return false;
+        }
+        if (expert_stream_) {
+            try { expert_stream_->bind(model_); }
+            catch (const std::exception & e) { std::cerr << e.what() << std::endl; unload(); return false; }
         }
 
         llama_context_params cp = llama_context_default_params();
@@ -136,6 +153,7 @@ public:
         cp.type_k = mapKvType(kv_.type_k);
         cp.type_v = mapKvType(kv_.type_v);
 
+        if (expert_stream_) expert_stream_->configure(cp);
         ctx_ = llama_init_from_model(model_, cp);
         if (!ctx_ && (cp.type_k != GGML_TYPE_F16 || cp.type_v != GGML_TYPE_F16)) {
             std::cerr << "[" << name() << "] context init failed with kv="
@@ -197,8 +215,22 @@ public:
             return r;
         }
 
+        auto cancelled = [&] { return s.should_continue && !s.should_continue(); };
+        auto mark_cancelled = [&] {
+            r.ok = false;
+            r.error = "request cancelled";
+            r.finish_reason = "cancelled";
+            r.latency_ms = std::chrono::duration<float, std::milli>(
+                std::chrono::steady_clock::now() - t0).count();
+        };
+        if (cancelled()) { mark_cancelled(); return r; }
         std::lock_guard<std::mutex> lock(infer_mutex_);
+        // A request may have disconnected while waiting for another inference.
+        if (cancelled()) { mark_cancelled(); return r; }
 
+        if (expert_stream_ && !expert_stream_->error().empty()) {
+            r.ok = false; r.error = expert_stream_->error(); return r;
+        }
         if (!switchMode(false)) {
             r.ok = false;
             r.error = "context switch failed";
@@ -220,7 +252,13 @@ public:
         auto tokens = common_tokenize(run_ctx, prompt, true, true);
         int n_ctx = (int)llama_n_ctx(run_ctx);
         bool truncated = false;
-        if ((int)tokens.size() >= n_ctx - 8) {
+        if (!s.truncate_prompt && (int64_t)tokens.size() + s.max_tokens > n_ctx) {
+            if (s.one_shot) llama_free(run_ctx);
+            r.ok = false;
+            r.error = "context_length_exceeded";
+            return r;
+        }
+        if (s.truncate_prompt && (int)tokens.size() >= n_ctx - 8) {
             // keep the tail of the prompt if it does not fit
             tokens.erase(tokens.begin(), tokens.end() - (n_ctx - 8));
             truncated = true;
@@ -249,26 +287,39 @@ public:
         }
 
         const llama_vocab* vocab = llama_model_get_vocab(model_);
-        const int chunk = 512;
+        const int chunk = expert_stream_ ? 1 : 512;
         llama_batch batch = llama_batch_init(chunk, 0, 1);
 
         // Prompt evaluation (chunked), à partir du préfixe réutilisé
         bool decode_ok = true;
+        bool was_cancelled = false;
         for (size_t off = prefix; off < tokens.size(); off += chunk) {
+            if (cancelled()) { was_cancelled = true; break; }
             size_t end = std::min(tokens.size(), off + chunk);
             common_batch_clear(batch);
             for (size_t i = off; i < end; i++) {
                 common_batch_add(batch, tokens[i], (llama_pos)i, {0},
                                  i == tokens.size() - 1);
             }
-            if (llama_decode(run_ctx, batch) != 0) { decode_ok = false; break; }
+            if (llama_decode(run_ctx, batch) != 0 || (expert_stream_ && !expert_stream_->error().empty())) {
+                decode_ok = false; break;
+            }
         }
         r.reused_tokens = s.one_shot ? -1 : (int)prefix;
-        if (!decode_ok) {
+        if (was_cancelled || !decode_ok) {
             llama_batch_free(batch);
             if (s.one_shot) llama_free(run_ctx);
+            if (was_cancelled) {
+                if (!s.one_shot) {
+                    llama_memory_clear(mem, true);
+                    cache_tokens_.clear();
+                }
+                mark_cancelled();
+                return r;
+            }
             r.ok = false;
-            r.error = "prompt decode failed";
+            r.error = expert_stream_ && !expert_stream_->error().empty() ? expert_stream_->error() : "prompt decode failed";
+            cache_tokens_.clear();
             return r;
         }
 
@@ -285,14 +336,19 @@ public:
         std::string output;
         if (!s.one_shot) cache_tokens_ = tokens; // les tokens générés s'y ajoutent
         int n_past = (int)tokens.size();
+        r.finish_reason = "length";
         for (int i = 0; i < s.max_tokens && n_past < n_ctx; i++) {
+            if (cancelled()) { was_cancelled = true; break; }
             llama_token id = llama_sampler_sample(smpl, run_ctx, -1);
-            if (llama_vocab_is_eog(vocab, id)) break;
+            if (llama_vocab_is_eog(vocab, id)) { r.finish_reason = "stop"; break; }
             std::string piece = common_token_to_piece(run_ctx, id);
             output += piece;
             if (!s.one_shot) cache_tokens_.push_back(id);
             r.tokens++;
-            if (s.on_token && s.stop.empty() && !s.on_token(piece)) break; // flux (sans stop-sequences)
+            if (s.on_token && s.stop.empty() && !s.on_token(piece)) {
+                was_cancelled = true;
+                break;
+            }
             // Séquences d'arrêt : coupe dès qu'une apparaît en fin de sortie
             bool stopped = false;
             for (auto& st : s.stop) {
@@ -303,10 +359,12 @@ public:
                     break;
                 }
             }
-            if (stopped) break;
+            if (stopped) { r.finish_reason = "stop"; break; }
             common_batch_clear(batch);
             common_batch_add(batch, id, n_past++, {0}, true);
-            if (llama_decode(run_ctx, batch) != 0) break;
+            if (llama_decode(run_ctx, batch) != 0 || (expert_stream_ && !expert_stream_->error().empty())) {
+                decode_ok = false; break;
+            }
         }
 
         llama_sampler_free(smpl);
@@ -314,7 +372,19 @@ public:
         if (s.one_shot) llama_free(run_ctx);
 
         r.text = output;
-        r.ok = true;
+        r.ok = decode_ok;
+        if (was_cancelled) {
+            // Discard partial persistent KV; a one-shot leaves the chat intact.
+            if (!s.one_shot) {
+                llama_memory_clear(mem, true);
+                cache_tokens_.clear();
+            }
+            mark_cancelled();
+        }
+        if (!decode_ok) {
+            r.error = expert_stream_ && !expert_stream_->error().empty() ? expert_stream_->error() : "generation decode failed";
+            cache_tokens_.clear();
+        }
 
         auto t1 = std::chrono::steady_clock::now();
         r.latency_ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
@@ -351,7 +421,29 @@ public:
         return out;
     }
 
-    VramStatus vram() override { return VramStatus{gpu_id_, 0, 0, 0}; }
+    VramStatus vram() override {
+        VramStatus result{gpu_id_, 0, 0, 0};
+        if (type() == BackendType::CPU) return result;
+        int index = 0;
+        for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+            auto dev = ggml_backend_dev_get(i);
+            if (ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) continue;
+            if (index++ != gpu_id_) continue;
+            ggml_backend_dev_memory(dev, &result.free_bytes, &result.total_bytes);
+            result.used_bytes = result.total_bytes - result.free_bytes;
+            break;
+        }
+        return result;
+    }
+
+    std::map<std::string, uint64_t> streamingStats() override {
+        std::lock_guard<std::mutex> lock(infer_mutex_);
+        if (!expert_stream_) return {};
+        auto s = expert_stream_->stats();
+        return {{"callbacks", s.callbacks}, {"hits", s.hits}, {"misses", s.misses},
+            {"payload_bytes", s.payload_bytes}, {"read_bytes", s.read_bytes},
+            {"logical_expert_bytes", s.logical_expert_bytes}, {"physical_expert_bytes", s.physical_expert_bytes}};
+    }
 
     HealthStatus health() override {
         return HealthStatus{loaded, 0, loaded ? "OK" : "not loaded"};
@@ -361,6 +453,8 @@ public:
         tmpls_.reset();
         if (ctx_)   { llama_free(ctx_); ctx_ = nullptr; }
         if (model_) { llama_model_free(model_); model_ = nullptr; }
+        expert_stream_.reset();
+        cache_tokens_.clear();
         if (loaded) std::cout << "[" << name() << "] unloaded: " << alias << std::endl;
         loaded = false;
     }
@@ -377,11 +471,14 @@ public:
                                            : LLAMA_FLASH_ATTN_TYPE_DISABLED;
         cp.type_k = mapKvType(kv.type_k);
         cp.type_v = mapKvType(kv.type_v);
+        if (expert_stream_) expert_stream_->configure(cp);
         llama_context* nctx = llama_init_from_model(model_, cp);
         if (!nctx) return false;
         if (ctx_) llama_free(ctx_);
         ctx_ = nctx;
         kv_ = kv;
+        embed_mode_ = false;
+        cache_tokens_.clear();
         return true;
     }
 };
@@ -411,6 +508,11 @@ public:
         threads_ = p.n_threads;
         kv_ = p.kv;
         loaded = true;
+        if (p.ews_slots != 0) {
+            loaded = false;
+            std::cerr << "EWS requires the patched llama.cpp runtime, not the placeholder backend" << std::endl;
+            return false;
+        }
         std::cout << "[" << name() << "] loaded (placeholder): " << alias
                   << " kv=" << kv_.type_k << "/" << kv_.type_v
                   << " ctx=" << kv_.n_ctx << std::endl;
@@ -464,10 +566,13 @@ public:
         // cudaDeviceProp props; cudaGetDeviceProperties(&props, gpu_id);
         // std::cout << "[CUDA] " << props.name << " " << props.totalGlobalMem/(1<<30) << " GB" << std::endl;
         std::cout << "[CUDA] GPU " << gpu_id << " initialized" << std::endl;
-        return true;
+        return CpuBackend::init(gpu_id);
     }
 
     VramStatus vram() override {
+#ifdef EIE_HAS_LLAMA
+        return CpuBackend::vram();
+#else
         VramStatus s;
         s.gpu_id = gpu_id_;
         // size_t free, total;
@@ -477,6 +582,7 @@ public:
         s.free_bytes = 8ULL << 30;
         s.used_bytes = s.total_bytes - s.free_bytes;
         return s;
+#endif
     }
 };
 
@@ -493,10 +599,13 @@ public:
         gpu_id_ = gpu_id;
         // hipSetDevice(gpu_id);
         std::cout << "[ROCm] GPU " << gpu_id << " initialized" << std::endl;
-        return true;
+        return CpuBackend::init(gpu_id);
     }
 
     VramStatus vram() override {
+#ifdef EIE_HAS_LLAMA
+        return CpuBackend::vram();
+#else
         VramStatus s;
         s.gpu_id = gpu_id_;
         // hipMemGetInfo(&s.free_bytes, &s.total_bytes);
@@ -504,6 +613,7 @@ public:
         s.free_bytes = 40ULL << 30;
         s.used_bytes = s.total_bytes - s.free_bytes;
         return s;
+#endif
     }
 };
 

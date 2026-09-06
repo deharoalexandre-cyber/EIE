@@ -1,0 +1,5 @@
+<|turn>user
+Write a Python function implementing a small LRU cache for integer keys and byte values, using only the standard library. Explain how hits update recency and how eviction works. Add three short assertions testing a hit, an eviction, and independent caches. Do not use external dependencies.<turn|>
+<|turn>model
+<|channel>thought
+<channel|>

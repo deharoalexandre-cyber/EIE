@@ -13,7 +13,9 @@ class ModelManager {
     std::map<std::string, std::string> registry_; // alias -> path
     std::map<std::string, std::unique_ptr<ComputeBackend>> backends_;
     std::map<std::string, Slot> slots_;
+    std::map<std::string, int> expert_slots_;
 public:
+    void setExpertSlots(const std::string & alias, int count) { expert_slots_[alias] = count; }
     void reg(const std::string& alias, const std::string& path) {
         registry_[alias] = path;
         std::cout << "[Models] registered: " << alias << std::endl;
@@ -42,6 +44,7 @@ public:
         p.path = it->second;
         p.alias = alias;
         p.kv = kv;
+        if (expert_slots_.count(alias)) p.ews_slots = expert_slots_.at(alias);
         if (!backend->load(p)) return false;
         Slot s;
         s.alias = alias;

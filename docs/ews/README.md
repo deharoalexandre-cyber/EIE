@@ -1,84 +1,69 @@
-# EWS — Expert-Aware Weight Streaming (experimental)
+# EWS - Expert-Aware Weight Streaming (experimental)
 
-**Status: validated v1 candidate (frozen, archived). Not yet integrated into
-the EIE server — this documents the design and the evidence behind it.**
+## Current status: consumed runtime published
 
-EWS lets EIE run Mixture-of-Experts models whose weights exceed available
-VRAM by streaming expert weights from NVMe at *expert granularity*, instead
-of layer granularity (the classic AirLLM approach — concept credited, no code
-reused; clean-room C++17).
+The September implementation runs expert matmuls on the slabs loaded into
+bounded per-layer slots. It is integrated into EIE's target runtime.
 
-## Central finding
+- [September consumed-weight measurements](../benchmarks/ews-consumed-20260905.md)
+- [Build, patch and runtime guide](runtime-port.md)
+- [Target integration and real Next envelope](../../experiments/ews_target/RESULTS.md)
+- [Remaining qualification work](../ROADMAP_TO_CLAIMS.md)
 
-> **EWS eligibility is governed by the cold working set induced by routing —
-> not merely by total model size or by being MoE.**
+Local Gemma 26B numerical evidence and real Next coexistence are established
+within the documented profiles. GLM, arbitrary contexts, other architectures
+and other hardware are not thereby validated. This runtime uses an LRU-style
+slot cache, one-token microbatches and no per-chunk SHA verification.
 
-Coarse, load-balanced MoE (Mixtral 8x7B: 8 experts, near-maximal routing
-entropy, 114 MB per expert slab) has *no exploitable locality*: even a
-clairvoyant cache stays below the viability floor. Fine-grained MoE
-(Gemma 4 26B-A4B: 128 experts / top-8 / 3.3 MB slabs; independently
-replicated on Qwen3-30B-A3B) concentrates 70–86 % of routed traffic on a
-small per-layer hotset — the storage footprint decouples from the
-instantaneous working set.
+## Historical August routing / I/O campaign
 
-A second empirical result from the final holdout verdict:
+The [August report](../benchmarks/ews-gemma4-a4b-rtx4090-laptop.md) and
+[frozen archive](../benchmarks/data/ews/README.md) are preserved for the
+sequence of experiments, including negative results.
 
-> **The static hotset provides structure; the dynamic cache provides
-> robustness outside the calibration distribution.**
-> On unseen workloads with short calibration, the pure static hotset degrades
-> to 0.51–0.77 hit rate while the frozen hotset+SLRU policy recovers
-> 0.75–0.88, cutting cold bytes per token by 40–48 %.
+**Important distinction:** the frozen C+ timing engine transferred bytes into
+a side arena while FFNs still consumed resident weights. Its simulated
+per-layer cache policy was not the current physical consumed-slot path.
+"End-to-end" in that archive means timed decode including injected I/O,
+not loading, prefill or complete application latency.
 
-## Frozen v1 candidate
+The useful hypothesis is that routing-induced cold working set, not total
+model size alone, governs streaming feasibility. On the reported Mixtral
+traces at the tested budget, even an oracle cache missed the viability target.
+This is not proof of no locality for every Mixtral workload. Gemma and a
+separate Qwen family showed stronger concentration on the examined traces;
+another model family is not an independent replication team.
 
-| Component | Frozen value |
+### Archived candidate, not current runtime configuration
+
+| Item | August experiment |
 |---|---|
-| Cache policy | 75 % pinned hotset (calibrated) + 25 % SLRU |
-| VRAM budget | F = 25 % of expert store (per layer) |
-| Fetch | 512 KiB aligned chunks, task granularity = chunk |
-| Integrity | independent SHA-256 per chunk, verified against a digest table; slot READY only after *all* chunks validate (fail-closed) |
-| Router visibility | graph-break read of top-k, ≈10 µs/layer (measured negligible) |
-| Known limitation | n_ctx ≤ 4096 (compiled into the frozen candidate) |
+| Policy | 75% pinned calibrated hotset + 25% SLRU |
+| Logical cache budget | 25% of each layer's expert store |
+| Transfer | 512 KiB aligned chunks into a side arena |
+| Integrity | Expected SHA-256 first populated from the first read, subsequent reads compared; no pre-trusted signed digest index |
+| Scope | Frozen 4,096-token context, reported Gemma holdouts |
+| Reported decode result | 6.55-11.10 tok/s, EVAL half, worst of two |
+| Reported dynamic gain | 40-48% fewer cold bytes than the smaller static pinned portion alone |
 
-Rejected by measurement during the campaign: layer-granularity streaming,
-routing predictors (three independent failures: byte savings, EWMA next-use,
-speculative bigram prefetch — a good *routing* predictor is a poor *miss*
-predictor), TinyLFU admission, sliding hotsets (prohibitive churn), deep I/O
-queues as a latency cure (the routing-dependency stall is latency-bound, not
-bandwidth-bound).
-
-## Headline result (pre-registered, end-to-end, unseen holdouts)
-
-> **Gemma 4 26B-A4B Q4_0 — EWS frozen candidate**
-> 4/4 unseen holdouts passed (pre-registered C+ gate)
-> **6.55–11.10 tok/s end-to-end** (worst-of-two-runs, EVAL half only)
-> **40–48 % fewer cold bytes/token vs static hotset**
-> SHA-256 chunk verification fail-closed enabled
-> Scope: Gemma-4-A4B, n_ctx ≤ 4096, tested hardware only
-
-**No claim is made for K3-class models, other MoE architectures, or contexts
-above 4096 tokens.** Mixtral-class coarse MoE is explicitly out of scope
-(published negative control).
+The static comparison has fewer allocated slots than the combined policy;
+it measures the dynamic portion's incremental contribution, not a comparison
+to an equal-capacity fully static cache. Raw timings/traces and some manifest
+prompts are not included, so full independent score recomputation is not
+available from the archive alone.
 
 ## Prior art / inspirations
 
-EWS was initially inspired by [AirLLM](https://github.com/lyogavin/airllm)'s
-work on weight streaming (layer-wise streaming in 2023–2024, then per-expert
-streaming in its 2026 revival). **AirLLM is credited for the general streaming
-approach.** EWS is an independent clean-room C++17 implementation with a
-different execution model (slot-arena substitution inside `ggml_mul_mat_id`),
-cache policy (calibrated hotset + SLRU), integrity layer (fail-closed
-per-chunk SHA-256 against a signed digest table) and empirical eligibility
-criteria (routing-profile measurement). **No AirLLM code has been reused.**
+[AirLLM](https://github.com/lyogavin/airllm) is credited for inspiring weight
+streaming. The maintainers state that their C++ implementation was developed
+independently without reusing AirLLM code; this audit did not establish legal
+provenance or novelty. It also does not independently verify historical
+competitor capability or performance claims.
 
-Related work also includes expert-offloading approaches such as
-PowerInfer (SJTU) and the Mixtral offloading research by Eliseev & Mazur
-(LRU expert cache + speculative prediction). llama.cpp's mmap/layer offload
-serves as the comparison baseline.
+Related approaches include PowerInfer, expert offloading/cache work by
+Eliseev and Mazur, and llama.cpp's offload mechanisms. Refer to exact versions
+and matched measurements when comparing systems.
 
-## Reports and artifacts
-
-Full campaign report, including the failures that shaped the design:
-[`docs/benchmarks/ews-gemma4-a4b-rtx4090-laptop.md`](../benchmarks/ews-gemma4-a4b-rtx4090-laptop.md).
-Raw protocols, manifests, verdict and reproduction scripts:
-[`docs/benchmarks/data/ews/`](../benchmarks/data/ews/).
+The August SHA/hotset experiment and September slot substitution are
+different implementations. There is no implemented signed-index integrity
+guarantee to attribute to the current runtime.

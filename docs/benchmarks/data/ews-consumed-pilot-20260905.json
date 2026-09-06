@@ -1,0 +1,811 @@
+{
+  "schema": "eie.ews.consumed-pilot.v1",
+  "date": "2026-09-05",
+  "base_llama_commit": "fae3a28070fe4026f87bd6a544aba1b2d1896566",
+  "base_eie_commit": "67a779d3b291bed29a09a43330f552cfbe084277",
+  "purpose": "real consumed-streaming correctness and small co-residency probe",
+  "local_raw_directory": "build/pilot_20260905_v1",
+  "protocol": {
+    "predictions": 96,
+    "n_ctx": 512,
+    "microbatch": 1,
+    "sampling": "greedy argmax; no RNG; fixed 96 predictions (no EOS stop)",
+    "limits": "Two authored prompts; no representativeness or GLM claims; no concurrent workloads"
+  },
+  "inputs": [
+    {
+      "path": "google_gemma-4-26B-A4B-it-Q4_0.gguf",
+      "bytes": 14439363584,
+      "sha256": "3eca3b8f6d7baf218a7dd6bba5fb59a56ee25fe2d567b6f5f589b4f697eca51d"
+    },
+    {
+      "path": "ews-consumed.exe",
+      "bytes": 210944,
+      "sha256": "eb76bd45c0b875278aefe5a8d894b264e19f188763b2ecb82efe6524f1b599e7"
+    },
+    {
+      "path": "ggml-base.dll",
+      "bytes": 616960,
+      "sha256": "5e58f5bad65d6ae64419e1c9dd1adc677ef9490bd559d8fe735596f16e4a77df"
+    },
+    {
+      "path": "ggml-cpu.dll",
+      "bytes": 880640,
+      "sha256": "fdf35b19c88e1fa4c57c34fe5a6be677d7d3bd183f6d3356acbaf274f3cc3641"
+    },
+    {
+      "path": "ggml-cuda.dll",
+      "bytes": 31906816,
+      "sha256": "7c86b4b8119fb7974daf556689557fdaddda0e59794c88a1266ca9adeb61c4b7"
+    },
+    {
+      "path": "ggml.dll",
+      "bytes": 67584,
+      "sha256": "c844ef1b30dddaf1b42951212bb52c0fb843464dada7b3e65a80527fab35c3fe"
+    },
+    {
+      "path": "llama.dll",
+      "bytes": 2062336,
+      "sha256": "eac3869fd726f0077a172978b515176f10f6a98d7ad9fe18e99dfb02257a530c"
+    },
+    {
+      "path": "main.cpp",
+      "bytes": 22502,
+      "sha256": "97657214c80c832115a3e129d10356dbe5fd79278f5a9622fceac4cb450d7abd"
+    },
+    {
+      "path": "compare_runs.py",
+      "bytes": 3328,
+      "sha256": "be89a49cc5aa7c54108ce6e501ceeb373fe8ddac4df03545d1d0ad1bfc90f456"
+    },
+    {
+      "path": "run_pilot.py",
+      "bytes": 4883,
+      "sha256": "8039bc523dc1cc472e61d09a952cbcb7f53847f463b31d1c2a7209087cf4326b"
+    },
+    {
+      "path": "fr_gemma4.txt",
+      "bytes": 353,
+      "sha256": "e83a0c3fd4d62fb4c158c491d89f345ff3c3a473137492af38047b5bb2869544"
+    },
+    {
+      "path": "code_gemma4.txt",
+      "bytes": 352,
+      "sha256": "028e0dfbe9cb9f0a0083ed797a4abfad88cbbf7d1d51ac6e359cb50926c49163"
+    },
+    {
+      "path": "gemma-4-12B-it-QAT-Q4_0.gguf",
+      "bytes": 6975879008,
+      "sha256": "f568ac5de71c8fcac5d5794494388ad94db9e18b4368ca897e21b30d2448eeec"
+    }
+  ],
+  "cases": [
+    {
+      "case": "fr_ref",
+      "passed": true,
+      "exit_code": 0,
+      "prompt_tokens": 75,
+      "predictions": 96,
+      "teacher_forced": false,
+      "slots_per_layer": 0,
+      "prefill_ms": 1291.887,
+      "decode_ms": 1460.5446,
+      "decode_calls": 95,
+      "decode_calls_per_second": 65.044230761594,
+      "model_buffers": [
+        {
+          "name": "CPU",
+          "bytes": 605552640,
+          "host": true
+        },
+        {
+          "name": "CUDA0",
+          "bytes": 14423602944,
+          "host": false
+        }
+      ],
+      "physical_expert_bytes": 12846366720,
+      "expert_bytes_saved": 0,
+      "direct_read_buffer_bytes": 0,
+      "prefill": {
+        "callback_calls": 2250,
+        "accesses": 0,
+        "hits": 0,
+        "misses": 0,
+        "payload_h2d_bytes": 0,
+        "direct_read_bytes": 0,
+        "read_ms": 0,
+        "upload_ms": 0,
+        "callback_ms": 51.19040000000004
+      },
+      "decode": {
+        "callback_calls": 2850,
+        "accesses": 0,
+        "hits": 0,
+        "misses": 0,
+        "payload_h2d_bytes": 0,
+        "direct_read_bytes": 0,
+        "read_ms": 0,
+        "upload_ms": 0,
+        "callback_ms": 60.052799999999884
+      },
+      "gpu_end_of_generation": [
+        {
+          "device": "CUDA0",
+          "total_bytes": 17170956288,
+          "free_bytes": 1235222528,
+          "used_bytes": 15935733760
+        }
+      ],
+      "comparison": null,
+      "co_resident": null,
+      "evidence": [
+        {
+          "file": "fr_ref.json",
+          "bytes": 4435,
+          "sha256": "e42c98172ed94e509f779886ce060030f87a520773a0f3f1e002221c7a89f4cb"
+        },
+        {
+          "file": "fr_ref.trace.tsv",
+          "bytes": 202979,
+          "sha256": "7a67500b342c595f253cc61101e099fab8febb669fb5cd461e7fa1eecb7361b8"
+        },
+        {
+          "file": "fr_ref.logits.bin",
+          "bytes": 100663296,
+          "sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4"
+        }
+      ]
+    },
+    {
+      "case": "fr_s32",
+      "passed": true,
+      "exit_code": 0,
+      "prompt_tokens": 75,
+      "predictions": 96,
+      "teacher_forced": false,
+      "slots_per_layer": 32,
+      "prefill_ms": 6301.9438,
+      "decode_ms": 7661.8154,
+      "decode_calls": 95,
+      "decode_calls_per_second": 12.399150206620744,
+      "model_buffers": [
+        {
+          "name": "CPU",
+          "bytes": 605552640,
+          "host": true
+        },
+        {
+          "name": "CUDA0",
+          "bytes": 4788827904,
+          "host": false
+        }
+      ],
+      "physical_expert_bytes": 3211591680,
+      "expert_bytes_saved": 9634775040,
+      "direct_read_buffer_bytes": 2236416,
+      "prefill": {
+        "callback_calls": 2250,
+        "accesses": 18000,
+        "hits": 14117,
+        "misses": 3883,
+        "payload_h2d_bytes": 12990219264,
+        "direct_read_bytes": 13021974528,
+        "read_ms": 3642.155500000022,
+        "upload_ms": 1105.8897999999992,
+        "callback_ms": 4770.3122000000085
+      },
+      "decode": {
+        "callback_calls": 2850,
+        "accesses": 22800,
+        "hits": 18324,
+        "misses": 4476,
+        "payload_h2d_bytes": 14974046208,
+        "direct_read_bytes": 15010709504,
+        "read_ms": 4102.912700000007,
+        "upload_ms": 1386.061000000001,
+        "callback_ms": 5516.734499999993
+      },
+      "gpu_end_of_generation": [
+        {
+          "device": "CUDA0",
+          "total_bytes": 17170956288,
+          "free_bytes": 10869538816,
+          "used_bytes": 6301417472
+        }
+      ],
+      "comparison": {
+        "logits_values": 25165824,
+        "logits_byte_identical": true,
+        "valid_numeric_values": true,
+        "max_abs_logit_difference": 0,
+        "generated_ids_identical": true,
+        "routing_trace_identical": true,
+        "reference_logits_sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4",
+        "candidate_logits_sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4",
+        "reference_model_buffer_bytes": 15029155584,
+        "candidate_model_buffer_bytes": 5394380544,
+        "candidate_physical_expert_bytes": 3211591680,
+        "candidate_expert_bytes_saved": 9634775040,
+        "negative_control": false
+      },
+      "co_resident": null,
+      "evidence": [
+        {
+          "file": "fr_s32.json",
+          "bytes": 4570,
+          "sha256": "c7b3d381fb8f795eb7019ab0893b0e4351c9f14c49aedec1b3d19c9e6d43f380"
+        },
+        {
+          "file": "fr_s32.trace.tsv",
+          "bytes": 202979,
+          "sha256": "7a67500b342c595f253cc61101e099fab8febb669fb5cd461e7fa1eecb7361b8"
+        },
+        {
+          "file": "fr_s32.logits.bin",
+          "bytes": 100663296,
+          "sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4"
+        }
+      ]
+    },
+    {
+      "case": "fr_s8",
+      "passed": true,
+      "exit_code": 0,
+      "prompt_tokens": 75,
+      "predictions": 96,
+      "teacher_forced": false,
+      "slots_per_layer": 8,
+      "prefill_ms": 15857.3946,
+      "decode_ms": 19943.6341,
+      "decode_calls": 95,
+      "decode_calls_per_second": 4.763424736116674,
+      "model_buffers": [
+        {
+          "name": "CPU",
+          "bytes": 605552640,
+          "host": true
+        },
+        {
+          "name": "CUDA0",
+          "bytes": 2380134144,
+          "host": false
+        }
+      ],
+      "physical_expert_bytes": 802897920,
+      "expert_bytes_saved": 12043468800,
+      "direct_read_buffer_bytes": 2236416,
+      "prefill": {
+        "callback_calls": 2250,
+        "accesses": 18000,
+        "hits": 7007,
+        "misses": 10993,
+        "payload_h2d_bytes": 36776070144,
+        "direct_read_bytes": 36866355200,
+        "read_ms": 10079.99850000001,
+        "upload_ms": 3711.548299999972,
+        "callback_ms": 13821.524300000008
+      },
+      "decode": {
+        "callback_calls": 2850,
+        "accesses": 22800,
+        "hits": 10122,
+        "misses": 12678,
+        "payload_h2d_bytes": 42413082624,
+        "direct_read_bytes": 42516733952,
+        "read_ms": 11558.70469999998,
+        "upload_ms": 4977.973199999994,
+        "callback_ms": 16575.84150000005
+      },
+      "gpu_end_of_generation": [
+        {
+          "device": "CUDA0",
+          "total_bytes": 17170956288,
+          "free_bytes": 13279166464,
+          "used_bytes": 3891789824
+        }
+      ],
+      "comparison": {
+        "logits_values": 25165824,
+        "logits_byte_identical": true,
+        "valid_numeric_values": true,
+        "max_abs_logit_difference": 0,
+        "generated_ids_identical": true,
+        "routing_trace_identical": true,
+        "reference_logits_sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4",
+        "candidate_logits_sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4",
+        "reference_model_buffer_bytes": 15029155584,
+        "candidate_model_buffer_bytes": 2985686784,
+        "candidate_physical_expert_bytes": 802897920,
+        "candidate_expert_bytes_saved": 12043468800,
+        "negative_control": false
+      },
+      "co_resident": null,
+      "evidence": [
+        {
+          "file": "fr_s8.json",
+          "bytes": 4570,
+          "sha256": "0db8531bca7e2605848681183ba0f99a27e301e2a9e92ff89b9cc810bea1fbc7"
+        },
+        {
+          "file": "fr_s8.trace.tsv",
+          "bytes": 202979,
+          "sha256": "7a67500b342c595f253cc61101e099fab8febb669fb5cd461e7fa1eecb7361b8"
+        },
+        {
+          "file": "fr_s8.logits.bin",
+          "bytes": 100663296,
+          "sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4"
+        }
+      ]
+    },
+    {
+      "case": "fr_zero",
+      "passed": true,
+      "exit_code": 0,
+      "prompt_tokens": 75,
+      "predictions": 96,
+      "teacher_forced": true,
+      "slots_per_layer": 32,
+      "prefill_ms": 4652.473,
+      "decode_ms": 6138.4092,
+      "decode_calls": 95,
+      "decode_calls_per_second": 15.476322432202792,
+      "model_buffers": [
+        {
+          "name": "CPU",
+          "bytes": 605552640,
+          "host": true
+        },
+        {
+          "name": "CUDA0",
+          "bytes": 4788827904,
+          "host": false
+        }
+      ],
+      "physical_expert_bytes": 3211591680,
+      "expert_bytes_saved": 9634775040,
+      "direct_read_buffer_bytes": 2236416,
+      "prefill": {
+        "callback_calls": 2250,
+        "accesses": 18000,
+        "hits": 14354,
+        "misses": 3646,
+        "payload_h2d_bytes": 12197357568,
+        "direct_read_bytes": 12227100672,
+        "read_ms": 3266.7535000000003,
+        "upload_ms": 141.28749999999965,
+        "callback_ms": 3438.530100000011
+      },
+      "decode": {
+        "callback_calls": 2850,
+        "accesses": 22800,
+        "hits": 18731,
+        "misses": 4069,
+        "payload_h2d_bytes": 13612465152,
+        "direct_read_bytes": 13646012416,
+        "read_ms": 3718.676199999999,
+        "upload_ms": 219.86749999999935,
+        "callback_ms": 3993.9603000000047
+      },
+      "gpu_end_of_generation": [
+        {
+          "device": "CUDA0",
+          "total_bytes": 17170956288,
+          "free_bytes": 10869538816,
+          "used_bytes": 6301417472
+        }
+      ],
+      "comparison": {
+        "logits_values": 25165824,
+        "logits_byte_identical": false,
+        "valid_numeric_values": true,
+        "max_abs_logit_difference": 44.680049896240234,
+        "generated_ids_identical": false,
+        "routing_trace_identical": false,
+        "reference_logits_sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4",
+        "candidate_logits_sha256": "4ca10e29f3ebd1ff0628608a59f0c3fb1c7fc4f7447f1d63e5b513172e1879b2",
+        "reference_model_buffer_bytes": 15029155584,
+        "candidate_model_buffer_bytes": 5394380544,
+        "candidate_physical_expert_bytes": 3211591680,
+        "candidate_expert_bytes_saved": 9634775040,
+        "negative_control": true
+      },
+      "co_resident": null,
+      "evidence": [
+        {
+          "file": "fr_zero.json",
+          "bytes": 4354,
+          "sha256": "993b6998c1a15766cd902306ce30ee9f362b52fc6519d83417467ddb09a5957f"
+        },
+        {
+          "file": "fr_zero.trace.tsv",
+          "bytes": 201825,
+          "sha256": "1f0206c5f6cbc51a89ec53d7098cfa3a18d632e67b2536dccc4e1ad32728758e"
+        },
+        {
+          "file": "fr_zero.logits.bin",
+          "bytes": 100663296,
+          "sha256": "4ca10e29f3ebd1ff0628608a59f0c3fb1c7fc4f7447f1d63e5b513172e1879b2"
+        }
+      ]
+    },
+    {
+      "case": "code_ref",
+      "passed": true,
+      "exit_code": 0,
+      "prompt_tokens": 69,
+      "predictions": 96,
+      "teacher_forced": false,
+      "slots_per_layer": 0,
+      "prefill_ms": 1389.2383,
+      "decode_ms": 1668.5419,
+      "decode_calls": 95,
+      "decode_calls_per_second": 56.93593909748386,
+      "model_buffers": [
+        {
+          "name": "CPU",
+          "bytes": 605552640,
+          "host": true
+        },
+        {
+          "name": "CUDA0",
+          "bytes": 14423602944,
+          "host": false
+        }
+      ],
+      "physical_expert_bytes": 12846366720,
+      "expert_bytes_saved": 0,
+      "direct_read_buffer_bytes": 0,
+      "prefill": {
+        "callback_calls": 2070,
+        "accesses": 0,
+        "hits": 0,
+        "misses": 0,
+        "payload_h2d_bytes": 0,
+        "direct_read_bytes": 0,
+        "read_ms": 0,
+        "upload_ms": 0,
+        "callback_ms": 55.457099999999876
+      },
+      "decode": {
+        "callback_calls": 2850,
+        "accesses": 0,
+        "hits": 0,
+        "misses": 0,
+        "payload_h2d_bytes": 0,
+        "direct_read_bytes": 0,
+        "read_ms": 0,
+        "upload_ms": 0,
+        "callback_ms": 68.34670000000025
+      },
+      "gpu_end_of_generation": [
+        {
+          "device": "CUDA0",
+          "total_bytes": 17170956288,
+          "free_bytes": 1235222528,
+          "used_bytes": 15935733760
+        }
+      ],
+      "comparison": null,
+      "co_resident": null,
+      "evidence": [
+        {
+          "file": "code_ref.json",
+          "bytes": 4340,
+          "sha256": "ef127fda1c0c49d0b2726fe46af4ee085d9a6c6be0c6479262c77439331b51dc"
+        },
+        {
+          "file": "code_ref.trace.tsv",
+          "bytes": 194285,
+          "sha256": "1ba643aa20415b40a0923ae8616f4a1be94337e1a9ec965158d61c7e6174655e"
+        },
+        {
+          "file": "code_ref.logits.bin",
+          "bytes": 100663296,
+          "sha256": "5b53d01b4e7c542abc96de89a5c52f0a8706931a35ff636cc6ab2fc16be9bd1b"
+        }
+      ]
+    },
+    {
+      "case": "code_s32",
+      "passed": true,
+      "exit_code": 0,
+      "prompt_tokens": 69,
+      "predictions": 96,
+      "teacher_forced": false,
+      "slots_per_layer": 32,
+      "prefill_ms": 6041.0207,
+      "decode_ms": 8635.8137,
+      "decode_calls": 95,
+      "decode_calls_per_second": 11.000700489868139,
+      "model_buffers": [
+        {
+          "name": "CPU",
+          "bytes": 605552640,
+          "host": true
+        },
+        {
+          "name": "CUDA0",
+          "bytes": 4788827904,
+          "host": false
+        }
+      ],
+      "physical_expert_bytes": 3211591680,
+      "expert_bytes_saved": 9634775040,
+      "direct_read_buffer_bytes": 2236416,
+      "prefill": {
+        "callback_calls": 2070,
+        "accesses": 16560,
+        "hits": 12464,
+        "misses": 4096,
+        "payload_h2d_bytes": 13702791168,
+        "direct_read_bytes": 13736620032,
+        "read_ms": 3671.6925000000083,
+        "upload_ms": 1110.9287000000008,
+        "callback_ms": 4803.810000000002
+      },
+      "decode": {
+        "callback_calls": 2850,
+        "accesses": 22800,
+        "hits": 18356,
+        "misses": 4444,
+        "payload_h2d_bytes": 14866993152,
+        "direct_read_bytes": 14903468032,
+        "read_ms": 4097.169600000012,
+        "upload_ms": 1793.6429999999943,
+        "callback_ms": 5919.307199999998
+      },
+      "gpu_end_of_generation": [
+        {
+          "device": "CUDA0",
+          "total_bytes": 17170956288,
+          "free_bytes": 10869538816,
+          "used_bytes": 6301417472
+        }
+      ],
+      "comparison": {
+        "logits_values": 25165824,
+        "logits_byte_identical": true,
+        "valid_numeric_values": true,
+        "max_abs_logit_difference": 0,
+        "generated_ids_identical": true,
+        "routing_trace_identical": true,
+        "reference_logits_sha256": "5b53d01b4e7c542abc96de89a5c52f0a8706931a35ff636cc6ab2fc16be9bd1b",
+        "candidate_logits_sha256": "5b53d01b4e7c542abc96de89a5c52f0a8706931a35ff636cc6ab2fc16be9bd1b",
+        "reference_model_buffer_bytes": 15029155584,
+        "candidate_model_buffer_bytes": 5394380544,
+        "candidate_physical_expert_bytes": 3211591680,
+        "candidate_expert_bytes_saved": 9634775040,
+        "negative_control": false
+      },
+      "co_resident": null,
+      "evidence": [
+        {
+          "file": "code_s32.json",
+          "bytes": 4473,
+          "sha256": "c055b667adbb1b81d7758706d005d5fa14a92926b1201f139ffbfc11b43ce25b"
+        },
+        {
+          "file": "code_s32.trace.tsv",
+          "bytes": 194285,
+          "sha256": "1ba643aa20415b40a0923ae8616f4a1be94337e1a9ec965158d61c7e6174655e"
+        },
+        {
+          "file": "code_s32.logits.bin",
+          "bytes": 100663296,
+          "sha256": "5b53d01b4e7c542abc96de89a5c52f0a8706931a35ff636cc6ab2fc16be9bd1b"
+        }
+      ]
+    },
+    {
+      "case": "code_s16",
+      "passed": true,
+      "exit_code": 0,
+      "prompt_tokens": 69,
+      "predictions": 96,
+      "teacher_forced": false,
+      "slots_per_layer": 16,
+      "prefill_ms": 10839.0952,
+      "decode_ms": 14077.4325,
+      "decode_calls": 95,
+      "decode_calls_per_second": 6.748389665516066,
+      "model_buffers": [
+        {
+          "name": "CPU",
+          "bytes": 605552640,
+          "host": true
+        },
+        {
+          "name": "CUDA0",
+          "bytes": 3183032064,
+          "host": false
+        }
+      ],
+      "physical_expert_bytes": 1605795840,
+      "expert_bytes_saved": 11240570880,
+      "direct_read_buffer_bytes": 2236416,
+      "prefill": {
+        "callback_calls": 2070,
+        "accesses": 16560,
+        "hits": 9300,
+        "misses": 7260,
+        "payload_h2d_bytes": 24287662080,
+        "direct_read_bytes": 24347140096,
+        "read_ms": 6746.489499999965,
+        "upload_ms": 2341.829899999982,
+        "callback_ms": 9114.68549999998
+      },
+      "decode": {
+        "callback_calls": 2850,
+        "accesses": 22800,
+        "hits": 14321,
+        "misses": 8479,
+        "payload_h2d_bytes": 28365714432,
+        "direct_read_bytes": 28435468288,
+        "read_ms": 7666.389999999978,
+        "upload_ms": 3215.2038000000175,
+        "callback_ms": 10916.191599999991
+      },
+      "gpu_end_of_generation": [
+        {
+          "device": "CUDA0",
+          "total_bytes": 17170956288,
+          "free_bytes": 12475957248,
+          "used_bytes": 4694999040
+        }
+      ],
+      "comparison": {
+        "logits_values": 25165824,
+        "logits_byte_identical": true,
+        "valid_numeric_values": true,
+        "max_abs_logit_difference": 0,
+        "generated_ids_identical": true,
+        "routing_trace_identical": true,
+        "reference_logits_sha256": "5b53d01b4e7c542abc96de89a5c52f0a8706931a35ff636cc6ab2fc16be9bd1b",
+        "candidate_logits_sha256": "5b53d01b4e7c542abc96de89a5c52f0a8706931a35ff636cc6ab2fc16be9bd1b",
+        "reference_model_buffer_bytes": 15029155584,
+        "candidate_model_buffer_bytes": 3788584704,
+        "candidate_physical_expert_bytes": 1605795840,
+        "candidate_expert_bytes_saved": 11240570880,
+        "negative_control": false
+      },
+      "co_resident": null,
+      "evidence": [
+        {
+          "file": "code_s16.json",
+          "bytes": 4472,
+          "sha256": "dcab0bc9874d2f0b9dd7136ded6da3fc64a04516e86b303f853a2fbb3af20963"
+        },
+        {
+          "file": "code_s16.trace.tsv",
+          "bytes": 194285,
+          "sha256": "1ba643aa20415b40a0923ae8616f4a1be94337e1a9ec965158d61c7e6174655e"
+        },
+        {
+          "file": "code_s16.logits.bin",
+          "bytes": 100663296,
+          "sha256": "5b53d01b4e7c542abc96de89a5c52f0a8706931a35ff636cc6ab2fc16be9bd1b"
+        }
+      ]
+    },
+    {
+      "case": "fr_s32_resident12",
+      "passed": true,
+      "exit_code": 0,
+      "prompt_tokens": 75,
+      "predictions": 96,
+      "teacher_forced": false,
+      "slots_per_layer": 32,
+      "prefill_ms": 6427.4168,
+      "decode_ms": 8605.2622,
+      "decode_calls": 95,
+      "decode_calls_per_second": 11.039756580572293,
+      "model_buffers": [
+        {
+          "name": "CPU",
+          "bytes": 605552640,
+          "host": true
+        },
+        {
+          "name": "CUDA0",
+          "bytes": 4788827904,
+          "host": false
+        }
+      ],
+      "physical_expert_bytes": 3211591680,
+      "expert_bytes_saved": 9634775040,
+      "direct_read_buffer_bytes": 2236416,
+      "prefill": {
+        "callback_calls": 2250,
+        "accesses": 18000,
+        "hits": 14117,
+        "misses": 3883,
+        "payload_h2d_bytes": 12990219264,
+        "direct_read_bytes": 13021974528,
+        "read_ms": 3545.9997999999987,
+        "upload_ms": 1252.874899999999,
+        "callback_ms": 4818.48710000001
+      },
+      "decode": {
+        "callback_calls": 2850,
+        "accesses": 22800,
+        "hits": 18324,
+        "misses": 4476,
+        "payload_h2d_bytes": 14974046208,
+        "direct_read_bytes": 15010709504,
+        "read_ms": 4038.808400000008,
+        "upload_ms": 1783.4737000000102,
+        "callback_ms": 5848.744400000017
+      },
+      "gpu_end_of_generation": [
+        {
+          "device": "CUDA0",
+          "total_bytes": 17170956288,
+          "free_bytes": 3680542720,
+          "used_bytes": 13490413568
+        }
+      ],
+      "comparison": {
+        "logits_values": 25165824,
+        "logits_byte_identical": true,
+        "valid_numeric_values": true,
+        "max_abs_logit_difference": 0,
+        "generated_ids_identical": true,
+        "routing_trace_identical": true,
+        "reference_logits_sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4",
+        "candidate_logits_sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4",
+        "reference_model_buffer_bytes": 15029155584,
+        "candidate_model_buffer_bytes": 5394380544,
+        "candidate_physical_expert_bytes": 3211591680,
+        "candidate_expert_bytes_saved": 9634775040,
+        "negative_control": false
+      },
+      "co_resident": {
+        "scope": "separate 256-token test context; not the Next UI/runtime",
+        "model_path": "gemma-4-12B-it-QAT-Q4_0.gguf",
+        "buffers": [
+          {
+            "name": "CPU",
+            "bytes": 825753600,
+            "host": true
+          },
+          {
+            "name": "CUDA0",
+            "bytes": 6960120064,
+            "host": false
+          }
+        ],
+        "gpu_after_warmup": [
+          {
+            "device": "CUDA0",
+            "total_bytes": 17170956288,
+            "free_bytes": 8726249472,
+            "used_bytes": 8444706816
+          }
+        ],
+        "warmup_tokens": 15,
+        "output_preserved_during_streaming": true,
+        "continued_after_streaming": true,
+        "next_token_fed": 53406
+      },
+      "evidence": [
+        {
+          "file": "fr_s32_resident12.json",
+          "bytes": 5324,
+          "sha256": "bb335814ab3dab42447fb1030dc786c8c7d2a5f6c690149c13eacae66941236a"
+        },
+        {
+          "file": "fr_s32_resident12.trace.tsv",
+          "bytes": 202979,
+          "sha256": "7a67500b342c595f253cc61101e099fab8febb669fb5cd461e7fa1eecb7361b8"
+        },
+        {
+          "file": "fr_s32_resident12.logits.bin",
+          "bytes": 100663296,
+          "sha256": "898e141a9a55d1bdbf3d65209a89fcb1c172102b1df323aa148d558ad04256b4"
+        }
+      ]
+    }
+  ]
+}

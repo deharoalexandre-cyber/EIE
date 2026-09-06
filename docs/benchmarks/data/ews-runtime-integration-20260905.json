@@ -1,0 +1,253 @@
+{
+  "runtime_pin": "2168b0cd8b87c75c29a1e6588692ebbb805b9bd2",
+  "numerical_gate": {
+    "runtime_pin": "2168b0cd8b87c75c29a1e6588692ebbb805b9bd2",
+    "cuda_graphs": false,
+    "comparisons": [
+      {
+        "domain": "fr",
+        "slots": 32,
+        "floats": 8388608,
+        "bit_identical": true,
+        "same_generated_tokens": true,
+        "max_abs_delta": 0,
+        "sha256": "5fa4baa61035e802ed6723864d79129bd995466deb68d257016f15aeb44f8f94"
+      },
+      {
+        "domain": "fr",
+        "slots": 8,
+        "floats": 8388608,
+        "bit_identical": true,
+        "same_generated_tokens": true,
+        "max_abs_delta": 0,
+        "sha256": "5fa4baa61035e802ed6723864d79129bd995466deb68d257016f15aeb44f8f94"
+      },
+      {
+        "domain": "code",
+        "slots": 32,
+        "floats": 8388608,
+        "bit_identical": true,
+        "same_generated_tokens": true,
+        "max_abs_delta": 0,
+        "sha256": "165ab3e1f1adc23f31fbcf50d44a5614a0e201d2e03947075eb417701e3fc048"
+      },
+      {
+        "domain": "code",
+        "slots": 8,
+        "floats": 8388608,
+        "bit_identical": true,
+        "same_generated_tokens": true,
+        "max_abs_delta": 0,
+        "sha256": "165ab3e1f1adc23f31fbcf50d44a5614a0e201d2e03947075eb417701e3fc048"
+      }
+    ]
+  },
+  "api_gate": [
+    {
+      "kv": "f16",
+      "chat_oneshot_repeated_identical": true,
+      "sse_identical": true,
+      "catalog_compatible": true,
+      "stats": {
+        "callbacks": 4320,
+        "hits": 21539,
+        "logical_expert_bytes": 12846366720,
+        "misses": 13021,
+        "payload_bytes": 43560557568,
+        "physical_expert_bytes": 1605795840,
+        "read_bytes": 43667202048
+      }
+    },
+    {
+      "kv": "turbo3",
+      "chat_oneshot_repeated_identical": true,
+      "sse_identical": true,
+      "catalog_compatible": true,
+      "stats": {
+        "callbacks": 4320,
+        "hits": 20806,
+        "logical_expert_bytes": 12846366720,
+        "misses": 13754,
+        "payload_bytes": 46012741632,
+        "physical_expert_bytes": 1605795840,
+        "read_bytes": 46125711360
+      }
+    }
+  ],
+  "envelopes": [
+    {
+      "run": "next-envelope-v1",
+      "completed_turns": 5,
+      "turn_seconds": [
+        20.625,
+        27.93800000002375,
+        18.98399999999674,
+        16.81300000002375,
+        16.01600000000326
+      ],
+      "configured_next_context": 16384,
+      "max_observed_prompt_eval_tokens": 9374,
+      "vision_established_before_during_after": true,
+      "nomic_established_before_during_after": true,
+      "ews_slots": 16,
+      "ews_context": 2048,
+      "ews_completion_tokens": 384,
+      "ews_request_seconds": [
+        32.76600000000326,
+        33.34400000004098
+      ],
+      "ews_output_tokens_per_request_wall_second": [
+        5.859732649697275,
+        5.7581573896282405
+      ],
+      "peak_gpu_used_mib": 13344,
+      "minimum_gpu_free_mib": 2705,
+      "actual_tool_calls": [],
+      "explicit_tool_requests": false,
+      "ews_counters": {
+        "callbacks": 13560,
+        "hits": 67992,
+        "logical_expert_bytes": 12846366720,
+        "misses": 40488,
+        "payload_bytes": 135448879104,
+        "physical_expert_bytes": 1605795840,
+        "read_bytes": 135782674432
+      },
+      "original_files": 1528,
+      "original_state_unchanged": true,
+      "raw_report_sha256": "d54f29d665bc58ef470a61a6e883372b6f763ac8f7b7586e535f67304670d8c3"
+    },
+    {
+      "run": "next-envelope-v2",
+      "completed_turns": 5,
+      "turn_seconds": [
+        15.438000000023749,
+        25.95400000002701,
+        17.10899999999674,
+        17.56199999997625,
+        15.59399999998277
+      ],
+      "configured_next_context": 16384,
+      "max_observed_prompt_eval_tokens": 9494,
+      "vision_established_before_during_after": true,
+      "nomic_established_before_during_after": true,
+      "ews_slots": 16,
+      "ews_context": 2048,
+      "ews_completion_tokens": 384,
+      "ews_request_seconds": [
+        32.17200000002049,
+        33.18800000002375
+      ],
+      "ews_output_tokens_per_request_wall_second": [
+        5.967922417004778,
+        5.785223574781927
+      ],
+      "peak_gpu_used_mib": 13408,
+      "minimum_gpu_free_mib": 2641,
+      "actual_tool_calls": [
+        "inspect_runtime",
+        "list_files",
+        "search_beliefs",
+        "search_memory"
+      ],
+      "explicit_tool_requests": true,
+      "ews_counters": {
+        "callbacks": 13560,
+        "hits": 67992,
+        "logical_expert_bytes": 12846366720,
+        "misses": 40488,
+        "payload_bytes": 135448879104,
+        "physical_expert_bytes": 1605795840,
+        "read_bytes": 135782674432
+      },
+      "original_files": 1528,
+      "original_state_unchanged": true,
+      "raw_report_sha256": "99db9b11d91b3aa12a0a167bef9c640e4ed749a71a588913344d6df3201cdc21"
+    }
+  ],
+  "sources": {
+    "CMakeLists.txt": "1d42935134c520eee3613574d453c847edad39d72cfb505807ee8ef21b20db96",
+    "backends/compute_backend.h": "765159470a2f4e6ad13f204b42296e80f987074581b2281cd0629cfec05d83d9",
+    "backends/cpu_backend.cpp": "afde0c053c576664a61db0e1acfc0ebd9de8eb519e0529e777daa55bab8bec7d",
+    "backends/expert_stream.cpp": "564b5ab05eba11bcad584145f0505357d74b990d45e72f34ff7b98b1c765474a",
+    "backends/expert_stream.h": "624b651ea9a2771b9660a912265a672130e1c88b7298afd2afc53933fd82973c",
+    "core/config.h": "3635a123340e38f6d6daecfa92257b06df54b8d6ae53b79b006519c1b45c1494",
+    "core/model_manager.h": "429145035f6808a21b98d4da4845499b0f25daad51e693d1479219d9f4311115",
+    "server/api.cpp": "c5c297f4d5ded369f15c39a6b5d71c945fa0258675b0c32b9e91784d1322562b",
+    "server/main.cpp": "1c07af8ca87193514b104e818906e779b190acc0aaf75ab86af54828a6b51c03",
+    "tests/ews_forward.cpp": "0916d8e5567b496bf75247f7776486fc881df7646572ffe98594db68bee4e393",
+    "patches/ews-runtime-2168b0.patch": "3805157a4ef0b58007ba37e3b7259f142474bbda76abe72c5237c4b750299ad9",
+    "experiments/ews_target/api_smoke.py": "83a5dc5b7fccbe6f72d01268fa8b1a14c3a1be8fcc6c96d77e3fe6db77eed4c1",
+    "experiments/ews_target/next_envelope.py": "db5703bc461f8b069021a3d74c5a1932fcad684393f4193478b5e5b7d28f057a",
+    "experiments/ews_target/run_forward.py": "f9609e40daed9ffcec1f8bba065b0353edaec90766dd4844c54c79ecb48e0599",
+    "experiments/ews_target/summarize.py": "7f62e7b1a27f4c89c1032e7737f6ce1e94453a38327290acdcfeabd2c86541bf"
+  },
+  "binaries": {
+    "bin/Release/ggml-base.dll": "a8d8f29ec67851f57533d4981cb9a5f36c86cc39559cd131857b310c670cc7f3",
+    "bin/Release/ggml-cpu.dll": "9bb4b2f979c48af7390d91ff4703df96ac8cdca440f73456a35980302e8951a7",
+    "bin/Release/ggml-cuda.dll": "af64c4156ad05d8f0205d7e996a3c99ebcb2df1c77242cb5f7e1b99a46935899",
+    "bin/Release/ggml.dll": "129aca7ff44ffb8c55ec197a2e17993bd022e0b01cbce3bf83a287d321abc9b6",
+    "bin/Release/llama-common.dll": "1f3e66c6cf204f9ee5764a7a7b41c917b2f0e4c19acc50503b7a1ec62755a27b",
+    "bin/Release/llama.dll": "6227906a87e3fef70bef0f2700fc29f872ac3689fff90eff69b48352bfc04469",
+    "Release/eie-server.exe": "9bbaf59c56732e61035f647a8b3fc428d29c0846bb43f962323e3ce574ca5051",
+    "Release/ews-forward.exe": "28efe89a64324a169953c8fff2943c5bf69f6ffbad509fa919d1ab581d14b58d"
+  },
+  "models": {
+    "gemma-26b": {
+      "file": "google_gemma-4-26B-A4B-it-Q4_0.gguf",
+      "size_bytes": 14439363584,
+      "sha256": "3eca3b8f6d7baf218a7dd6bba5fb59a56ee25fe2d567b6f5f589b4f697eca51d"
+    },
+    "gemma-12b": {
+      "file": "gemma-4-12B-it-QAT-Q4_0.gguf",
+      "size_bytes": 6975879008,
+      "sha256": "f568ac5de71c8fcac5d5794494388ad94db9e18b4368ca897e21b30d2448eeec"
+    }
+  },
+  "tool_outcomes_v2": [
+    {
+      "name": "inspect_runtime",
+      "outcome": "completed",
+      "reason_code": null,
+      "journal_commit_sha256": "dbcbf3255e84129a654501aa9c5b1899bdab97bb05243566f29278f10e545a0d",
+      "result_sha256": "311457e36f22fe8847f4d0f2bfc399ca116c4483586191fc354ce25853d590a1"
+    },
+    {
+      "name": "search_memory",
+      "outcome": "completed",
+      "reason_code": null,
+      "journal_commit_sha256": "2be6e02007456b29845fe01e5f7fe633c21a6c3a541cd0f2807406f35ae342ea",
+      "result_sha256": "3a0b3e6365ee8a982bdc102cb09076072d9a4979c16e962617b9a1961d13851f"
+    },
+    {
+      "name": "search_beliefs",
+      "outcome": "completed",
+      "reason_code": null,
+      "journal_commit_sha256": "d7c55a6fa34aaf87f475aa3d9a23cc759391d817aad9a7935989cfd675243e61",
+      "result_sha256": "b13510026f5fd97a43c6e976377eeb4485c373369a0000920a9d70458f4c1b1e"
+    },
+    {
+      "name": "list_files",
+      "outcome": "completed",
+      "reason_code": null,
+      "journal_commit_sha256": "4485f542bcf993d67f8107c7e0057113c855c59e6081b6f318c549f832b7b770",
+      "result_sha256": "a87d24ff2d020f28a585ba09e553f08ec91cb1525a195706c39f50bc0a01e9e8"
+    }
+  ],
+  "limitations": [
+    "Two small numerical prompts, 32 predictions each; no broad quality claim",
+    "Real Next composition, copied state, isolated ports; production unchanged",
+    "No automatic Next-to-26B cognitive routing was added",
+    "Next context configured 16384, observed prompts around 9K, not a full 16K saturation test",
+    "Drivers enabled but no idle consolidation/reflection event occurred during this short test",
+    "V1 did not call tools and invented file names; retained as a negative usability observation",
+    "V2 explicitly requested tool execution; search_beliefs returned no match, so inspect_belief was not exercised",
+    "Post-unload inspect_runtime re-call was requested but not made; liveness was measured by runtime snapshot",
+    "Vision established, but no image inference exercised",
+    "No guarantee about factual accuracy of retrieved memories or answers",
+    "EIE rates include prefill and contention; not isolated decode throughput",
+    "Windows/CUDA/F16 numerical proof only; Turbo3 API smoke is not a quality proof",
+    "Non-Windows buffered reader, LoRA, other quantizations, multi-GPU and GLM not validated"
+  ],
+  "hardware": "NVIDIA GeForce RTX 4090 Laptop GPU, 16376 MiB, 595.79"
+}

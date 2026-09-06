@@ -1,0 +1,5 @@
+<|turn>user
+Explique en français, en cinq points détaillés, ce qui distingue un cache d'experts en mémoire graphique, un cache en RAM et la lecture directe sur SSD pour exécuter un modèle MoE. Distingue clairement la capacité mémoire et le débit. Ne donne aucun chiffre de performance inventé.<turn|>
+<|turn>model
+<|channel>thought
+<channel|>
