@@ -8,6 +8,8 @@
 #include <ctime>
 #include <map>
 #include <cstdint>
+#include <algorithm>
+#include <mutex>
 
 namespace eie {
 
@@ -67,9 +69,11 @@ class Metrics {
     std::map<std::string, ModelM> models_;
     std::map<std::string, GroupM> groups_;
     int64_t start_time_ = std::time(nullptr);
+    std::mutex mutex_;
 
 public:
     void recordModel(const std::string& m, float lat, int tokens = 0) {
+        std::lock_guard<std::mutex> lock(mutex_);
         auto& x = models_[m];
         x.reqs++;
         x.lat_max = std::max(x.lat_max, lat);
@@ -77,13 +81,15 @@ public:
     }
 
     void recordGroup(const std::string& g, bool complete, float lat) {
+        std::lock_guard<std::mutex> lock(mutex_);
         auto& x = groups_[g];
         x.execs++;
         if (!complete) x.partials++;
         x.lat_max = std::max(x.lat_max, lat);
     }
 
-    std::string prometheus() {
+    std::string prometheus(size_t loaded_models) {
+        std::lock_guard<std::mutex> lock(mutex_);
         std::ostringstream ss;
         for (auto& [n, m] : models_) {
             ss << "eie_model_requests_total{model=\"" << n << "\"} " << m.reqs << "\n";
@@ -96,14 +102,14 @@ public:
             ss << "eie_group_latency_max_ms{group=\"" << n << "\"} " << g.lat_max << "\n";
         }
         ss << "eie_uptime_seconds " << (std::time(nullptr) - start_time_) << "\n";
-        ss << "eie_models_loaded " << models_.size() << "\n";
+        ss << "eie_models_loaded " << loaded_models << "\n";
         return ss.str();
     }
 
-    std::string healthJson() {
+    std::string healthJson(size_t loaded_models) const {
         return "{\"status\":\"ok\",\"uptime\":" +
                std::to_string(std::time(nullptr) - start_time_) +
-               ",\"models\":" + std::to_string(models_.size()) + "}";
+               ",\"models\":" + std::to_string(loaded_models) + "}";
     }
 };
 

@@ -232,7 +232,10 @@ public:
                 r.responses.push_back(res);
                 if (res.ok) r.completed++;
             } catch (const std::exception& e) {
-                r.responses.push_back(InferenceResult{"", "", e.what(), 0, 0, false});
+                InferenceResult failed;
+                failed.error = e.what();
+                failed.ok = false;
+                r.responses.push_back(std::move(failed));
             }
         }
 

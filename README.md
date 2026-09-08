@@ -7,7 +7,7 @@
 
 EIE loads GGUF models and exposes chat and embedding endpoints using a subset of the OpenAI API format. It is inference infrastructure, not an agent: memory, tools, identity and application orchestration belong to its clients. **A single LLM is a supported use case; multiple models are not required.**
 
-## What is established — 7 September 2026
+## What is established — updated 8 September 2026
 
 The maintainers report single-model deployments in the Elyne lineage, sometimes with separate generation and embedding processes. This is not a public fleet-reliability study. EIE's group scheduler is implemented but not production/load-qualified.
 
@@ -16,6 +16,8 @@ The newer EWS path has **locally verified consumed-weight and Next-coexistence r
 - [Claim-by-claim audit](docs/CLAIMS_AUDIT.md): code, evidence, qualifications.
 - [Remaining work and acceptance criteria](docs/ROADMAP_TO_CLAIMS.md): what must still be built or measured.
 - [Verification receipt](docs/benchmarks/claims-verification-20260907.md): checks actually performed, without another GPU campaign.
+- [Serving candidate receipt](docs/benchmarks/serving-functional-20260908.md): stop/stream, usage and metrics fixes; offline tests pass, new real-model qualification pending.
+- [Serving candidate receipt](docs/benchmarks/serving-functional-20260908.md): stop/stream, usage and metrics fixes; offline tests pass, new real-model qualification pending.
 
 **Labels:** *implemented* means the code path exists; *locally verified* names a bounded executed test; *maintainer-reported* lacks a complete inspected raw evidence bundle; *planned/not validated* is not a product guarantee. Historical reports retain their original results with explicit scope corrections.
 
@@ -172,23 +174,23 @@ curl http://localhost:8090/v1/chat/completions \
 
 Text messages use the GGUF's native chat template when available, with a generic fallback. EIE does not add an identity/persona; it disables the optional thinking channel in template rendering. Raw `prompt` passthrough is available when messages are not supplied.
 
-**Compatibility limits:** native tool-call schemas/results, structured outputs, multimodal message arrays, seed handling, complete usage accounting and every SDK option are not implemented here. Unknown fields may be ignored. `prompt_tokens` remains zero; do not use it for billing or context validation.
+**Compatibility limits:** native tool-call schemas/results, structured outputs, multimodal message arrays, seed handling and every SDK option are not implemented here. Unknown fields may be ignored. The serving candidate now reports retained tokenized prompt length, sampled completion tokens and reused-prefix tokens in both modes. [Accounting semantics and qualification limits](tests/serving/README.md): serializer tests pass; the new real-tokenizer gate is compiled but not yet executed.
 
-SSE and `one_shot` have local regression evidence. `stop` combined with `stream=true` is **not qualified**: token callbacks are suppressed when stop sequences are supplied. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error. `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
+SSE and `one_shot` have earlier local regression evidence. The new candidate uses the same incremental stop/UTF-8 path for streamed and buffered generation: it no longer suppresses all callbacks when a stop is supplied. Offline and real-route/fake-model tests pass; the new real-model and Next-envelope gates remain pending. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error. `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
 
 | Endpoint | Method | Status |
 |---|---|---|
 | `/v1/chat/completions` | POST | Text chat, raw prompt, SSE; limits above |
 | `/v1/embeddings` | POST | String/string-array input; encoder support depends on model; input is capped at 2,048 tokens |
 | `/v1/models` | GET | Loaded-model registry |
-| `/health` | GET | Process response/uptime, not inference readiness; model count is activity-derived |
+| `/health` | GET | Process response/uptime and loaded-registry count, not inference readiness |
 | `/v1/batch/execute` | POST | Configured group execution; not OpenAI Batch API |
 | `/v1/chain/execute` | POST | Sequential chain |
 | `/v1/admin/models/discover` | GET | Existing discovery registry, not a fresh scan |
 | `/v1/admin/scheduling/status` | GET | Strategy name and group count |
 | `/v1/admin/vram/status` | GET | Device memory per alias; shared-device values must not be summed |
 | `/v1/admin/ews/status` | GET | EWS access/cache/read/payload counters |
-| `/metrics` | GET | Prometheus-style text; concurrency and loaded-count limitations remain |
+| `/metrics` | GET | Prometheus-style text; synchronized metric maps and loaded-registry count; not full API load qualification |
 | `/v1/admin/health/deep` | GET | Stub; no inference probe |
 | `/v1/admin/config/reload` | POST | Stub |
 | `/v1/completions`, admin load/unload | POST | Planned, not implemented |

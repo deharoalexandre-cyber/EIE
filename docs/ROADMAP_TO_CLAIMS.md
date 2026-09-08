@@ -1,6 +1,6 @@
 # From current implementation to defensible claims
 
-Status: 7 September 2026. This is an acceptance backlog, not a promise that
+Status: updated 8 September 2026. This is an acceptance backlog, not a promise that
 every possible feature will be built. Removing an unnecessary claim is a
 valid resolution. Priority is useful working inference, not more blocking
 layers.
@@ -20,12 +20,18 @@ These are not future milestones. [Evidence and exact scope](benchmarks/ews-consu
 
 ## First: eliminate practical serving surprises
 
+The [8 September candidate](benchmarks/serving-functional-20260908.md) implements
+incremental stop/UTF-8 output, usage counters, loaded-model counts and synchronized
+metrics. It also fixes stopped-token KV bookkeeping and exception-result
+construction. Offline tests pass; real-model and clean-clone inference gates
+are still pending. These are candidate fixes, not completed deployment claims.
+
 | Deliverable | Why | Acceptance test |
 |---|---|---|
 | Clean distribution build | EWS patch and runtime libraries are mandatory dependencies | From a clean clone, apply pinned patch, build normal + EWS targets, load a known model, send chat/embedding requests; archive versions and hashes. Package Docker only after the same test passes inside it |
-| Complete streaming contract | SSE plus stop sequences currently suppresses token callbacks | Same prompt streamed/unstreamed, stops spanning token pieces, normal end/length/error/disconnect; same visible result and intelligible recovery |
+| Complete streaming contract | Candidate fixes callback suppression; real-model output/recovery gate still pending | Same prompt streamed/unstreamed, stops spanning token pieces, normal end/length/error/disconnect; same visible result and intelligible recovery |
 | Correct context/cache lifecycle | Overflow options exist; adaptive context recreation and prefix reuse need lifecycle coverage | Fresh, repeated-prefix, changed-prefix, one-shot, overflow, interrupted prefill/decode and next-request recovery; compare against fresh-context references |
-| Honest counters and readiness | Usage prompt count and health loaded-model count are wrong/incomplete | Prompt tokenizer agrees with usage; loaded registry agrees with health; optional readiness probe exercises inference; metrics withstand concurrent reads/writes |
+| Honest counters and readiness | Candidate fixes counts; tokenizer gate and inference readiness remain distinct | Prompt tokenizer agrees with usage; loaded registry agrees with health; optional readiness probe exercises inference; metrics withstand concurrent reads/writes |
 | Multi-client regression | A model mutex is not complete API concurrency protection | Concurrent chat, embeddings, health and stats; no races, stale aliases, deadlocks or lost errors. Keep normal authorized requests working |
 
 No GPU run was made for this audit; execute the inference parts in a dedicated
@@ -68,7 +74,19 @@ separate capabilities; one should not be inferred from another.
 ## GLM and resource-efficiency research
 
 GLM 320B remains a separate feasibility campaign, not an advertised supported
-model. Before implementation promises:
+model. The first requested milestone is **functional, not fast**: on a fresh
+copy of Next, retain the resident 12B, replace only the auxiliary role with GLM,
+obtain a usable answer and return to the 12B. Record latency without a speed
+pass/fail threshold. Preserve the 26B baseline and original Next state.
+
+The current EWS runtime is Gemma-specific (30 layers, 128 experts, fused gate/up,
+single GGUF reader), and its pinned llama.cpp lacks GLM-5-Next. The GLM GGUF
+publisher points to [a dedicated runtime port](https://github.com/ggml-org/llama.cpp/pull/27754).
+Model download alone does not implement that port or GLM expert streaming.
+Check artifact size, shards, free storage and architecture compatibility before
+download; adapt the runtime on the experimental checkout, not production.
+
+After initial functional bring-up, the fuller measurement campaign can:
 
 - verify the exact model artifact and runtime architecture support;
 - specify a hashed calibration/holdout corpus, route instrumentation and its

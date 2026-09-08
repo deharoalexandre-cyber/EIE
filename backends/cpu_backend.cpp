@@ -6,6 +6,7 @@
 // so the scheduler/API layers can still be exercised standalone.
 
 #include "compute_backend.h"
+#include "text_output.h"
 #include <iostream>
 #include <chrono>
 
@@ -269,6 +270,7 @@ public:
             r.error = "empty prompt";
             return r;
         }
+        r.prompt_tokens = (int)tokens.size();
 
         // KV-reuse (D12 du mobile, porté serveur) : le préfixe commun avec la
         // requête précédente reste dans le cache KV ; seul le delta est préfillé.
@@ -319,7 +321,7 @@ public:
             }
             r.ok = false;
             r.error = expert_stream_ && !expert_stream_->error().empty() ? expert_stream_->error() : "prompt decode failed";
-            cache_tokens_.clear();
+            if (!s.one_shot) cache_tokens_.clear();
             return r;
         }
 
@@ -333,45 +335,35 @@ public:
         llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
         // Generation loop
-        std::string output;
+        TextOutput output(s.stop, s.on_token);
         if (!s.one_shot) cache_tokens_ = tokens; // les tokens générés s'y ajoutent
         int n_past = (int)tokens.size();
         r.finish_reason = "length";
         for (int i = 0; i < s.max_tokens && n_past < n_ctx; i++) {
             if (cancelled()) { was_cancelled = true; break; }
             llama_token id = llama_sampler_sample(smpl, run_ctx, -1);
+            ++r.tokens; // Include a sampled EOG or token containing a stop sequence.
             if (llama_vocab_is_eog(vocab, id)) { r.finish_reason = "stop"; break; }
             std::string piece = common_token_to_piece(run_ctx, id);
-            output += piece;
-            if (!s.one_shot) cache_tokens_.push_back(id);
-            r.tokens++;
-            if (s.on_token && s.stop.empty() && !s.on_token(piece)) {
-                was_cancelled = true;
+            if (!output.push(piece)) {
+                was_cancelled = output.cancelled();
+                if (output.stopped()) r.finish_reason = "stop";
                 break;
             }
-            // Séquences d'arrêt : coupe dès qu'une apparaît en fin de sortie
-            bool stopped = false;
-            for (auto& st : s.stop) {
-                auto pos = output.rfind(st);
-                if (pos != std::string::npos && pos + st.size() >= output.size()) {
-                    output.erase(pos);
-                    stopped = true;
-                    break;
-                }
-            }
-            if (stopped) { r.finish_reason = "stop"; break; }
             common_batch_clear(batch);
             common_batch_add(batch, id, n_past++, {0}, true);
             if (llama_decode(run_ctx, batch) != 0 || (expert_stream_ && !expert_stream_->error().empty())) {
                 decode_ok = false; break;
             }
+            if (!s.one_shot) cache_tokens_.push_back(id); // Only tokens actually decoded into KV.
         }
+        if (decode_ok && !was_cancelled && !output.finish()) was_cancelled = true;
 
         llama_sampler_free(smpl);
         llama_batch_free(batch);
         if (s.one_shot) llama_free(run_ctx);
 
-        r.text = output;
+        r.text = output.text();
         r.ok = decode_ok;
         if (was_cancelled) {
             // Discard partial persistent KV; a one-shot leaves the chat intact.
@@ -383,7 +375,7 @@ public:
         }
         if (!decode_ok) {
             r.error = expert_stream_ && !expert_stream_->error().empty() ? expert_stream_->error() : "generation decode failed";
-            cache_tokens_.clear();
+            if (!s.one_shot) cache_tokens_.clear();
         }
 
         auto t1 = std::chrono::steady_clock::now();

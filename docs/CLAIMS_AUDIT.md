@@ -1,4 +1,4 @@
-# Public claims audit - 7 September 2026
+# Public claims audit - 7 September 2026, serving update 8 September
 
 ## Scope and status
 
@@ -26,7 +26,9 @@ Labels:
 - **Incomplete / unqualified:** missing behavior or missing evidence; not a current guarantee.
 
 See the [verification receipt](benchmarks/claims-verification-20260907.md)
-and [acceptance roadmap](ROADMAP_TO_CLAIMS.md).
+and [acceptance roadmap](ROADMAP_TO_CLAIMS.md). The [8 September serving receipt](benchmarks/serving-functional-20260908.md)
+updates the affected code findings below, without reusing old GPU results as
+qualification of the new candidate.
 
 ## What the publication adds, not what remains to invent
 
@@ -49,17 +51,17 @@ can borrow the other's performance, integrity or memory claims.
 | Published feature / implication | Current evidence and exact limitation |
 |---|---|
 | One or several LLMs | Single-model operation is valid. Multiple models are optional. The server owns loaded aliases, chat and embedding backends; agentic orchestration belongs to clients |
-| OpenAI compatibility | Text chat and embeddings use a subset of the format. Native tools/tool-call parsing, structured outputs, multimodal message arrays, request seed and complete usage accounting are absent |
-| Streaming | SSE implemented and locally exercised. With nonempty stop sequences, token callbacks are suppressed: `stream=true` plus `stop` is not qualified |
-| Context / usage | Long prompts truncate by default; `truncate_prompt: false` rejects overflow. `prompt_tokens` is zero, so usage is not accurate prompt accounting |
+| OpenAI compatibility | Text chat and embeddings use a subset of the format. Native tools/tool-call parsing, structured outputs, multimodal message arrays and request seed are absent; new usage fields have bounded offline evidence, not full SDK parity |
+| Streaming | Shared incremental stop/UTF-8 path implemented in streamed and buffered generation. Offline and real-route/fake-model tests pass; new real-model qualification pending |
+| Context / usage | Long prompts truncate by default; `truncate_prompt: false` rejects overflow. Candidate counts retained tokenized prompt, sampled tokens (including terminal EOG/stop) and reused prefix; real-tokenizer gate pending |
 | Groups | Parallel, sequential and longest-successful-response fan-out implemented. This is not quality-based voting, continuous batching or proven throughput scaling |
 | `retry_once` / `replace_with` | **Incomplete.** One failure leads to a partial outcome or failure; there is no second call or replacement invocation |
 | Group KV overrides | **Incomplete.** Parser does not read them; nonempty struct defaults can mask global cache/context settings |
 | Pinned / multi-group isolation | **Not enforced as a memory guarantee.** Boot loading and response-quorum decisions exist; `multi-group` aliases pinned-group |
 | Generic FIFO, on-demand loading, LRU eviction | **Not established.** Model mutexes serialize inference, not FIFO admission. Discovery is boot-time; no integrated dynamic eviction path |
 | Latency limits | Group latency target is not a timeout; health latency remains zero |
-| Health / metrics | Process response and uptime, not inference readiness. Model count follows the metrics/activity map rather than loaded models. Deep health and config reload are stubs |
-| Concurrency | Per-model inference mutex exists, but metric maps and cross-endpoint state need a threaded audit/load test; no fleet reliability or race-free API guarantee |
+| Health / metrics | Process response/uptime and loaded-registry count, not inference readiness. Candidate metric maps are synchronized. Deep health and config reload remain stubs |
+| Concurrency | Per-model inference mutex exists. Synchronized metric maps pass concurrent writes/reads and 60 fake-backend HTTP requests pass; real chat/embedding load and cross-endpoint state remain unqualified |
 
 Implementation sources:
 [API](../server/api.cpp), [entry point](../server/main.cpp),

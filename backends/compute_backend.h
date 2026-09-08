@@ -64,6 +64,7 @@ struct InferenceResult {
     std::string model, text, error;
     std::string finish_reason = "stop";
     int tokens = 0;
+    int prompt_tokens = 0; // Actual retained tokenized prompt, including reused KV prefix.
     int reused_tokens = 0; // préfixe KV réutilisé (0 = préfill complet)
     float latency_ms = 0;
     bool ok = true;

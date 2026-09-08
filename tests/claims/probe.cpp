@@ -59,11 +59,11 @@ int main(int argc, char** argv) {
         check(cv.total_bytes == (16ULL << 30) && hv.total_bytes == (48ULL << 30),
               "no-llama CUDA/HIP placeholders still fabricate capacities; not device telemetry");
         eie::Metrics metrics;
-        check(metrics.healthJson().find("\"models\":0") != std::string::npos,
-              "health reports zero models independently of loaded backends");
+        check(metrics.healthJson(2).find("\"models\":2") != std::string::npos,
+              "health uses the supplied loaded registry count before any activity");
         metrics.recordModel("not-a-loaded-model", 1, 1);
-        check(metrics.healthJson().find("\"models\":1") != std::string::npos,
-              "health model count follows recorded activity, not the model registry");
+        check(metrics.healthJson(2).find("\"models\":2") != std::string::npos,
+              "recorded activity cannot change the supplied loaded registry count");
         std::cout << "CHARACTERIZATION COMPLETE: 9 observations; NOT 9 implemented features.\n";
         return 0;
     } catch (const std::exception& e) {

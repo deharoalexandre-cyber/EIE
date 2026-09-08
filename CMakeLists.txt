@@ -39,6 +39,20 @@ if(EIE_HAS_LLAMA)
     target_compile_definitions(eie-server PRIVATE EIE_HAS_LLAMA=1 HAS_HTTPLIB=1)
 endif()
 
+option(EIE_BUILD_SERVING_TESTS "Build offline and explicit real-model serving gates" OFF)
+if(EIE_BUILD_SERVING_TESTS)
+    enable_testing()
+    add_subdirectory(tests/serving)
+    if(EIE_HAS_LLAMA)
+        add_executable(serving-model-contract tests/serving/backend_contract.cpp backends/expert_stream.cpp)
+        target_include_directories(serving-model-contract PRIVATE ${CMAKE_SOURCE_DIR}
+            llama.cpp/include llama.cpp/src llama.cpp/ggml/include llama.cpp/common
+            llama.cpp/vendor llama.cpp/vendor/cpp-httplib)
+        target_compile_definitions(serving-model-contract PRIVATE EIE_HAS_LLAMA=1)
+        target_link_libraries(serving-model-contract PRIVATE llama-common llama ggml cpp-httplib)
+    endif()
+endif()
+
 find_package(Threads REQUIRED)
 target_link_libraries(eie-server PRIVATE Threads::Threads)
 

@@ -93,7 +93,13 @@ static std::string escapeJson(const std::string& s) {
             case '\n': out += "\\n"; break;
             case '\r': out += "\\r"; break;
             case '\t': out += "\\t"; break;
-            default: out += c;
+            default:
+                if (static_cast<unsigned char>(c) < 0x20) {
+                    const char* hex = "0123456789abcdef";
+                    out += "\\u00";
+                    out += hex[(static_cast<unsigned char>(c) >> 4) & 15];
+                    out += hex[static_cast<unsigned char>(c) & 15];
+                } else out += c;
         }
     }
     return out;
@@ -103,12 +109,13 @@ static std::string chatCompletionJson(const InferenceResult& r, const std::strin
     std::ostringstream ss;
     ss << "{\"id\":\"eie-" << std::time(nullptr) << "\","
        << "\"object\":\"chat.completion\","
-       << "\"model\":\"" << model << "\","
+       << "\"model\":\"" << escapeJson(model) << "\","
        << "\"choices\":[{\"index\":0,"
        << "\"message\":{\"role\":\"assistant\",\"content\":\"" << escapeJson(r.text) << "\"},"
        << "\"finish_reason\":\"" << r.finish_reason << "\"}],"
-       << "\"usage\":{\"prompt_tokens\":0,\"completion_tokens\":" << r.tokens
-       << ",\"total_tokens\":" << r.tokens << "}}";
+       << "\"usage\":{\"prompt_tokens\":" << r.prompt_tokens << ",\"completion_tokens\":" << r.tokens
+       << ",\"total_tokens\":" << (int64_t(r.prompt_tokens) + r.tokens)
+       << ",\"prompt_tokens_details\":{\"cached_tokens\":" << std::max(0, r.reused_tokens) << "}}}";
     return ss.str();
 }
 
@@ -233,7 +240,10 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
                           {"model", model_copy},
                           {"choices", {{{"index", 0}, {"delta", json::object()},
                                         {"finish_reason", result.finish_reason}}}},
-                          {"usage", {{"completion_tokens", result.tokens}}}});
+                          {"usage", {{"prompt_tokens", result.prompt_tokens},
+                                     {"completion_tokens", result.tokens},
+                                     {"total_tokens", int64_t(result.prompt_tokens) + result.tokens},
+                                     {"prompt_tokens_details", {{"cached_tokens", std::max(0, result.reused_tokens)}}}}}});
                     std::string done = "data: [DONE]\n\n";
                     sink.write(done.data(), done.size());
                     sink.done();
@@ -262,7 +272,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
     // GET /health
     svr.Get("/health", [&](const httplib::Request&, httplib::Response& res) {
-        res.set_content(metrics.healthJson(), "application/json");
+        res.set_content(metrics.healthJson(models.loaded().size()), "application/json");
     });
 
     // POST /v1/embeddings — OpenAI-compatible
@@ -414,13 +424,13 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
     // GET /metrics — Prometheus
     svr.Get("/metrics", [&](const httplib::Request&, httplib::Response& res) {
-        res.set_content(metrics.prometheus(), "text/plain");
+        res.set_content(metrics.prometheus(models.loaded().size()), "text/plain");
     });
 
     // GET /v1/admin/health/deep
     svr.Get("/v1/admin/health/deep", [&](const httplib::Request&, httplib::Response& res) {
         // TODO: test inference on each loaded model
-        res.set_content(metrics.healthJson(), "application/json");
+        res.set_content(metrics.healthJson(models.loaded().size()), "application/json");
     });
 
     std::cout << "[EIE] Server listening on " << cfg.host << ":" << cfg.port << std::endl;
@@ -457,8 +467,8 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
     }
 
     // Print metrics
-    std::cout << "\n[EIE] Metrics:\n" << metrics.prometheus() << std::endl;
-    std::cout << "[EIE] Health: " << metrics.healthJson() << std::endl;
+    std::cout << "\n[EIE] Metrics:\n" << metrics.prometheus(models.loaded().size()) << std::endl;
+    std::cout << "[EIE] Health: " << metrics.healthJson(models.loaded().size()) << std::endl;
     std::cout << "[EIE] Audit records: " << audit.size() << std::endl;
 
     std::cout << "\n[EIE] Standalone test complete." << std::endl;
