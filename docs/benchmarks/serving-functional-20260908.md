@@ -37,6 +37,11 @@ Windows 11, MSVC 19.44 / Visual Studio 2022, Release x64.
 Commands and fixture entry points are in [tests/serving](../../tests/serving/README.md).
 The HTTP runner starts and stops only its own temporary-port fixture.
 
+A separate clean source clone at `97de76f` was created. Dependency initialization
+did not complete: Git's Windows shell failed to spawn a child process
+(`0xC0000142`, `Resource temporarily unavailable`). This is a failed setup
+attempt, not a successful clean build or evidence of a model/runtime defect.
+
 ## Still to execute
 
 1. On the known 12B and streamed Gemma 26B, run `serving-model-contract`:
