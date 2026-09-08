@@ -80,6 +80,15 @@ def run(binary):
         assert chat({'stop': 'END'})[0] == 'caf\u00e9 '
         checks += 1
 
+        status, raw = request('/v1/chat/completions', {'model': 'fixture', 'prompt': 'overflow'})
+        error = json.loads(raw)['error']
+        assert status == 400 and error['code'] == 'context_length_exceeded'
+        assert error['type'] == 'invalid_request_error'
+        status, raw = request('/v1/chat/completions', {'model': 'fixture', 'prompt': 'overflow', 'stream': True})
+        assert status == 200 and 'context_length_exceeded' in raw and '[DONE]' not in raw
+        assert chat({'stop': 'END'})[0] == 'caf\u00e9 '
+        checks += 1
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
             calls = [pool.submit(chat, {'stop': 'END'}, i % 2 == 0) for i in range(40)]
             calls += [pool.submit(request, '/metrics') for _ in range(20)]

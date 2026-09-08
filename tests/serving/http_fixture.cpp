@@ -17,6 +17,7 @@ public:
         InferenceResult r;
         r.model = alias; r.prompt_tokens = 11; r.reused_tokens = s.one_shot ? -1 : 3;
         if (prompt == "error") { r.ok = false; r.error = "injected test error"; return r; }
+        if (prompt == "overflow") { r.ok = false; r.error = "context_length_exceeded"; return r; }
         TextOutput output(s.stop, s.on_token);
         std::vector<std::string> pieces = {"caf\xC3", "\xA9 ", "E", "ND tail"};
         r.finish_reason = "length";

@@ -254,8 +254,11 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
         auto result = backend->chat(prompt, sp);
         if (!result.ok) {
-            res.status = 500;
-            res.set_content(json({{"error", {{"message", result.error}, {"type", "inference_error"}}}}).dump(), "application/json");
+            const bool overflow = result.error == "context_length_exceeded";
+            res.status = overflow ? 400 : 500;
+            res.set_content(json({{"error", {{"message", result.error},
+                {"type", overflow ? "invalid_request_error" : "inference_error"},
+                {"code", overflow ? "context_length_exceeded" : "inference_error"}}}}).dump(), "application/json");
             return;
         }
         std::cout << "[KV] reused=" << result.reused_tokens
