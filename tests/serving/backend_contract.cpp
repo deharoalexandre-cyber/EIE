@@ -7,10 +7,51 @@ static void check(bool ok, const char* why) { if (!ok) throw std::runtime_error(
 class ProbeBackend : public eie::CpuBackend {
 public:
     int promptCount(const std::string& p) { return int(common_tokenize(ctx_, p, true, true).size()); }
+    void loadTemplateOnly(const char * path) {
+        auto params = llama_model_default_params();
+        params.vocab_only = true;
+        params.n_gpu_layers = 0;
+        model_ = llama_model_load_from_file(path, params);
+        check(model_ != nullptr, "vocabulary-only load failed");
+        tmpls_ = common_chat_templates_init(model_, "");
+    }
 };
 
 int main(int argc, char** argv) {
     try {
+        if (argc == 2 && std::string(argv[1]) == "--api-only") {
+            check(eie::mapKvType("f16") == GGML_TYPE_F16, "F16 mapping changed");
+            auto * sampler = eie::penaltySampler(llama_sampler_init_penalties, 1024);
+            check(sampler != nullptr, "penalty sampler API mismatch");
+            llama_sampler_free(sampler);
+            common_chat_params rendered;
+            rendered.prompt = "question<assistant><think>";
+            rendered.supports_thinking = true;
+            rendered.thinking_start_tag = "<think>";
+            rendered.thinking_end_tags = {"</think>"};
+            check(eie::answerOnlyPrompt(rendered) == rendered.prompt + "</think>", "open reasoning prefix not closed");
+            rendered.prompt += "</think>";
+            check(eie::answerOnlyPrompt(rendered) == rendered.prompt, "closed reasoning prefix changed");
+            rendered.prompt = "quoted <think> in user text<assistant>";
+            check(eie::answerOnlyPrompt(rendered) == rendered.prompt, "user text changed");
+            for (const auto * name : {"turbo2", "turbo3", "turbo4"}) {
+                const auto type = eie::mapKvType(name);
+                std::cout << name << " -> " << ggml_type_name(type) << '\n';
+            }
+            std::cout << "PASS runtime API compatibility (no model/GPU)\n";
+            return 0;
+        }
+        if (argc == 3 && std::string(argv[1]) == "--template-only") {
+            ProbeBackend backend;
+            backend.loadTemplateOnly(argv[2]);
+            const auto prompt = backend.formatChat({{"user", "Combien font 17 + 25 ? Reponds uniquement avec le nombre."}});
+            check(!prompt.empty(), "empty chat prompt");
+            const std::string open = "<think>";
+            check(prompt.size() < open.size() || prompt.compare(prompt.size() - open.size(), open.size(), open) != 0,
+                  "answer-only template still opens reasoning");
+            std::cout << nlohmann::json({{"result", "pass"}, {"prompt", prompt}, {"weights_loaded", false}}).dump() << '\n';
+            return 0;
+        }
         check(argc == 3, "usage: serving-model-contract MODEL_GGUF EWS_SLOTS (0 for normal loading)");
         ProbeBackend b;
         b.init(0);

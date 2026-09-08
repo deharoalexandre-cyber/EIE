@@ -37,9 +37,13 @@ The [September report](docs/benchmarks/ews-consumed-20260905.md) links the evide
 
 **Do not combine different experiments.** The [August C+ archive](docs/benchmarks/ews-gemma4-a4b-rtx4090-laptop.md) reported 6.55–11.10 tok/s with real I/O inserted during decode, but its FFN still consumed resident weights. Those timings exclude prefill/loading and do not prove consumed streaming or physical VRAM savings. Its hotset/SLRU and first-read SHA scheme are **not** the policy of the September runtime, which uses an LRU-style slot cache without per-chunk SHA verification.
 
-**Not validated for EWS:** GLM 320B or other MoE architectures, arbitrary long contexts, multi-GPU EWS, Linux/ROCm/macOS/Android EWS performance, fleet reliability, power/water savings, or a 15–20% reduction in training GPUs. These are research or qualification targets, not consequences of the Gemma pilot.
+**Experimental GLM EWS port, 8 September:** the [separate GLM runtime path](docs/GLM_EWS_EXPERIMENT.md) now streams the six-shard UD-Q4_K_XL artifact into an 8-slot host expert cache. The short native/EWS forward comparison passes: **619,520 logits bit-identical and the same four generated tokens**. Routed expert tensors occupy **5.152 GB instead of 185.478 GB**; that is the expert tensor allocation, not whole-process RAM or VRAM. This first profile computes experts on CPU, with partial CUDA offload for the rest of the model. The default Gemma runtime pin is unchanged.
 
-**Separate GLM feasibility milestone, 8 September:** a [native llama.cpp baseline](docs/benchmarks/glm53-native-next-20260908.md) runs GLM 5.3 Flash UD-Q4_K_XL on the 32 GiB-class / RTX 4090 Laptop machine, with a real fresh-state Next 12B -> GLM -> 12B roundtrip. The complete auxiliary answer took 611.812 s, with no speed threshold. This uses CPU expert mmap and partial GPU offload, **not EIE/EWS**; the GLM EWS port remains to be done.
+The [actual fresh-state Next 12B -> GLM through EIE/EWS -> 12B roundtrip](docs/benchmarks/glm53-ews-next-20260908.md) also passes: a complete 702-token auxiliary answer in 1,090.547 s, resident synthesis, then a separate resident answer. Sampled total GPU use peaks at 12,894 MiB; whole-host RAM is tight. The answer exceeds the requested brevity and contains a corrected formatting error. This is a functional result, not a quality/speed claim; unsuccessful attempts are retained.
+
+**Not validated for EWS:** other MoE architectures, arbitrary long contexts, multi-GPU EWS, Linux/ROCm/macOS/Android EWS performance, fleet reliability, power/water savings, or a 15–20% reduction in training GPUs. GLM's GPU-expert placement is also unqualified; Gemma's GPU results cannot substitute for it.
+
+**Separate native GLM baseline:** a [native llama.cpp run](docs/benchmarks/glm53-native-next-20260908.md) already completed a fresh-state Next 12B -> GLM -> 12B roundtrip on the same laptop. Its 611.812 s auxiliary answer uses CPU expert mmap, **not EWS**. It is a working reference, not evidence that EWS is the only feasible path or a paired speed comparison.
 
 ## Desktop performance — historical field measurements
 
@@ -85,6 +89,7 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 | Automatic KV optimization | **Not operational**: no `auto` selector; health latency remains zero |
 | Device-memory telemetry | Runtime port queries device memory; no reserve/budget/eviction enforcement |
 | CUDA EWS | Local Windows/CUDA/Gemma validation, bounded above |
+| GLM EWS | Separate experimental runtime; host expert cache/CPU expert computation, partial CUDA offload; short paired numerical gate and actual fresh-state Next online roundtrip pass |
 | Other platforms | Build paths or portable code; not qualified by the Windows campaign |
 | Audit logging | Optional FNV-derived prototype, not a cryptographic/verifiable audit ledger |
 | Custom strategy plugins | Interface exists; dynamic library loading planned |
@@ -104,7 +109,7 @@ Parallel execution sends the prompt to multiple loaded backends using asynchrono
 
 ### KV cache and memory management
 
-The backend maps `f32`, `f16`, `q8_0`, `q4_0`, `turbo2`, `turbo3`, `turbo4`. This publication corrects the old `turbo*` mapping, which selected weight formats instead of the fork's `GGML_TYPE_TURBO*_0` KV formats. `turbo3` is the configured default, not a universal quality recommendation. A failed quantized context initialization may fall back to F16; check the logs.
+The backend maps `f32`, `f16`, `q8_0`, `q4_0` and discovers `turbo2`, `turbo3`, `turbo4` by the runtime's KV type names. On the pinned Gemma fork these select `GGML_TYPE_TURBO*_0`, not the similarly named weight formats. The experimental native GLM fork has no TurboQuant KV types and uses explicit F16 in its measured profile. `turbo3` remains the default for the standard build, not a universal quality recommendation. Missing types or failed quantized context initialization may fall back to F16; check the logs.
 
 There is **no `auto` selector**; unknown names fall back to F16. Separate K/V settings are available but are not qualified for every architecture. Quantizer bit widths do not equal whole-process VRAM savings.
 

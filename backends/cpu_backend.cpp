@@ -16,6 +16,7 @@
 #include "chat.h"
 #include "expert_stream.h"
 #include "ggml-backend.h"
+#include "ggml-cpu.h"
 #include <mutex>
 #include <thread>
 #include <algorithm>
@@ -43,11 +44,34 @@ static ggml_type mapKvType(const std::string& t) {
     if (t == "f16")    return GGML_TYPE_F16;
     if (t == "q8_0")   return GGML_TYPE_Q8_0;
     if (t == "q4_0")   return GGML_TYPE_Q4_0;
-    if (t == "turbo2") return GGML_TYPE_TURBO2_0;
-    if (t == "turbo3") return GGML_TYPE_TURBO3_0;
-    if (t == "turbo4") return GGML_TYPE_TURBO4_0;
+    if (t == "turbo2" || t == "turbo3" || t == "turbo4") {
+        for (int i = 0; i < GGML_TYPE_COUNT; ++i) {
+            const auto type = static_cast<ggml_type>(i);
+            const char * name = ggml_type_name(type);
+            if (name && t == name) return type;
+        }
+    }
     std::cerr << "[KV] unknown type '" << t << "', using f16" << std::endl;
     return GGML_TYPE_F16;
+}
+
+// The GLM runtime adds vocabulary size to the penalty sampler API.
+static llama_sampler * penaltySampler(llama_sampler * (*init)(int32_t, float, float, float), int32_t) {
+    return init(256, 1.15f, 0.0f, 0.0f);
+}
+static llama_sampler * penaltySampler(llama_sampler * (*init)(int32_t, int32_t, float, float, float), int32_t n_vocab) {
+    return init(n_vocab, 256, 1.15f, 0.0f, 0.0f);
+}
+
+static std::string answerOnlyPrompt(common_chat_params rendered) {
+    // Some templates ignore enable_thinking=false and leave reasoning open.
+    const auto & start = rendered.thinking_start_tag;
+    if (rendered.supports_thinking && !start.empty() && !rendered.thinking_end_tags.empty() &&
+        rendered.prompt.size() >= start.size() &&
+        rendered.prompt.compare(rendered.prompt.size() - start.size(), start.size(), start) == 0) {
+        rendered.prompt += rendered.thinking_end_tags.front();
+    }
+    return rendered.prompt;
 }
 
 class CpuBackend : public ComputeBackend {
@@ -120,6 +144,9 @@ public:
         kv_ = p.kv;
 
         llama_model_params mp = llama_model_default_params();
+        const llama_model_tensor_buft_override cpu_experts[] = {
+            {"\\.ffn_.*_exps\\.weight", ggml_backend_cpu_buffer_type()}, {nullptr, nullptr}};
+        if (p.cpu_moe) mp.tensor_buft_overrides = cpu_experts;
         // Mac Intel : jamais d'offload — ggml choisirait Metal, qui produit du
         // bruit sur les iGPU non-Apple-Silicon. Ailleurs (Apple Silicon inclus,
         // Metal fiable), on respecte n_gpu_layers demandé.
@@ -198,7 +225,7 @@ public:
         // Pas de canal de "réflexion" par défaut : la réponse est la réponse.
         in.enable_thinking = false;
         try {
-            return common_chat_templates_apply(tmpls_.get(), in).prompt;
+            return answerOnlyPrompt(common_chat_templates_apply(tmpls_.get(), in));
         } catch (const std::exception& e) {
             std::cerr << "[" << name() << "] chat template failed: " << e.what() << std::endl;
             return "";
@@ -328,7 +355,7 @@ public:
         // Sampler chain
         llama_sampler* smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
         // Pénalité de répétition : les petits modèles bouclent vite en complétion brute
-        llama_sampler_chain_add(smpl, llama_sampler_init_penalties(256, 1.15f, 0.0f, 0.0f));
+        llama_sampler_chain_add(smpl, penaltySampler(llama_sampler_init_penalties, llama_vocab_n_tokens(vocab)));
         llama_sampler_chain_add(smpl, llama_sampler_init_top_k(s.top_k));
         llama_sampler_chain_add(smpl, llama_sampler_init_top_p(s.top_p, 1));
         llama_sampler_chain_add(smpl, llama_sampler_init_temp(s.temperature));
@@ -434,6 +461,7 @@ public:
         auto s = expert_stream_->stats();
         return {{"callbacks", s.callbacks}, {"hits", s.hits}, {"misses", s.misses},
             {"payload_bytes", s.payload_bytes}, {"read_bytes", s.read_bytes},
+            {"host_payload_bytes", s.host_payload_bytes}, {"device_payload_bytes", s.device_payload_bytes},
             {"logical_expert_bytes", s.logical_expert_bytes}, {"physical_expert_bytes", s.physical_expert_bytes}};
     }
 

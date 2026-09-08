@@ -34,7 +34,8 @@ struct KvConfig {
 struct ModelParams {
     std::string path, alias;
     int n_gpu_layers = 99, n_threads = 2;
-    int ews_slots = 0; // Per-model Gemma4 expert cache; 0 preserves normal loading.
+    int ews_slots = 0; // Per-model expert cache; 0 preserves normal loading.
+    bool cpu_moe = false;
     KvConfig kv;
 };
 

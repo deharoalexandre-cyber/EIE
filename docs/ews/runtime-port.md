@@ -2,7 +2,9 @@
 
 This port runs Gemma 4 26B-A4B expert matmuls on the expert slabs actually
 loaded into a bounded per-layer cache. It is distinct from the older
-trace-driven SLRU / SHA-256 experiment. It does not claim GLM support.
+trace-driven SLRU / SHA-256 experiment. This pinned runtime recipe is for Gemma.
+GLM uses a [separate experimental runtime and patch](../GLM_EWS_EXPERIMENT.md),
+not this submodule revision. Do not apply the two patches on top of each other.
 
 Measured outcome and limitations: [2026-09-05 integration report](../../experiments/ews_target/RESULTS.md).
 

@@ -1,4 +1,4 @@
-// EIE - on-demand Gemma4 expert weights (Apache-2.0)
+// EIE - on-demand expert weights (Apache-2.0)
 #pragma once
 #include "llama.h"
 #include <memory>
@@ -9,6 +9,7 @@ namespace eie {
 struct ExpertStreamStats {
     uint64_t callbacks = 0, hits = 0, misses = 0, payload_bytes = 0, read_bytes = 0;
     uint64_t logical_expert_bytes = 0, physical_expert_bytes = 0;
+    uint64_t host_payload_bytes = 0, device_payload_bytes = 0;
 };
 
 // One cache per loaded model, shared by its serialized inference contexts.

@@ -105,3 +105,8 @@ POST this JSON to `/v1/chat/completions` after `/health` returns HTTP 200:
   by successful online GLM calls.
 
 This baseline establishes a working reference for the EWS port, not its success.
+
+Subsequent, separate measurement: the
+[experimental EIE/EWS receipt](glm53-ews-next-20260908.md) now records the actual
+port and its bounded forward/Next results. Those do not retroactively turn this
+native mmap baseline into an EWS run.

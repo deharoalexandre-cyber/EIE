@@ -67,6 +67,10 @@ install(TARGETS eie-server DESTINATION bin)
 
 option(EIE_BUILD_EWS_TESTS "Build the matched EWS forward test" OFF)
 if(EIE_BUILD_EWS_TESTS AND EIE_HAS_LLAMA)
+    add_executable(ews-stream-unit tests/ews_stream_unit.cpp)
+    target_include_directories(ews-stream-unit PRIVATE ${CMAKE_SOURCE_DIR}
+        llama.cpp/include llama.cpp/src llama.cpp/ggml/include)
+    target_link_libraries(ews-stream-unit PRIVATE llama ggml)
     add_executable(ews-forward tests/ews_forward.cpp backends/expert_stream.cpp)
     target_include_directories(ews-forward PRIVATE ${CMAKE_SOURCE_DIR}
         llama.cpp/include llama.cpp/src llama.cpp/ggml/include llama.cpp/vendor)

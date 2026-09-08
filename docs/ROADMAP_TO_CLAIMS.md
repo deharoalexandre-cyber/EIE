@@ -78,23 +78,34 @@ separate capabilities; one should not be inferred from another.
 
 ## GLM and resource-efficiency research
 
-GLM 320B remains a separate feasibility campaign, not an advertised EIE-supported
-model. The first **functional, not fast** milestone passed on 8 September using
+GLM 320B remains a separate experimental runtime path, not a generally qualified
+model on EIE's default build. The first **functional, not fast** milestone passed on 8 September using
 a separate native runtime: actual fresh-state Next 12B -> GLM tool call -> 12B
 continuation, with a complete 188-token auxiliary answer. See the
 [native receipt and retained truncated first run](benchmarks/glm53-native-next-20260908.md).
 Latency has no speed pass/fail threshold. The 26B baseline and production Next
 state remain unchanged. This is a CPU-expert mmap baseline, not a GLM EWS result.
 
-The current EWS runtime is Gemma-specific (30 layers, 128 experts, fused gate/up,
-single GGUF reader), and its pinned llama.cpp lacks GLM-5-Next. The GLM GGUF
-publisher points to [a dedicated runtime port](https://github.com/ggml-org/llama.cpp/pull/27754).
-The artifact is now downloaded and rehashed; that native port is built and tested.
-Next is the actual EWS port: split-file addressing, separate gate/up/down tensors,
-42 routed trunk layers, 288 experts, physical slots with unchanged logical router
-IDs, and an explicit CPU/GPU placement that coexists with the resident. Compare
-its outputs and resource use to the measured native baseline, not a hypothetical
-alternative. Do not change production while qualifying the experimental runtime.
+The shared EWS reader now handles split files, separate gate/up/down projections,
+metadata-derived routed layers and expert counts, and physical slots with
+unchanged logical router IDs. The [GLM-specific runtime patch](GLM_EWS_EXPERIMENT.md)
+targets the downloaded/rehashed GLM artifact and a separate pinned native fork;
+EIE's default llama.cpp pin still lacks GLM-5-Next. The 42 routed trunk layers /
+288 experts / 8-slot host cache pass a short paired numerical gate. Updated-reader
+Gemma regressions remain on the original runtime. Neither production Next nor
+its runtime is replaced by the experiment.
+
+The [EIE/EWS online Next gate](benchmarks/glm53-ews-next-20260908.md) is also
+complete: real tool invocation, normal GLM completion, resident synthesis and
+subsequent resident turn. It is a short, fresh-state functional result with
+strong RAM pressure, not a clean brevity/quality result or the whole Next
+lifecycle qualification. Keep both earlier failed attempts in the history.
+
+The next placement milestone is **GLM expert computation on GPU**, with actual
+VRAM headroom for the resident and new numerical checks. It is not established
+by host-cache streaming or Gemma's GPU result. Measure whole-process memory and
+I/O, not just the compact expert tensor allocation. Longer contexts and cache
+policy improvements follow the initial functional qualification.
 
 After initial functional bring-up, the fuller measurement campaign can:
 

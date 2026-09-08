@@ -70,9 +70,14 @@ struct SlabFile {
 #endif
 };
 
-struct Weight { uint64_t offset = 0; size_t slab = 0; ggml_tensor * tensor = nullptr; };
+struct Weight {
+    uint64_t offset = 0;
+    size_t slab = 0, file = 0;
+    ggml_type type = GGML_TYPE_F32;
+    ggml_tensor * tensor = nullptr;
+};
 struct Layer {
-    Weight gate_up, down;
+    std::map<std::string, Weight> weights;
     std::vector<int> experts;
     std::vector<uint64_t> touched;
     uint64_t clock = 0;
@@ -90,44 +95,97 @@ struct Layer {
         return {victim, false};
     }
 };
+
+int integer(const gguf_context * meta, const std::string & key, int fallback = -1) {
+    const auto i = gguf_find_key(meta, key.c_str());
+    if (i < 0) return fallback;
+    switch (gguf_get_kv_type(meta, i)) {
+        case GGUF_TYPE_UINT16: return gguf_get_val_u16(meta, i);
+        case GGUF_TYPE_UINT32: return int(gguf_get_val_u32(meta, i));
+        case GGUF_TYPE_INT32:  return gguf_get_val_i32(meta, i);
+        default: throw std::runtime_error("EWS: expected integer metadata: " + key);
+    }
+}
+
+bool expert_weight(const char * kind) {
+    return strcmp(kind, "ffn_gate_up_exps.weight") == 0 || strcmp(kind, "ffn_gate_exps.weight") == 0 ||
+           strcmp(kind, "ffn_up_exps.weight") == 0 || strcmp(kind, "ffn_down_exps.weight") == 0;
+}
 }
 
 struct ExpertStream::Impl {
     int slots;
+    int expert_count = 0, top_k = 0;
     std::map<int, Layer> layers;
-    SlabFile file;
+    std::vector<std::unique_ptr<SlabFile>> files;
     std::string error;
     ExpertStreamStats stats;
-    Impl(const std::string & path, int n) : slots(n), file(path) {
-        check(slots >= 8 && slots < 128, "EWS: Gemma4 requires 8..127 slots (0 disables EWS)");
-        ggml_context * tensors = nullptr;
-        auto * meta = gguf_init_from_file(path.c_str(), {true, &tensors});
-        check(meta && tensors, "EWS: cannot read GGUF metadata");
-        try {
-            for (auto * t = ggml_get_first_tensor(tensors); t; t = ggml_get_next_tensor(tensors, t)) {
+    Impl(const std::string & path, int n) : slots(n) {
+        int count = 1, first_layer = 0, last_layer = 0;
+        std::string arch;
+        std::vector<char> split_prefix(path.size() + 32), split_path(path.size() + 32);
+        for (int part = 0; part < count; ++part) {
+            std::string current = path;
+            if (part) {
+                check(llama_split_path(split_path.data(), split_path.size(), split_prefix.data(), part, count) > 0,
+                      "EWS: cannot form shard path");
+                current = split_path.data();
+            }
+            ggml_context * raw_tensors = nullptr;
+            std::unique_ptr<gguf_context, decltype(&gguf_free)> meta(
+                gguf_init_from_file(current.c_str(), {true, &raw_tensors}), gguf_free);
+            std::unique_ptr<ggml_context, decltype(&ggml_free)> tensors(raw_tensors, ggml_free);
+            check(bool(meta), "EWS: cannot read GGUF shard metadata");
+            if (!part) {
+                const auto key = gguf_find_key(meta.get(), "general.architecture");
+                check(key >= 0, "EWS: missing architecture");
+                arch = gguf_get_val_str(meta.get(), key);
+                check(arch == "gemma4" || arch == "glm5next", "EWS: unsupported architecture");
+                expert_count = integer(meta.get(), arch + ".expert_count");
+                top_k = integer(meta.get(), arch + ".expert_used_count");
+                first_layer = integer(meta.get(), arch + ".leading_dense_block_count", 0);
+                last_layer = integer(meta.get(), arch + ".block_count") - integer(meta.get(), arch + ".nextn_predict_layers", 0);
+                check(top_k > 0 && slots >= top_k && slots < expert_count, "EWS: need top-k <= slots < expert count");
+                count = integer(meta.get(), "split.count", 1);
+                check(count >= 1 && integer(meta.get(), "split.no", 0) == 0, "EWS: supply the first GGUF shard");
+                if (count > 1) check(llama_split_prefix(split_prefix.data(), split_prefix.size(), path.c_str(), 0, count) > 0,
+                                     "EWS: invalid split GGUF filename");
+            }
+            check(integer(meta.get(), "split.no", 0) == part && integer(meta.get(), "split.count", 1) == count,
+                  "EWS: inconsistent shard index");
+            files.push_back(std::make_unique<SlabFile>(current));
+            for (auto * t = tensors ? ggml_get_first_tensor(tensors.get()) : nullptr; t; t = ggml_get_next_tensor(tensors.get(), t)) {
                 int id = -1; char kind[80] = {};
                 if (sscanf(t->name, "blk.%d.%79s", &id, kind) != 2) continue;
-                bool gu = strcmp(kind, "ffn_gate_up_exps.weight") == 0;
-                bool dn = strcmp(kind, "ffn_down_exps.weight") == 0;
-                if (!gu && !dn) continue;
-                check(t->ne[2] == 128 && t->ne[3] == 1, "EWS: expected Gemma4 128-expert weights");
+                if (!expert_weight(kind) || id < first_layer || id >= last_layer) continue;
+                check(t->ne[2] == expert_count && t->ne[3] == 1, "EWS: expert count mismatch");
                 auto & layer = layers[id];
                 layer.experts.assign(slots, -1); layer.touched.assign(slots, 0);
-                auto & w = gu ? layer.gate_up : layer.down;
+                check(!layer.weights.count(kind), "EWS: duplicate expert tensor");
+                auto & w = layer.weights[kind];
                 w.slab = t->nb[2];
-                w.offset = gguf_get_data_offset(meta) + gguf_get_tensor_offset(meta, gguf_find_tensor(meta, t->name));
+                w.file = size_t(part); w.type = t->type;
+                w.offset = gguf_get_data_offset(meta.get()) + gguf_get_tensor_offset(meta.get(), gguf_find_tensor(meta.get(), t->name));
                 stats.logical_expert_bytes += ggml_nbytes(t);
             }
-            check(layers.size() == 30, "EWS: this port supports Gemma4 26B-A4B's 30 MoE layers");
-            for (const auto & p : layers) check(p.second.gate_up.slab && p.second.down.slab, "EWS: missing expert tensor");
-        } catch (...) { gguf_free(meta); ggml_free(tensors); throw; }
-        gguf_free(meta); ggml_free(tensors);
+        }
+        check(last_layer > first_layer && layers.size() == size_t(last_layer - first_layer), "EWS: missing routed layer");
+        for (const auto & p : layers) {
+            const auto & w = p.second.weights;
+            const bool fused = w.size() == 2 && w.count("ffn_gate_up_exps.weight");
+            const bool separate = w.size() == 3 && w.count("ffn_gate_exps.weight") && w.count("ffn_up_exps.weight");
+            check(w.count("ffn_down_exps.weight") && (fused || separate), "EWS: missing expert projection");
+        }
     }
     void upload(Weight & w, int expert, int slot) {
+        auto & file = *files.at(w.file);
+        const uint64_t before = file.bytes_read;
         const auto * data = file.read(w.offset + expert * w.slab, w.slab);
         ggml_backend_tensor_set(w.tensor, data, size_t(slot) * w.slab, w.slab);
         stats.payload_bytes += w.slab;
-        stats.read_bytes = file.bytes_read;
+        if (ggml_backend_buffer_is_host(w.tensor->buffer)) stats.host_payload_bytes += w.slab;
+        else stats.device_payload_bytes += w.slab;
+        stats.read_bytes += file.bytes_read - before;
     }
 };
 
@@ -141,15 +199,14 @@ void ExpertStream::bind(llama_model * model) {
     for (const auto & p : model->tensors_by_name) {
         int id = -1; char kind[80] = {};
         if (sscanf(p.first.c_str(), "blk.%d.%79s", &id, kind) != 2) continue;
-        bool gu = strcmp(kind, "ffn_gate_up_exps.weight") == 0;
-        bool dn = strcmp(kind, "ffn_down_exps.weight") == 0;
-        if (!gu && !dn) continue;
-        auto & w = gu ? s.layers.at(id).gate_up : s.layers.at(id).down;
+        if (!expert_weight(kind)) continue;
+        auto & w = s.layers.at(id).weights.at(kind);
         w.tensor = p.second;
-        check(w.tensor->ne[2] == s.slots && w.tensor->nb[2] == w.slab, "EWS: runtime slot layout mismatch");
+        check(w.tensor->ne[2] == s.slots && w.tensor->nb[2] == w.slab && w.tensor->type == w.type,
+              "EWS: runtime slot layout mismatch");
         s.stats.physical_expert_bytes += ggml_nbytes(w.tensor);
     }
-    for (auto & p : s.layers) check(p.second.gate_up.tensor && p.second.down.tensor, "EWS: unbound weights");
+    for (auto & p : s.layers) for (auto & w : p.second.weights) check(w.second.tensor != nullptr, "EWS: unbound weights");
 }
 
 void ExpertStream::configure(llama_context_params & p) {
@@ -166,18 +223,21 @@ bool ExpertStream::callback(ggml_tensor * t, bool ask, void * user) {
     auto & s = *static_cast<ExpertStream *>(user)->impl_;
     if (!s.error.empty()) return false;
     try {
-        check(t->type == GGML_TYPE_I32 && t->ne[0] == 8 && t->ne[1] == 1, "EWS: expected top-8 one-token routing");
-        std::vector<int32_t> ids(8);
+        check(t->type == GGML_TYPE_I32 && t->ne[0] == s.top_k && t->ne[1] == 1, "EWS: expected one-token top-k routing");
+        std::vector<int32_t> ids(size_t(s.top_k));
         ggml_backend_tensor_get(t, ids.data(), 0, ids.size() * sizeof(int32_t));
         const std::set<int> active(ids.begin(), ids.end());
         check(active.size() == ids.size(), "EWS: duplicate route IDs");
         auto & layer = s.layers.at(std::stoi(t->name + strlen(prefix)));
         ++s.stats.callbacks;
         for (auto & id : ids) {
-            check(id >= 0 && id < 128, "EWS: expert ID out of range");
+            check(id >= 0 && id < s.expert_count, "EWS: expert ID out of range");
             auto slot = layer.acquire(id, active);
             if (slot.second) ++s.stats.hits;
-            else { ++s.stats.misses; s.upload(layer.gate_up, id, slot.first); s.upload(layer.down, id, slot.first); }
+            else {
+                ++s.stats.misses;
+                for (auto & w : layer.weights) s.upload(w.second, id, slot.first);
+            }
             id = slot.first;
         }
         ggml_backend_tensor_set(t, ids.data(), 0, ids.size() * sizeof(int32_t));

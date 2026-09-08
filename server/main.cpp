@@ -81,6 +81,9 @@ int main(int argc, char** argv) {
     }
 
     for (const auto & [alias, count] : cfg.ews_slots) models.setExpertSlots(alias, count);
+    for (const auto & [alias, count] : cfg.gpu_layers) models.setGpuLayers(alias, count);
+    for (const auto & [alias, enabled] : cfg.cpu_moe) models.setCpuMoe(alias, enabled);
+    for (const auto & [alias, count] : cfg.threads) models.setThreads(alias, count);
 
     // Pre-load pinned models from groups
     for (auto& [gname, group] : cfg.groups) {

@@ -39,7 +39,7 @@ qualification of the new candidate.
 | Expert traffic and physical weight savings were measured | **Yes.** FR/32-slot pilot: 14,974,046,208 decode payload bytes; CUDA weight buffers 14.424 to 4.789 decimal GB | [Pilot metadata](benchmarks/data/ews-consumed-pilot-20260905.json); not whole-process peak VRAM or PCIe bus-analyzer traffic |
 | Streaming preserves reference logits | Five positive pilot and four runtime comparisons are bit-identical within their exact profiles | Two short prompts; no claim of all-input/all-quantization equivalence |
 | Resident Next and streamed 26B coexist | Two five-turn copied-state runs; real 12B, memory and tools; four auxiliary HTTP requests in total, alongside Next activity | [Runtime metadata](benchmarks/data/ews-runtime-integration-20260905.json); not proof of every lifecycle function |
-| Correct TurboQuant KV type mapping | Imported correction maps KV names to `GGML_TYPE_TURBO*_0`, not similarly named weight formats | [Backend](../backends/cpu_backend.cpp); F16 numerical gate and separate Turbo3 API smoke, not a TurboQuant quality study |
+| Correct TurboQuant KV type mapping | Runtime-name lookup selects `GGML_TYPE_TURBO*_0` on the pinned Gemma fork, not similarly named weight formats; absent on the experimental GLM runtime, which uses F16 | [Backend](../backends/cpu_backend.cpp); both runtime API compatibility checks pass; no TurboQuant quality study |
 | Device memory counters are real in an inference build | Imported backend uses `ggml_backend_dev_memory`; no-llama CUDA/HIP placeholders still return constants | Same backend, [admin endpoints](../server/api.cpp); policies remain unenforced |
 | Auxiliary request failure semantics and prefill cancellation | Existing local fixes imported: strict model, overflow option, length finish reason, propagated errors, disconnect checks | Same backend/API; [receipt](benchmarks/claims-verification-20260907.md) records bounded cancellation results |
 
@@ -115,10 +115,19 @@ every old design aspiration is neither necessary nor implicitly authorized.
 - **Mobile:** numbers are author-reported, without an app bundle, full build/model
   hashes and raw runs. Quantizations differ. NPU/CPU/GPU causal rankings cannot
   be inferred from the table alone.
-- **Large MoE:** the [8 September native GLM receipt](benchmarks/glm53-native-next-20260908.md)
-  establishes bounded loading, generation and a real fresh-state Next roundtrip
-  on the laptop. It uses a separately built native runtime with CPU expert mmap,
-  not EIE/EWS. GLM expert streaming, long contexts and broader quality remain unqualified.
+- **Large MoE:** the [native GLM receipt](benchmarks/glm53-native-next-20260908.md)
+  establishes a CPU-expert mmap baseline and fresh-state Next roundtrip. The
+  subsequent [experimental EWS port](GLM_EWS_EXPERIMENT.md) has its own paired
+  forward result: 619,520 bit-identical logits and four identical tokens on one
+  short prompt. The 8-slot expert tensor cache is 5,152,178,176 bytes; logical
+  routed expert tensors total 185,478,414,336 bytes. These are not whole-process
+  memory peaks. This GLM profile uses host expert buffers/CPU matmuls and partial
+  CUDA offload. GPU expert placement, long contexts and broader quality remain
+  unqualified. Its [actual online Next roundtrip](benchmarks/glm53-ews-next-20260908.md)
+  passes with a complete 702-token auxiliary answer and resident continuation.
+  It does not pass a two-sentence brevity requirement or establish a quality
+  score. RAM pressure, 2.83 TB of repeated reader bytes and the failed first
+  attempts are retained. The default EIE runtime pin is unchanged.
 - **Energy / training:** no data-center GPU-count reduction, measured power/water
   savings or training-efficiency result. These remain research hypotheses.
 
