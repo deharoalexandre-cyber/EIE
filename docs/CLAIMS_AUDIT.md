@@ -122,12 +122,22 @@ every old design aspiration is neither necessary nor implicitly authorized.
   short prompt. The 8-slot expert tensor cache is 5,152,178,176 bytes; logical
   routed expert tensors total 185,478,414,336 bytes. These are not whole-process
   memory peaks. This GLM profile uses host expert buffers/CPU matmuls and partial
-  CUDA offload. GPU expert placement, long contexts and broader quality remain
+  CUDA offload. Long contexts and broader quality remain
   unqualified. Its [actual online Next roundtrip](benchmarks/glm53-ews-next-20260908.md)
   passes with a complete 702-token auxiliary answer and resident continuation.
   It does not pass a two-sentence brevity requirement or establish a quality
   score. RAM pressure, 2.83 TB of repeated reader bytes and the failed first
   attempts are retained. The default EIE runtime pin is unchanged.
+- **GLM GPU placement:** [bounded numerical controls](benchmarks/glm53-ews-gpu-next-20260908.md)
+  now cover native/EWS equality on two routed CUDA layers, and cache-size
+  consistency on an 18-GPU/24-CPU placement. The latter is not a full native
+  equivalence test. Device expert allocation is 2,198,339,584 bytes with eight
+  slots. The actual fresh-state Next roundtrip passes with a complete 148-token
+  auxiliary answer, synthesis and resident continuation; sampled GPU peak is
+  14,995 MiB. A truncated first attempt is retained. The rerun has a larger
+  token allowance and a changed resident-authored question, so it proves neither
+  a speedup nor an isolated budget effect. All-GPU experts remain unqualified.
+  The first output-only probe is retained as non-GPU-expert evidence.
 - **Energy / training:** no data-center GPU-count reduction, measured power/water
   savings or training-efficiency result. These remain research hypotheses.
 

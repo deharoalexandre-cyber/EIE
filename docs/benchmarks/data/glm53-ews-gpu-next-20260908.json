@@ -1,0 +1,1077 @@
+{
+  "schema": "elyne.glm-ews-gpu-feasibility/v1",
+  "date": "2026-09-08",
+  "scope": "Hybrid GPU expert cache: 18 routed layers on CUDA, 24 on CPU; actual virgin Next roundtrip",
+  "host_baseline_receipt_sha256": "14081d807362cc6a0123df3996b7b32588e2918c0866f4361edc1b83ec18259d",
+  "runtime_revision": "b9b8207fcfc2962093b9466df7af4ff29c2a81ef",
+  "runtime_patch_sha256": "dfa6b873fd77afcddb2d70baa02578efe506d952f20938964f590f4a2b141ac9",
+  "eie_source_lf_sha256": {
+    "CMakeLists.txt": "f4eee662bf7a0398db69e719748c2ae0ae9eef8933e789cc7b4e5b55defb8eff",
+    "backends/compute_backend.h": "c61196a962c3ec18a96200a5bfd010997def5a12c914cfbb7d0e1e7fd17fab23",
+    "backends/cpu_backend.cpp": "9955fa6fb2f107e2bd54bbb8bfcaa622027149b6b6680af0a58243f683639078",
+    "backends/expert_stream.h": "ccf1ab2ff60973f65acefe625dbc8a29d5113f1c51a81cdb750f6f1f4932db28",
+    "backends/expert_stream.cpp": "ce941eb9beb05ec6568e37c77595d0cf8fb0972b06431871f2b811152159a794",
+    "core/config.h": "c896531e93ca127d056e9e9f34c135f8883be06c2cf16f2300365b27eb998757",
+    "core/model_manager.h": "32aea5d30c4fd22364bd485d450b294c7955d06b1ed0c10fd37d81d03d497cfc",
+    "server/main.cpp": "d893aa1b34e0dee177790a0baa52f9e1df653b2fa58c2537298117818f5c336f",
+    "tests/ews_forward.cpp": "6216f7198f480916790671459d6891601e6b7d4f0f0175fb95e01ee43ef5cf19",
+    "tests/ews_stream_unit.cpp": "1f22fb09cac7e33fa852f55413910f34ca80f6cfc4d7443e0b25c6f864f7d5c0",
+    "tests/serving/backend_contract.cpp": "494071770c35d1c3a87ba9fc22e63024f1e9d6d1cc238de50caca43f4867753f",
+    "experiments/ews_target/run_forward.py": "ea0e83ee87834f61a03ea86a0dd0aeaba6e1694d403faf37290e8d121a416c04"
+  },
+  "model_revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+  "model_files": [
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00001-of-00006.gguf",
+      "bytes": 9429859,
+      "sha256": "00dceaf3ed08781b1e44513a44ebb19e96248d01ba2a80b17f675a2b6fa9a1ee"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00002-of-00006.gguf",
+      "bytes": 49198039200,
+      "sha256": "d3ecb6ff3957a99878f9a0352676a0913748a431a9a4a1b1ffa5ade9b8947a74"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00003-of-00006.gguf",
+      "bytes": 49988626304,
+      "sha256": "328073c004e7c5395b208247feed26089db247b94dd8fa4ab0f2569d86c1d770"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00004-of-00006.gguf",
+      "bytes": 48700701344,
+      "sha256": "6803ab7effa6da4a0b02c9c7865952fdd6c5b2e10e53903348da369e90bd13f9"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00006-of-00006.gguf",
+      "bytes": 2784497888,
+      "sha256": "c6ba510fafc1e12cc0addbc361a329c0c592ab96980098e7e25e107d8faa983e"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00005-of-00006.gguf",
+      "bytes": 49026026752,
+      "sha256": "852f3df9dacde3d196796f9fe738468e80c8701555ff0a8c30bc010fb8974dd8"
+    }
+  ],
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4090 Laptop GPU",
+    "physical_ram_bytes": 34070192128,
+    "cpu": "Intel Core i9-14900HX",
+    "driver": "595.79",
+    "cuda_build": "13.2.78"
+  },
+  "build": {
+    "configuration": "Release",
+    "cuda_architecture": "89",
+    "native_cpu": false,
+    "shared_libraries": true,
+    "compiler": "MSVC 19.44"
+  },
+  "profile": {
+    "gpu_layers": 20,
+    "cpu_moe": false,
+    "ews_slots": 8,
+    "threads": 8,
+    "kv": "f16/f16",
+    "flash_attention": false,
+    "mtp": false,
+    "tf32": false,
+    "cuda_graphs": false,
+    "microbatch": 1,
+    "forward_context": 512,
+    "eie_context": 2048,
+    "routed_gpu_layers": [
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44
+    ],
+    "routed_cpu_layers": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26
+    ],
+    "gpu_layers_counting": "47 positions = 46 blocks including unused MTP + output; 20 selects 27..46"
+  },
+  "native_gpu_control": {
+    "paired": {
+      "runtime_pin": "b9b8207fcfc2962093b9466df7af4ff29c2a81ef",
+      "profile": "glm-gpu",
+      "gpu_layers_override": 4,
+      "reference_slots": 0,
+      "comparison_kind": "native-vs-ews",
+      "cuda_graphs": false,
+      "tf32": false,
+      "comparisons": [
+        {
+          "domain": "glm-smoke",
+          "slots": 8,
+          "floats": 1239040,
+          "bit_identical": true,
+          "same_generated_tokens": true,
+          "max_abs_delta": 0.0,
+          "sha256": "c1ef293a5728a6b7561044e82efd134454da39c92536c3dd7b79c3a138a589d7"
+        }
+      ],
+      "runs": [
+        {
+          "domain": "glm-smoke",
+          "slots": 0,
+          "exit_code": 0,
+          "seconds": 62.89100000006147
+        },
+        {
+          "domain": "glm-smoke",
+          "slots": 8,
+          "exit_code": 0,
+          "seconds": 29.375
+        }
+      ],
+      "prompts": {
+        "glm-smoke": {
+          "sha256": "0b8b55f996e7040d630079da36b3f1e0f08dffa8d014c9e5dada28b80396cbc4",
+          "text": "The capital of France is\n"
+        }
+      },
+      "binary_hashes": {
+        "ews-forward.exe": "9ac66d15c2561a295a8853d02ea60d2b7c91bac799129dba9cc4b7273ef32bf8",
+        "llama.dll": "939464c8b14f7d4daee6b21731170e5a575397986382fa3ea1bdb311ed8e1756"
+      },
+      "runtime_diff_sha256": "dfa6b873fd77afcddb2d70baa02578efe506d952f20938964f590f4a2b141ac9"
+    },
+    "arms": [
+      {
+        "slots": 0,
+        "prompt_tokens": 6,
+        "generated_token_ids": [
+          59190,
+          198,
+          785,
+          6722,
+          315,
+          9621,
+          374,
+          198
+        ],
+        "profile": "glm-gpu",
+        "gpu_layers": 4,
+        "cpu_moe": false,
+        "vocab": 154880,
+        "predict": 8,
+        "kv": "f16/f16",
+        "router_boundary_both_arms": true,
+        "prefill_seconds": 22.6009339,
+        "decode_seconds_including_logit_write": 14.2224224
+      },
+      {
+        "slots": 8,
+        "prompt_tokens": 6,
+        "generated_token_ids": [
+          59190,
+          198,
+          785,
+          6722,
+          315,
+          9621,
+          374,
+          198
+        ],
+        "profile": "glm-gpu",
+        "gpu_layers": 4,
+        "cpu_moe": false,
+        "vocab": 154880,
+        "predict": 8,
+        "kv": "f16/f16",
+        "router_boundary_both_arms": true,
+        "prefill_seconds": 9.3397153,
+        "decode_seconds_including_logit_write": 9.0507213,
+        "ews": {
+          "callbacks": 546,
+          "hits": 1268,
+          "misses": 3100,
+          "payload_bytes": 47594209280,
+          "read_bytes": 47632302080,
+          "host_payload_bytes": 45168066560,
+          "device_payload_bytes": 2426142720,
+          "host_expert_bytes": 4899995648,
+          "device_expert_bytes": 252182528,
+          "logical_expert_bytes": 185478414336,
+          "physical_expert_bytes": 5152178176
+        }
+      }
+    ],
+    "raw_report_sha256": "08bf8651ee42a8521c0a3bd51b6668d90311c210cbbca73a97c554b12894d3f9"
+  },
+  "native_gpu_control_scope": "gpu_layers=4 selects routed layers43/44, unused MTP45, output46; NOT all18 GPU layers",
+  "cache_size_consistency": {
+    "smoke": {
+      "paired": {
+        "runtime_pin": "b9b8207fcfc2962093b9466df7af4ff29c2a81ef",
+        "profile": "glm-gpu",
+        "gpu_layers_override": 20,
+        "reference_slots": 16,
+        "comparison_kind": "ews-cache-size-consistency",
+        "cuda_graphs": false,
+        "tf32": false,
+        "comparisons": [
+          {
+            "domain": "glm-smoke",
+            "slots": 8,
+            "floats": 1239040,
+            "bit_identical": true,
+            "same_generated_tokens": true,
+            "max_abs_delta": 0.0,
+            "sha256": "fa3c380919ea2f0a3c4ad16437ad672cd5919c93d9a809c4d3892eebd33cf22c"
+          }
+        ],
+        "runs": [
+          {
+            "domain": "glm-smoke",
+            "slots": 16,
+            "exit_code": 0,
+            "seconds": 22.39000000001397
+          },
+          {
+            "domain": "glm-smoke",
+            "slots": 8,
+            "exit_code": 0,
+            "seconds": 24.0
+          }
+        ],
+        "prompts": {
+          "glm-smoke": {
+            "sha256": "0b8b55f996e7040d630079da36b3f1e0f08dffa8d014c9e5dada28b80396cbc4",
+            "text": "The capital of France is\n"
+          }
+        },
+        "binary_hashes": {
+          "ews-forward.exe": "9ac66d15c2561a295a8853d02ea60d2b7c91bac799129dba9cc4b7273ef32bf8",
+          "llama.dll": "939464c8b14f7d4daee6b21731170e5a575397986382fa3ea1bdb311ed8e1756"
+        },
+        "runtime_diff_sha256": "dfa6b873fd77afcddb2d70baa02578efe506d952f20938964f590f4a2b141ac9"
+      },
+      "arms": [
+        {
+          "slots": 16,
+          "prompt_tokens": 6,
+          "generated_token_ids": [
+            59190,
+            198,
+            785,
+            6722,
+            315,
+            9621,
+            374,
+            198
+          ],
+          "profile": "glm-gpu",
+          "gpu_layers": 20,
+          "cpu_moe": false,
+          "vocab": 154880,
+          "predict": 8,
+          "kv": "f16/f16",
+          "router_boundary_both_arms": true,
+          "prefill_seconds": 8.4084968,
+          "decode_seconds_including_logit_write": 6.3211239,
+          "ews": {
+            "callbacks": 546,
+            "hits": 1746,
+            "misses": 2622,
+            "payload_bytes": 40266563584,
+            "read_bytes": 40298782720,
+            "host_payload_bytes": 24780275712,
+            "device_payload_bytes": 15486287872,
+            "host_expert_bytes": 5907677184,
+            "device_expert_bytes": 4396679168,
+            "logical_expert_bytes": 185478414336,
+            "physical_expert_bytes": 10304356352
+          }
+        },
+        {
+          "slots": 8,
+          "prompt_tokens": 6,
+          "generated_token_ids": [
+            59190,
+            198,
+            785,
+            6722,
+            315,
+            9621,
+            374,
+            198
+          ],
+          "profile": "glm-gpu",
+          "gpu_layers": 20,
+          "cpu_moe": false,
+          "vocab": 154880,
+          "predict": 8,
+          "kv": "f16/f16",
+          "router_boundary_both_arms": true,
+          "prefill_seconds": 8.7314874,
+          "decode_seconds_including_logit_write": 8.4493261,
+          "ews": {
+            "callbacks": 546,
+            "hits": 1267,
+            "misses": 3101,
+            "payload_bytes": 47607185408,
+            "read_bytes": 47645290496,
+            "host_payload_bytes": 28838592512,
+            "device_payload_bytes": 18768592896,
+            "host_expert_bytes": 2953838592,
+            "device_expert_bytes": 2198339584,
+            "logical_expert_bytes": 185478414336,
+            "physical_expert_bytes": 5152178176
+          }
+        }
+      ],
+      "raw_report_sha256": "b1eece57d48b8aef71be61447018dd34646458253cb8656d0f2ddebb52b18ec5"
+    },
+    "code": {
+      "paired": {
+        "runtime_pin": "b9b8207fcfc2962093b9466df7af4ff29c2a81ef",
+        "profile": "glm-gpu",
+        "gpu_layers_override": 20,
+        "reference_slots": 16,
+        "comparison_kind": "ews-cache-size-consistency",
+        "cuda_graphs": false,
+        "tf32": false,
+        "comparisons": [
+          {
+            "domain": "custom",
+            "slots": 8,
+            "floats": 1239040,
+            "bit_identical": true,
+            "same_generated_tokens": true,
+            "max_abs_delta": 0.0,
+            "sha256": "39a04545963b3ad07f9c990515111ad72278b006d00d03b9c77eee91b4dab87e"
+          }
+        ],
+        "runs": [
+          {
+            "domain": "custom",
+            "slots": 16,
+            "exit_code": 0,
+            "seconds": 39.453000000095926
+          },
+          {
+            "domain": "custom",
+            "slots": 8,
+            "exit_code": 0,
+            "seconds": 41.45299999997951
+          }
+        ],
+        "prompts": {
+          "custom": {
+            "sha256": "41dc8d78f339784a88fb848791e8cbb50959ad884723aca5ac99f429f0a7562f",
+            "text": "def count_even(values):\n    \"\"\"Return the number of even integers in values.\"\"\"\n    return\n"
+          }
+        },
+        "binary_hashes": {
+          "ews-forward.exe": "9ac66d15c2561a295a8853d02ea60d2b7c91bac799129dba9cc4b7273ef32bf8",
+          "llama.dll": "939464c8b14f7d4daee6b21731170e5a575397986382fa3ea1bdb311ed8e1756"
+        },
+        "runtime_diff_sha256": "dfa6b873fd77afcddb2d70baa02578efe506d952f20938964f590f4a2b141ac9"
+      },
+      "arms": [
+        {
+          "slots": 16,
+          "prompt_tokens": 19,
+          "generated_token_ids": [
+            262,
+            1760,
+            284,
+            220,
+            15,
+            198,
+            262,
+            369
+          ],
+          "profile": "glm-gpu",
+          "gpu_layers": 20,
+          "cpu_moe": false,
+          "vocab": 154880,
+          "predict": 8,
+          "kv": "f16/f16",
+          "router_boundary_both_arms": true,
+          "prefill_seconds": 23.8685064,
+          "decode_seconds_including_logit_write": 8.3397469,
+          "ews": {
+            "callbacks": 1092,
+            "hits": 2936,
+            "misses": 5800,
+            "payload_bytes": 89000378368,
+            "read_bytes": 89071648768,
+            "host_payload_bytes": 54140665856,
+            "device_payload_bytes": 34859712512,
+            "host_expert_bytes": 5907677184,
+            "device_expert_bytes": 4396679168,
+            "logical_expert_bytes": 185478414336,
+            "physical_expert_bytes": 10304356352
+          }
+        },
+        {
+          "slots": 8,
+          "prompt_tokens": 19,
+          "generated_token_ids": [
+            262,
+            1760,
+            284,
+            220,
+            15,
+            198,
+            262,
+            369
+          ],
+          "profile": "glm-gpu",
+          "gpu_layers": 20,
+          "cpu_moe": false,
+          "vocab": 154880,
+          "predict": 8,
+          "kv": "f16/f16",
+          "router_boundary_both_arms": true,
+          "prefill_seconds": 25.844068,
+          "decode_seconds_including_logit_write": 9.1414243,
+          "ews": {
+            "callbacks": 1092,
+            "hits": 2149,
+            "misses": 6587,
+            "payload_bytes": 101048451072,
+            "read_bytes": 101129392128,
+            "host_payload_bytes": 60959883264,
+            "device_payload_bytes": 40088567808,
+            "host_expert_bytes": 2953838592,
+            "device_expert_bytes": 2198339584,
+            "logical_expert_bytes": 185478414336,
+            "physical_expert_bytes": 5152178176
+          }
+        }
+      ],
+      "raw_report_sha256": "a3c455a964a469013fdb93bf90789f49d68b30f9d22c52d268f5e45b93b08926"
+    },
+    "fr": {
+      "paired": {
+        "runtime_pin": "b9b8207fcfc2962093b9466df7af4ff29c2a81ef",
+        "profile": "glm-gpu",
+        "gpu_layers_override": 20,
+        "reference_slots": 16,
+        "comparison_kind": "ews-cache-size-consistency",
+        "cuda_graphs": false,
+        "tf32": false,
+        "comparisons": [
+          {
+            "domain": "custom",
+            "slots": 8,
+            "floats": 1239040,
+            "bit_identical": true,
+            "same_generated_tokens": true,
+            "max_abs_delta": 0.0,
+            "sha256": "fadf395ff68d0638a9eabacadeb3d83b5a01127c51aa78fbffc0d4ca818321f0"
+          }
+        ],
+        "runs": [
+          {
+            "domain": "custom",
+            "slots": 16,
+            "exit_code": 0,
+            "seconds": 37.28100000007544
+          },
+          {
+            "domain": "custom",
+            "slots": 8,
+            "exit_code": 0,
+            "seconds": 40.54700000002049
+          }
+        ],
+        "prompts": {
+          "custom": {
+            "sha256": "90ea423891db986ea90b7ff68262fb03eb31a28e2d949e41824562fee357d76b",
+            "text": "Une nouvelle tentative ne garantit pas de corriger une panne commune aux deux essais, parce que\n"
+          }
+        },
+        "binary_hashes": {
+          "ews-forward.exe": "9ac66d15c2561a295a8853d02ea60d2b7c91bac799129dba9cc4b7273ef32bf8",
+          "llama.dll": "939464c8b14f7d4daee6b21731170e5a575397986382fa3ea1bdb311ed8e1756"
+        },
+        "runtime_diff_sha256": "dfa6b873fd77afcddb2d70baa02578efe506d952f20938964f590f4a2b141ac9"
+      },
+      "arms": [
+        {
+          "slots": 16,
+          "prompt_tokens": 21,
+          "generated_token_ids": [
+            642,
+            281,
+            40925,
+            834,
+            14778,
+            6368,
+            1257,
+            144576
+          ],
+          "profile": "glm-gpu",
+          "gpu_layers": 20,
+          "cpu_moe": false,
+          "vocab": 154880,
+          "predict": 8,
+          "kv": "f16/f16",
+          "router_boundary_both_arms": true,
+          "prefill_seconds": 23.6749239,
+          "decode_seconds_including_logit_write": 6.7956402,
+          "ews": {
+            "callbacks": 1176,
+            "hits": 4102,
+            "misses": 5306,
+            "payload_bytes": 81415438336,
+            "read_bytes": 81480638464,
+            "host_payload_bytes": 50233016320,
+            "device_payload_bytes": 31182422016,
+            "host_expert_bytes": 5907677184,
+            "device_expert_bytes": 4396679168,
+            "logical_expert_bytes": 185478414336,
+            "physical_expert_bytes": 10304356352
+          }
+        },
+        {
+          "slots": 8,
+          "prompt_tokens": 21,
+          "generated_token_ids": [
+            642,
+            281,
+            40925,
+            834,
+            14778,
+            6368,
+            1257,
+            144576
+          ],
+          "profile": "glm-gpu",
+          "gpu_layers": 20,
+          "cpu_moe": false,
+          "vocab": 154880,
+          "predict": 8,
+          "kv": "f16/f16",
+          "router_boundary_both_arms": true,
+          "prefill_seconds": 26.0687103,
+          "decode_seconds_including_logit_write": 8.1392868,
+          "ews": {
+            "callbacks": 1176,
+            "hits": 3102,
+            "misses": 6306,
+            "payload_bytes": 96731791360,
+            "read_bytes": 96809279488,
+            "host_payload_bytes": 60024225792,
+            "device_payload_bytes": 36707565568,
+            "host_expert_bytes": 2953838592,
+            "device_expert_bytes": 2198339584,
+            "logical_expert_bytes": 185478414336,
+            "physical_expert_bytes": 5152178176
+          }
+        }
+      ],
+      "raw_report_sha256": "98236ff35efd4a52ac16b23c3dc2304b82845ce031ab15b992c9c5ed03ec4162"
+    }
+  },
+  "eie_binary_hashes": {
+    "glm53_ews_live_gate_20260908.py": "8ff8e83c0c455e676c2b0a8751f16c8daa22b9be51918fca02edb64f2754df8e",
+    "glm53_next_roundtrip_20260908.py": "ce31fc20fd7ac6eec41b1d9e07458f923a2d83bb40804a7fddd41b2b8c18e0cb",
+    "eie-server.exe": "462564d27dd8faf92d1b3628ad7f372dba9cd45ef9368f3a9cb28129d9e723f6",
+    "config.yaml": "dd0cba4a5ec10acf2e71558b4723a4ddd30bebce1abe35b802ddc2f433ed555d",
+    "ggml-base.dll": "ed8b3994d375dba68bd3b3db476f6dd2649233cdba95cc139a20cefeddd3b87b",
+    "ggml-cpu.dll": "d59bd61e9a5b4855d5e94411ef18ff5be89981e9cffbca1cea79029f12acc8c4",
+    "ggml-cuda.dll": "435786082fba81851ded80a664bdaf2a77d4e76a471bb37d58ef97e86a04b06b",
+    "ggml.dll": "a09f705ad350f48ff721873fe096b28a7386b0b4808f9bce8e5192b7afb9562c",
+    "llama-common.dll": "74a7c0a6f3932161b1dc488ba9288c440d18d01be97374bf583e997be52dc2f3",
+    "llama.dll": "939464c8b14f7d4daee6b21731170e5a575397986382fa3ea1bdb311ed8e1756"
+  },
+  "eie_load_seconds": 8.077999999979511,
+  "eie_stats_before": {
+    "glm-5.3-flash-ews": {
+      "callbacks": 0,
+      "device_expert_bytes": 2198339584,
+      "device_payload_bytes": 0,
+      "hits": 0,
+      "host_expert_bytes": 2953838592,
+      "host_payload_bytes": 0,
+      "logical_expert_bytes": 185478414336,
+      "misses": 0,
+      "payload_bytes": 0,
+      "physical_expert_bytes": 5152178176,
+      "read_bytes": 0
+    }
+  },
+  "eie_stats_after": {
+    "glm-5.3-flash-ews": {
+      "callbacks": 9282,
+      "device_expert_bytes": 2198339584,
+      "device_payload_bytes": 313628819456,
+      "hits": 21736,
+      "host_expert_bytes": 2953838592,
+      "host_payload_bytes": 491761893376,
+      "logical_expert_bytes": 185478414336,
+      "misses": 52520,
+      "payload_bytes": 805390712832,
+      "physical_expert_bytes": 5152178176,
+      "read_bytes": 806036078592
+    }
+  },
+  "next": {
+    "gate": {
+      "actual_glm_call_completed": true,
+      "glm_response_complete": true,
+      "all_turns_completed": true,
+      "resident_alive": true
+    },
+    "original_state_unchanged": true,
+    "source_file_sha256": {
+      "glm53_next_roundtrip_20260908.py": "ce31fc20fd7ac6eec41b1d9e07458f923a2d83bb40804a7fddd41b2b8c18e0cb",
+      "deep_analysis.py": "a4a033c12c036e33e38349a586b2d4b6dca3b74ddb75964c7eaaf2b2aafb65e5",
+      "session.py": "742c1caba1bedae143af551aa0a3dc99ba7eebedc074ad5c432d5371d49ca875",
+      "streaming_chat.py": "6f9cc4714cb94e1ca6c9d4a04ca0f558810786541277ffdaee64e6a9e799d2ea",
+      "turn_core.py": "a919dfc33b779d3af93d972f4cc59d5798465bb295c60c407d77b77e108aab5a"
+    },
+    "initial_memory": {
+      "kind": "empty"
+    },
+    "resident_configured_context": 16384,
+    "auxiliary_max_tokens": 1536,
+    "auxiliary_timeout_seconds": 86400,
+    "turns": [
+      {
+        "label": "resident-before",
+        "status": "completed",
+        "seconds": 2.530999999959022
+      },
+      {
+        "label": "roundtrip",
+        "status": "completed",
+        "seconds": 287.68699999991804
+      },
+      {
+        "label": "resident-after",
+        "status": "completed",
+        "seconds": 2.9070000000065193
+      }
+    ],
+    "resident_calls": [
+      {
+        "seconds": 2.452999999979511,
+        "completion_tokens": 3,
+        "exposed_tools": 23,
+        "tool_calls": []
+      },
+      {
+        "seconds": 4.344000000040978,
+        "completion_tokens": 73,
+        "exposed_tools": 23,
+        "tool_calls": [
+          "request_deep_analysis"
+        ]
+      },
+      {
+        "seconds": 4.702999999979511,
+        "completion_tokens": 176,
+        "exposed_tools": 23,
+        "tool_calls": []
+      },
+      {
+        "seconds": 2.843999999924563,
+        "completion_tokens": 3,
+        "exposed_tools": 23,
+        "tool_calls": []
+      }
+    ],
+    "actual_deep_calls": [
+      {
+        "call_id": "turn-glm-native-bcda4d34431841678298ca2c29cfd2bc.tool-1",
+        "arguments": {
+          "question": "Effectue un contre-examen en deux phrases de l'affirmation suivante : \"si une opération échoue dans 10 % des cas, la retenter une fois ramène toujours le risque à 1 %, même quand les deux tentatives dépendent du même serveur indisponible.\""
+        },
+        "started_unix": 1788879651.3401177,
+        "seconds": 278.51500000001397,
+        "result_type": "ToolCompleted",
+        "reason_code": null,
+        "result": {
+          "binary_sha256": null,
+          "completion_tokens": 148,
+          "config_sha256": null,
+          "finish_reason": "stop",
+          "identity_basis": "external-unverified",
+          "incomplete": false,
+          "model": "glm-5.3-flash-ews",
+          "model_sha256": null,
+          "owned": false,
+          "pid": null,
+          "text": "Voici le contre-examen en deux phrases :\n\nL'affirmation repose sur une confusion entre événements **indépendants** et événements **corrélés** : si les échecs proviennent d'une cause commune (serveur indisponible), la seconde tentative hérite de la même probabilité d'échec que la première, soit 10 % — pas 1 %. Le calcul « 0,1 × 0,1 = 0,01 » ne vaut que pour des tentatives indépendantes ; avec un serveur partagé, on obtient plutôt P(échec total) = 0,1, ce qui dément l'« toujours » de l'énoncé."
+        }
+      }
+    ],
+    "resident_before": "13",
+    "resident_synthesis": "Voici le contre-examen du modèle auxiliaire :\n\nL'affirmation repose sur une confusion entre événements **indépendants** et événements **corrélés** : si les échecs proviennent d'une cause commune (serveur indisponible), la seconde tentative hérite de la même probabilité d'échec que la première, soit 10 % — pas 1 %. Le calcul « 0,1 × 0,1 = 0,01 » ne vaut que pour des tentatives indépendantes ; avec un serveur partagé, on obtient plutôt P(échec total) = 0,1, ce qui dément l'« toujours » de l'énoncé.\n\n**Mon verdict :** L'affirmation est fausse car elle ignore la corrélation des causes d'échec.",
+    "resident_after": "55",
+    "raw_report_sha256": "f8a52b4958b3d5408993716c2dcf3aef5349d9d7edbed30b2f2ab6cfa6e07765"
+  },
+  "memory_samples": {
+    "count": 32,
+    "max_total_gpu_mib": 14995,
+    "min_gpu_free_mib": 1054,
+    "min_system_available_bytes": 1116454912,
+    "max_eie_working_set_bytes": 9641463808,
+    "max_eie_private_bytes": 20000854016,
+    "raw_sha256": "1473ff1416843c031a805d6b22f2f3de4f0610bcc114d29ac64689660e9982f9"
+  },
+  "gemma_regression": {
+    "runtime_pin": "2168b0cd8b87c75c29a1e6588692ebbb805b9bd2",
+    "profile": "gemma-gpu",
+    "gpu_layers_override": null,
+    "reference_slots": 0,
+    "comparison_kind": "native-vs-ews",
+    "cuda_graphs": false,
+    "tf32": false,
+    "comparisons": [
+      {
+        "domain": "fr",
+        "slots": 32,
+        "floats": 2097152,
+        "bit_identical": true,
+        "same_generated_tokens": true,
+        "max_abs_delta": 0.0,
+        "sha256": "5904b0eca821c09192e70987f192e9488d9eecc77086474abd350f086b46c6e5"
+      },
+      {
+        "domain": "fr",
+        "slots": 8,
+        "floats": 2097152,
+        "bit_identical": true,
+        "same_generated_tokens": true,
+        "max_abs_delta": 0.0,
+        "sha256": "5904b0eca821c09192e70987f192e9488d9eecc77086474abd350f086b46c6e5"
+      },
+      {
+        "domain": "code",
+        "slots": 32,
+        "floats": 2097152,
+        "bit_identical": true,
+        "same_generated_tokens": true,
+        "max_abs_delta": 0.0,
+        "sha256": "d0642c84b53d1e0fba1eaed1553f9594cefdb6c4d1abfab8856050568563d2f9"
+      },
+      {
+        "domain": "code",
+        "slots": 8,
+        "floats": 2097152,
+        "bit_identical": true,
+        "same_generated_tokens": true,
+        "max_abs_delta": 0.0,
+        "sha256": "d0642c84b53d1e0fba1eaed1553f9594cefdb6c4d1abfab8856050568563d2f9"
+      }
+    ],
+    "runs": [
+      {
+        "domain": "fr",
+        "slots": 0,
+        "exit_code": 0,
+        "seconds": 7.48499999998603
+      },
+      {
+        "domain": "fr",
+        "slots": 32,
+        "exit_code": 0,
+        "seconds": 9.562000000034459
+      },
+      {
+        "domain": "fr",
+        "slots": 8,
+        "exit_code": 0,
+        "seconds": 20.57799999997951
+      },
+      {
+        "domain": "code",
+        "slots": 0,
+        "exit_code": 0,
+        "seconds": 7.077999999979511
+      },
+      {
+        "domain": "code",
+        "slots": 32,
+        "exit_code": 0,
+        "seconds": 9.359000000054948
+      },
+      {
+        "domain": "code",
+        "slots": 8,
+        "exit_code": 0,
+        "seconds": 20.20299999997951
+      }
+    ],
+    "prompts": {
+      "fr": {
+        "sha256": "ea006b6e19f623e56d1168355dc0ba4c078f37a9adc283207f814139385c68ae",
+        "text": "<|turn>user\nExplique en français, en cinq points détaillés, ce qui distingue un cache d'experts en mémoire graphique, un cache en RAM et la lecture directe sur SSD pour exécuter un modèle MoE. Distingue clairement la capacité mémoire et le débit. Ne donne aucun chiffre de performance inventé.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>\n"
+      },
+      "code": {
+        "sha256": "17d180cc7c3d30409e9f35152eed82696934896e303c634f289c1b06e49dac33",
+        "text": "<|turn>user\nWrite a Python function implementing a small LRU cache for integer keys and byte values, using only the standard library. Explain how hits update recency and how eviction works. Add three short assertions testing a hit, an eviction, and independent caches. Do not use external dependencies.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>\n"
+      }
+    },
+    "binary_hashes": {
+      "ews-forward.exe": "4a49458568eb66a8fdc6beb97973b4d70eb0e556729bd82d3ad44586656a191e",
+      "llama.dll": "7a9bf447c8ddefd4de65d67e111a6fff67b1166f282f46373f67a4604fc5f6a4"
+    },
+    "runtime_diff_sha256": "8612e3d50fea6fe086cade10b9f6e6f6d23f2f8445a957a7c8f996cb4073ac33"
+  },
+  "offline_checks": {
+    "ews_unit_assertions_each_runtime": 46,
+    "serving_assertions": 628,
+    "full_eie_links_against_original_runtime": true,
+    "api_compatibility_both_runtimes": true
+  },
+  "test_history": [
+    {
+      "run": "gpu_layers=1 probe",
+      "numerical_pass": true,
+      "gpu_expert_qualification": false,
+      "reason": "Only output on GPU, no routed experts. Device counters correctly zero. Corrected to4 for native control.",
+      "evidence": {
+        "paired": {
+          "runtime_pin": "b9b8207fcfc2962093b9466df7af4ff29c2a81ef",
+          "profile": "glm-gpu",
+          "gpu_layers_override": 1,
+          "reference_slots": 0,
+          "comparison_kind": "native-vs-ews",
+          "cuda_graphs": false,
+          "tf32": false,
+          "comparisons": [
+            {
+              "domain": "glm-smoke",
+              "slots": 8,
+              "floats": 1239040,
+              "bit_identical": true,
+              "same_generated_tokens": true,
+              "max_abs_delta": 0.0,
+              "sha256": "70837b2ee34e3974ae05658483924d7a937cd67ff5298193124cfcea56082465"
+            }
+          ],
+          "runs": [
+            {
+              "domain": "glm-smoke",
+              "slots": 0,
+              "exit_code": 0,
+              "seconds": 51.67200000002049
+            },
+            {
+              "domain": "glm-smoke",
+              "slots": 8,
+              "exit_code": 0,
+              "seconds": 28.60999999998603
+            }
+          ],
+          "prompts": {
+            "glm-smoke": {
+              "sha256": "0b8b55f996e7040d630079da36b3f1e0f08dffa8d014c9e5dada28b80396cbc4",
+              "text": "The capital of France is\n"
+            }
+          },
+          "binary_hashes": {
+            "ews-forward.exe": "9ac66d15c2561a295a8853d02ea60d2b7c91bac799129dba9cc4b7273ef32bf8",
+            "llama.dll": "939464c8b14f7d4daee6b21731170e5a575397986382fa3ea1bdb311ed8e1756"
+          },
+          "runtime_diff_sha256": "dfa6b873fd77afcddb2d70baa02578efe506d952f20938964f590f4a2b141ac9"
+        },
+        "arms": [
+          {
+            "slots": 0,
+            "prompt_tokens": 6,
+            "generated_token_ids": [
+              59190,
+              198,
+              785,
+              6722,
+              315,
+              9621,
+              374,
+              198
+            ],
+            "profile": "glm-gpu",
+            "gpu_layers": 1,
+            "cpu_moe": false,
+            "vocab": 154880,
+            "predict": 8,
+            "kv": "f16/f16",
+            "router_boundary_both_arms": true,
+            "prefill_seconds": 20.0517997,
+            "decode_seconds_including_logit_write": 13.2850108
+          },
+          {
+            "slots": 8,
+            "prompt_tokens": 6,
+            "generated_token_ids": [
+              59190,
+              198,
+              785,
+              6722,
+              315,
+              9621,
+              374,
+              198
+            ],
+            "profile": "glm-gpu",
+            "gpu_layers": 1,
+            "cpu_moe": false,
+            "vocab": 154880,
+            "predict": 8,
+            "kv": "f16/f16",
+            "router_boundary_both_arms": true,
+            "prefill_seconds": 8.8825494,
+            "decode_seconds_including_logit_write": 8.4201527,
+            "ews": {
+              "callbacks": 546,
+              "hits": 1270,
+              "misses": 3098,
+              "payload_bytes": 47561572352,
+              "read_bytes": 47599640576,
+              "host_payload_bytes": 47561572352,
+              "device_payload_bytes": 0,
+              "host_expert_bytes": 5152178176,
+              "device_expert_bytes": 0,
+              "logical_expert_bytes": 185478414336,
+              "physical_expert_bytes": 5152178176
+            }
+          }
+        ],
+        "raw_report_sha256": "20153ee410962c8c4b383519d77a64b24474d0bf32aa52949e7fe8ddfd7d31b7"
+      }
+    },
+    {
+      "run": "gpu-live-v1",
+      "full_answer_gate": false,
+      "auxiliary_max_tokens": 768,
+      "gate": {
+        "actual_glm_call_completed": true,
+        "glm_response_complete": false,
+        "all_turns_completed": true,
+        "resident_alive": true
+      },
+      "actual_deep_calls": [
+        {
+          "call_id": "turn-glm-native-3488c0dd822949ec859c46d05c7e15ac.tool-1",
+          "arguments": {
+            "question": "Effectue un contre-examen en deux phrases de l'affirmation suivante : \"si une opération échoue dans 10 % des cas, la retenter une fois ramène toujours le risque à 1 %, même quand les deux tentatives dépendent du même serveur indisponible.\" Explique pourquoi cette logique est erronée."
+          },
+          "started_unix": 1788878397.9159024,
+          "seconds": 1103.030999999959,
+          "result_type": "ToolCompleted",
+          "reason_code": null,
+          "result": {
+            "binary_sha256": null,
+            "completion_tokens": 768,
+            "config_sha256": null,
+            "finish_reason": "length",
+            "identity_basis": "external-unverified",
+            "incomplete": true,
+            "model": "glm-5.3-flash-ews",
+            "model_sha256": null,
+            "owned": false,
+            "pid": null,
+            "text": "Voici un cross-examination en deux phrases :\n\n**Phrase 1 :** Si les tentatives sont dépendantes (même serveur indisponible), l'échec de la première tentative rend l'échec de l'affirmation évident : le second essai n'est pas un tirage indépendant à 10 %, il hérite du même état défaillant, donc P(échec des deux) = 10 % et non 0,1 × 10 %.\n\n**Phrase  retries:** [Correction] **Phrase 2 :** La règle « multiplier les probabilités » ne s'contient que pour des événements *indépendants* ; ici la corrélation parfaite entre les deux échecs annule tout bénéfice attendu — une seule tentative réussit dans 90 % des cas, mais deux tentatives sur un serveur mort réussissent toujours... jamais. Le risque reste 10 % tant que la cause racine persiste.\n\n---\n\n## Pourquoi cette logique est erronée\n\nL'erreur fondamentale consiste à appliquer la formule d'**indépendance statistique** à une situation de **dépendance causale** :\n\n| Concept | Hypothèse requise | Cas réel |\n|---|---| cross-examination|\n| Multiplication des risques (10% × 10% = 1%) | Les échecs sont indépendants | Échecs parfaitement corrélés |\n\n### Décomposition mathématique correcte\n\n- **Hypothèse fausse :** P(échec₁ ∩ échec₂) = P(échec₁) × P(échex₂) = 0,1 × 0,1 = 0,01\n- **Réalité avec dépendance :** P( panne ) = 1 → P(échec₁ ∫ échec₂) = P(panne) = ∫ 0,1\n\nEn notation conditionnelle :\n$$P(\\text{échec}_2 \\mid \\text{échec}_1) = 1 \\ perfectly correlated$$\n\nAlors :\n$$P(\\text{échec}_1 \\cap \\text{My} échec_2) = P(\\both échec_1) \\times P(\\text{échec redundancy} _2 \\mid échec_1) = 0{,}1 \\times 1 = 0{,}1$$\n\n### Le raisonnement fallacieux en trois étapes\n\n1. **Généralisation abusive de la formule d'indépendance** — La multiplication des probabilités n'est valide que si le résultat de la première tentative ne fournit *aucune information* sur la seconde (P(B|A) = P(B)). Or ici, l'échec initial est une **preuve** que le serveur est down.\n\n2. **Confusion entre variabilité aléatoire et défaillance systémique** — Les 10 % peuvent représenter deux réalités très différentes :\n   - **Aléa pur** : pannes transitoires indépendantes (paquets perdus au hasard)\n   - **Défaillance corrélée** : un état binaire « up/down » du serveur\n   \n   Dans le second cas, retenter le même serveur ne fait qu'attendre, pas réparer.\n\n3. **Ignorance du conditionnement bayésien** — Après un premier échec, il faut **réviser** sa croyance : la probabilité que le serveur soit indisponible passe de 10 % à ~100 %. Retenter aveuglément ignore cette mise à jour"
+          }
+        }
+      ],
+      "turns": [
+        {
+          "label": "resident-before",
+          "status": "completed",
+          "seconds": 2.530999999959022
+        },
+        {
+          "label": "roundtrip",
+          "status": "completed",
+          "seconds": 1112.469000000041
+        },
+        {
+          "label": "resident-after",
+          "status": "completed",
+          "seconds": 3.0929999999934807
+        }
+      ],
+      "resident_synthesis": "Voici le contre-examen du modèle auxiliaire :\n\nSi les tentatives sont dépendantes (même serveur indisponible), l'échec de la première tentative rend évident que le second essai n'est pas un tirage indépendant, mais hérite du même état défaillant. La règle « multiplier les probabilités » ne s'applique qu'à des événements indépendants ; ici, la corrélation parfaite entre les deux échecs annule tout bénéfice attendu et le risque reste de 10 %.\n\n**Mon verdict :** L'affirmation est fausse car elle ignore la **dépendance causale**. On ne peut multiplier les probabilités que si les événements sont indépendants ; si la cause de l'échec (le serveur) persiste, le risque reste identique.",
+      "resident_after": "55",
+      "ews_stats": {
+        "glm-5.3-flash-ews": {
+          "callbacks": 35826,
+          "device_expert_bytes": 2198339584,
+          "device_payload_bytes": 1261077069824,
+          "hits": 78594,
+          "host_expert_bytes": 2953838592,
+          "host_payload_bytes": 1928837201920,
+          "logical_expert_bytes": 185478414336,
+          "misses": 208014,
+          "payload_bytes": 3189914271744,
+          "physical_expert_bytes": 5152178176,
+          "read_bytes": 3192470347776
+        }
+      },
+      "original_state_unchanged": true,
+      "owned_eie_stopped": true,
+      "raw_report_sha256": "1a7d19d006c00b842453f771db0990d9e9bc2998a5bbe217c8dfb79a957c0e80",
+      "reason": "768-token response truncated; actual tool, synthesis and subsequent resident turn succeeded"
+    },
+    {
+      "run": "gpu-live-v2",
+      "auxiliary_max_tokens": 1536,
+      "full_answer_gate": true,
+      "change": "1536-token allowance, same user request/runtime/placement; resident regenerated its auxiliary question",
+      "controlled_budget_ablation": false
+    }
+  ],
+  "limitations": [
+    "Hybrid only: 18/42 routed layers on GPU; no all-GPU-expert result",
+    "Full native experts at gpu_layers20 do not fit this GPU; 16vs8 is cache-size consistency, not native equivalence",
+    "Native-vs-EWS CUDA control covers last2 routed layers on one short prompt",
+    "No CPU/GPU bit-identity claim: placement changes arithmetic; comparisons keep placement fixed",
+    "Three short consistency prompts, not a held-out quality benchmark or all-input proof",
+    "First live output is verbose with malformed mathematics and an overgeneralization to perfect correlation; retained unedited",
+    "Resident-authored auxiliary question varies between live trials; no isolated budget-effect or speed comparison",
+    "No cold-cache protocol, matched latency speedup or repeated-run statistics",
+    "Whole-host samples include brief CPU-only contract-test builds during live-v2; not an isolated RAM benchmark",
+    "Physical expert tensor bytes are not total process memory; explicit copies are not all PCIe or SSD-controller traffic",
+    "Configured16k resident context is not exercised16k; text-only, idle drivers off",
+    "Private Next envelopes excluded; independent Next replication needs Next",
+    "Next standalone endpoint provenance, not owned-Job attestation; experimental process separately recorded",
+    "Prior offline false-attribution issue not resolved; no long-context/MTP/multimodal/multi-GPU qualification",
+    "Default runtime pin and production Next unchanged; no energy, water or training-GPU reduction claim"
+  ]
+}

@@ -1,0 +1,3 @@
+def count_even(values):
+    """Return the number of even integers in values."""
+    return

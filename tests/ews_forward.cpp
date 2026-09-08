@@ -20,9 +20,11 @@ static bool reference_boundary(ggml_tensor * t, bool ask, void *) {
 }
 int main(int argc, char ** argv) {
     try {
-        check(argc == 6 || argc == 7, "usage: ews-forward MODEL PROMPT OUTPUT_PREFIX SLOTS PREDICT [glm-cpu]");
-        const bool glm = argc == 7 && std::string(argv[6]) == "glm-cpu";
-        check(argc == 6 || glm, "unknown test profile");
+        check(argc >= 6 && argc <= 8, "usage: ews-forward MODEL PROMPT OUTPUT_PREFIX SLOTS PREDICT [gemma-gpu|glm-cpu|glm-gpu] [GPU_LAYERS]");
+        const std::string profile = argc >= 7 ? argv[6] : "gemma-gpu";
+        const bool glm = profile == "glm-cpu" || profile == "glm-gpu";
+        check(glm || profile == "gemma-gpu", "unknown test profile");
+        const int gpu_layers = argc == 8 ? std::stoi(argv[7]) : (glm ? 20 : 99);
         const int slots = std::stoi(argv[4]), predict = std::stoi(argv[5]);
         check(predict > 0 && predict <= 512, "invalid prediction count");
         std::string prefix = argv[3];
@@ -34,13 +36,12 @@ int main(int argc, char ** argv) {
         std::unique_ptr<eie::ExpertStream> stream;
         if (slots) stream = std::make_unique<eie::ExpertStream>(argv[1], slots);
         auto mp = llama_model_default_params();
-        mp.n_gpu_layers = 99; mp.load_mode = LLAMA_LOAD_MODE_NONE;
+        mp.n_gpu_layers = gpu_layers; mp.load_mode = LLAMA_LOAD_MODE_NONE;
         mp.use_extra_bufts = false; mp.ews_n_slots = slots;
         const llama_model_tensor_buft_override cpu_experts[] = {
             {"\\.ffn_.*_exps\\.weight", ggml_backend_cpu_buffer_type()}, {nullptr, nullptr}};
         if (glm) {
-            mp.n_gpu_layers = 20;
-            mp.tensor_buft_overrides = cpu_experts;
+            if (profile == "glm-cpu") mp.tensor_buft_overrides = cpu_experts;
             if (!slots) mp.load_mode = LLAMA_LOAD_MODE_MMAP;
         }
         std::unique_ptr<llama_model, decltype(&llama_model_free)> model(llama_model_load_from_file(argv[1], mp), llama_model_free);
@@ -86,7 +87,7 @@ int main(int argc, char ** argv) {
         }
         const auto end = std::chrono::steady_clock::now();
         json report{{"slots", slots}, {"prompt_tokens", n}, {"generated_token_ids", generated},
-            {"profile", glm ? "glm-cpu" : "gemma-gpu"},
+            {"profile", profile}, {"gpu_layers", gpu_layers}, {"cpu_moe", profile == "glm-cpu"},
             {"vocab", n_vocab}, {"predict", predict}, {"kv", "f16/f16"}, {"router_boundary_both_arms", true},
             {"prefill_seconds", std::chrono::duration<double>(prefilled - start).count()},
             {"decode_seconds_including_logit_write", std::chrono::duration<double>(end - prefilled).count()}};
@@ -95,6 +96,7 @@ int main(int argc, char ** argv) {
             report["ews"] = {{"callbacks", s.callbacks}, {"hits", s.hits}, {"misses", s.misses},
                 {"payload_bytes", s.payload_bytes}, {"read_bytes", s.read_bytes},
                 {"host_payload_bytes", s.host_payload_bytes}, {"device_payload_bytes", s.device_payload_bytes},
+                {"host_expert_bytes", s.host_expert_bytes}, {"device_expert_bytes", s.device_expert_bytes},
                 {"logical_expert_bytes", s.logical_expert_bytes}, {"physical_expert_bytes", s.physical_expert_bytes}};
         }
         std::ofstream out(prefix + ".json"); out << report.dump(2) << '\n';

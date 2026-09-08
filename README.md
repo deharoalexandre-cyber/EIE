@@ -41,7 +41,9 @@ The [September report](docs/benchmarks/ews-consumed-20260905.md) links the evide
 
 The [actual fresh-state Next 12B -> GLM through EIE/EWS -> 12B roundtrip](docs/benchmarks/glm53-ews-next-20260908.md) also passes: a complete 702-token auxiliary answer in 1,090.547 s, resident synthesis, then a separate resident answer. Sampled total GPU use peaks at 12,894 MiB; whole-host RAM is tight. The answer exceeds the requested brevity and contains a corrected formatting error. This is a functional result, not a quality/speed claim; unsuccessful attempts are retained.
 
-**Not validated for EWS:** other MoE architectures, arbitrary long contexts, multi-GPU EWS, Linux/ROCm/macOS/Android EWS performance, fleet reliability, power/water savings, or a 15–20% reduction in training GPUs. GLM's GPU-expert placement is also unqualified; Gemma's GPU results cannot substitute for it.
+**Hybrid GLM GPU placement:** [numerical checks and a real Next roundtrip](docs/benchmarks/glm53-ews-gpu-next-20260908.md) now pass with actual CUDA expert buffers: a native/EWS control on two routed layers, then three cache-size consistency checks with 18 routed layers on GPU and 24 on CPU. This profile uses 2.198 GB of device expert cache plus 2.954 GB of host expert cache. The complete auxiliary answer is 148 tokens in 278.515 s, followed by resident synthesis and a new resident answer. Sampled total GPU peak is 14,995 MiB with 1,054 MiB free. A first 768-token truncated attempt is retained; the successful rerun used a 1,536-token allowance and a slightly different resident-authored question. This is **not** a paired speedup or a proven budget effect.
+
+**Not validated for EWS:** other MoE architectures, arbitrary long contexts, multi-GPU EWS, Linux/ROCm/macOS/Android EWS performance, fleet reliability, power/water savings, or a 15–20% reduction in training GPUs. GLM all-GPU expert placement and full native equivalence at the larger GPU placement remain unqualified.
 
 **Separate native GLM baseline:** a [native llama.cpp run](docs/benchmarks/glm53-native-next-20260908.md) already completed a fresh-state Next 12B -> GLM -> 12B roundtrip on the same laptop. Its 611.812 s auxiliary answer uses CPU expert mmap, **not EWS**. It is a working reference, not evidence that EWS is the only feasible path or a paired speed comparison.
 
@@ -89,7 +91,7 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 | Automatic KV optimization | **Not operational**: no `auto` selector; health latency remains zero |
 | Device-memory telemetry | Runtime port queries device memory; no reserve/budget/eviction enforcement |
 | CUDA EWS | Local Windows/CUDA/Gemma validation, bounded above |
-| GLM EWS | Separate experimental runtime; host expert cache/CPU expert computation, partial CUDA offload; short paired numerical gate and actual fresh-state Next online roundtrip pass |
+| GLM EWS | Separate experimental runtime; host-cache and hybrid GPU-expert profiles have bounded numerical checks and actual fresh-state Next roundtrips; not all-GPU experts or general quality qualification |
 | Other platforms | Build paths or portable code; not qualified by the Windows campaign |
 | Audit logging | Optional FNV-derived prototype, not a cryptographic/verifiable audit ledger |
 | Custom strategy plugins | Interface exists; dynamic library loading planned |

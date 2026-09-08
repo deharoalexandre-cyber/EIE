@@ -205,6 +205,8 @@ void ExpertStream::bind(llama_model * model) {
         check(w.tensor->ne[2] == s.slots && w.tensor->nb[2] == w.slab && w.tensor->type == w.type,
               "EWS: runtime slot layout mismatch");
         s.stats.physical_expert_bytes += ggml_nbytes(w.tensor);
+        if (ggml_backend_buffer_is_host(w.tensor->buffer)) s.stats.host_expert_bytes += ggml_nbytes(w.tensor);
+        else s.stats.device_expert_bytes += ggml_nbytes(w.tensor);
     }
     for (auto & p : s.layers) for (auto & w : p.second.weights) check(w.second.tensor != nullptr, "EWS: unbound weights");
 }

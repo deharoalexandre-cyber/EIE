@@ -20,7 +20,7 @@ CPU/mmap feasibility; it did not establish EWS. Keep those measurements separate
   and otherwise emits an open `<think>` despite that setting. This is chat
   formatting, not an added instruction to the model or a larger token allowance.
 - Native reference and initial candidate both compute routed experts on CPU,
-  with 20 other layers offloaded to CUDA. This isolates streaming from a change
+  with `gpu_layers: 20` for other weights. This isolates streaming from a change
   in CPU/GPU arithmetic. It is not an all-GPU expert acceleration claim.
 
 The model's routed trunk tensors total 185,478,414,336 bytes. An 8-slot cache
@@ -39,6 +39,8 @@ not used as a feasibility threshold. No cold-cache protocol is claimed.
 
 - `payload_bytes`: slab bytes explicitly installed in the expert cache;
 - `host_payload_bytes` / `device_payload_bytes`: destination buffer breakdown;
+- `host_expert_bytes` / `device_expert_bytes`: bound cache tensor allocation,
+  distinguished from the cumulative copy counters above;
 - `read_bytes`: reader bytes including aligned direct-I/O padding on Windows;
 - logical and physical expert tensor bytes, callbacks, hits and misses.
 
@@ -135,8 +137,9 @@ loop, and its prompt is not identical to the resident-authored French question.
 
 1. Repeat the paired numerical test with a longer, frozen multi-domain corpus.
    Separate prefill from decode, and reserve a holdout split before tuning.
-2. Test GPU expert placement separately. The first GLM cache uses host buffers;
-   Gemma's GPU result cannot qualify GLM's expert kernels or VRAM headroom.
+2. Expand the [bounded hybrid GPU placement](benchmarks/glm53-ews-gpu-next-20260908.md).
+   It has a real Next roundtrip, a two-layer native GPU control and three
+   larger-placement cache consistency checks; not all-GPU expert qualification.
 3. Measure cache-hit distributions and bytes per generated token against
    explicit RAM/VRAM budgets before adding prefetch or a second cache tier.
 4. Repeat native/EWS timing under a declared cache protocol. Count complete
@@ -146,3 +149,37 @@ loop, and its prompt is not identical to the resident-authored French question.
 
 No automatic production replacement, new permission layer, or per-chunk
 cryptographic gate is part of this port.
+
+## GPU placement reproduction
+
+The [GPU experiment and live receipt](benchmarks/glm53-ews-gpu-next-20260908.md)
+keep the runtime patch, 8-slot cache and F16 profile. It
+changes `cpu_moe` to `false`, allowing the normal layer placement to put experts
+on CUDA. For this runtime, `gpu_layers: 20` counts output and the unused MTP
+position too: **18 routed layers (27..44) use CUDA; 24 (3..26) use CPU**.
+This is hybrid streaming, not all 42 expert layers on GPU.
+
+With 8 slots, the bound expert tensors contain 2,198,339,584 device bytes and
+2,953,838,592 host bytes. Check those fields and the cumulative device payload
+in `/v1/admin/ews/status`; occupied VRAM alone does not prove GPU expert use.
+
+Run numerical checks without the Next resident first:
+
+```powershell
+# A native GPU reference that fits: routed layers43/44 plus output on CUDA.
+python experiments/ews_target/run_forward.py --model MODEL --out build-ews/new-gpu-native --profile glm-gpu --gpu-layers 4 --slots 8 --predict 8
+# The larger placement: cache-size consistency, NOT a native reference.
+python experiments/ews_target/run_forward.py --model MODEL --out build-ews/new-gpu-smoke --profile glm-gpu --gpu-layers 20 --reference-slots 16 --slots 8 --predict 8
+python experiments/ews_target/run_forward.py --model MODEL --out build-ews/new-gpu-code --profile glm-gpu --gpu-layers 20 --reference-slots 16 --slots 8 --predict 8 --prompt experiments/ews_target/glm53-gpu-code-prompt.txt
+python experiments/ews_target/run_forward.py --model MODEL --out build-ews/new-gpu-fr --profile glm-gpu --gpu-layers 20 --reference-slots 16 --slots 8 --predict 8 --prompt experiments/ews_target/glm53-gpu-fr-prompt.txt
+```
+
+Native full expert tensors at `gpu_layers: 20` do not fit this GPU. Do not call
+the 16-vs-8-slot comparison native equivalence. Both caches can share an error;
+the separate native GPU control covers only two routed layers and one prompt.
+Likewise, CPU and GPU placements may differ numerically; equality is tested
+within each fixed placement, not across them.
+
+The first probe used `gpu_layers: 1`: only output was offloaded, device expert
+payload was zero. It passed numerically but did **not** qualify GPU experts.
+That probe is retained rather than relabeled as a GPU success.

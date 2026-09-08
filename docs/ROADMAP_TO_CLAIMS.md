@@ -101,11 +101,18 @@ subsequent resident turn. It is a short, fresh-state functional result with
 strong RAM pressure, not a clean brevity/quality result or the whole Next
 lifecycle qualification. Keep both earlier failed attempts in the history.
 
-The next placement milestone is **GLM expert computation on GPU**, with actual
-VRAM headroom for the resident and new numerical checks. It is not established
-by host-cache streaming or Gemma's GPU result. Measure whole-process memory and
-I/O, not just the compact expert tensor allocation. Longer contexts and cache
-policy improvements follow the initial functional qualification.
+The [first hybrid GPU placement](benchmarks/glm53-ews-gpu-next-20260908.md) now
+passes: 18 routed expert layers on GPU, 24 on CPU, with actual Next cohabitation.
+The native/EWS GPU control covers two routed layers; three larger-placement
+comparisons establish cache-size consistency, not full native equivalence.
+The complete 148-token live answer follows an earlier truncated attempt, which
+remains visible. No paired speedup or isolated token-budget effect is claimed.
+
+Next, measure whether more expert computation can move to GPU while retaining
+resident headroom, using explicit placement budgets and new numerical controls.
+All 42 expert layers on GPU are not yet qualified. Reduce repeated slab reads
+with a measured cache policy before promising usable long-context latency.
+Measure whole-process/whole-host memory and I/O, not just expert tensors.
 
 After initial functional bring-up, the fuller measurement campaign can:
 

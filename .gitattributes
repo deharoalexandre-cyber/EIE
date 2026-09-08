@@ -1,0 +1,2 @@
+# Fixed benchmark prompt bytes across Windows/Linux checkouts.
+experiments/ews_target/glm53*-prompt.txt text eol=lf

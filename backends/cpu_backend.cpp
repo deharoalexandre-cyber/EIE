@@ -462,6 +462,7 @@ public:
         return {{"callbacks", s.callbacks}, {"hits", s.hits}, {"misses", s.misses},
             {"payload_bytes", s.payload_bytes}, {"read_bytes", s.read_bytes},
             {"host_payload_bytes", s.host_payload_bytes}, {"device_payload_bytes", s.device_payload_bytes},
+            {"host_expert_bytes", s.host_expert_bytes}, {"device_expert_bytes", s.device_expert_bytes},
             {"logical_expert_bytes", s.logical_expert_bytes}, {"physical_expert_bytes", s.physical_expert_bytes}};
     }
 
