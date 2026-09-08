@@ -44,12 +44,31 @@ Its predetermined prompt count is a serializer check, not tokenizer evidence.
 - Health and the loaded-model gauge come from the model registry, not prior
   request activity. This is not a successful inference-readiness probe.
 
-The separate real-model gate must still compare streamed/nonstreamed output,
-tokenizer counts, stopped-request KV recovery and resident/auxiliary coexistence
-before a candidate is qualified for deployment.
+Run the separate real-model gate for a new build; an offline pass alone does not
+qualify inference. The [8 September receipt](../../docs/benchmarks/serving-functional-20260908.md)
+records executed 12B and streamed 26B passes, plus the distinct failed Next
+offline-attribution scenario. Do not convert a native serving pass into a claim
+that an agent always calls or correctly attributes its tools.
 
 Build with `-DEIE_BUILD_SERVING_TESTS=ON` in an initialized/patched full checkout.
 `serving-model-contract MODEL_GGUF EWS_SLOTS` exercises the actual backend and
 tokenizer: use 0 for normal loading or 16 for the known Gemma EWS profile.
 It loads a model and can use the GPU; run only in the dedicated test window.
 The offline CTest does not launch this executable automatically.
+
+## Real HTTP, real models (Windows/CUDA profile)
+
+After building the full initialized/patched checkout:
+
+```powershell
+python tests/serving/real_http_contract.py --eie C:/path/to/EIE --out C:/path/to/new-test-output --model C:/models/gemma-4-12B-it-QAT-Q4_0.gguf --embedder C:/models/nomic-embed-text-v2-moe.Q6_K.gguf
+```
+
+This opt-in test loads both models with F16 KV, 512 context tokens, and disabled
+CUDA graphs. It starts `build-ews/Release/eie-server.exe`, puts its freshly built
+`build-ews/bin/Release` libraries on PATH, uses a temporary localhost port, and
+stops only that process. The output directory must not already exist.
+Assertions cover chat/SSE/stop parity, usage, two finite nonzero 768-dimensional
+embeddings, catalog/health/metrics, HTTP 404/400 and next-request recovery.
+The dimensions and short prompt are specific to this known-model profile;
+this is not a generic all-model quality test. It does not run production Next.

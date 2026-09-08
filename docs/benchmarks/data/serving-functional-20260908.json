@@ -1,0 +1,52 @@
+{
+  "schema": "eie.serving-validation/v1",
+  "date": "2026-09-08",
+  "provenance": "maintainer-side local execution; not independent replication",
+  "server_source": "d1599a336463b551537a0c49b73fe153d4f7051c",
+  "runtime_base": "2168b0cd8b87c75c29a1e6588692ebbb805b9bd2",
+  "runtime_patch": "patches/ews-runtime-2168b0.patch",
+  "profile": "Windows 11, MSVC 19.44, CUDA 13.2.78, RTX 4090 Laptop, F16 KV, CUDA graphs disabled",
+  "sha256": {
+    "eie-server.exe": "d0cfc0a01da5171b534b777ccd220ac0085bc936086fc7f9fd1f6de5a1350248",
+    "serving-model-contract.exe": "234dd0aa6e4213664a7f1b7927bcb951084e5731b327741109debc56e914a485",
+    "llama.dll": "7a9bf447c8ddefd4de65d67e111a6fff67b1166f282f46373f67a4604fc5f6a4",
+    "ggml-cuda.dll": "5e1dba582ab33ecfee0e80dfecaf97234d5bd4e24528ea3017207053fca887bd",
+    "gemma-4-12B-it-QAT-Q4_0.gguf": "f568ac5de71c8fcac5d5794494388ad94db9e18b4368ca897e21b30d2448eeec",
+    "google_gemma-4-26B-A4B-it-Q4_0.gguf": "3eca3b8f6d7baf218a7dd6bba5fb59a56ee25fe2d567b6f5f589b4f697eca51d",
+    "nomic-embed-text-v2-moe.Q6_K.gguf": "e74dafe6932fc7ae53f98061401f5cae136203a6b09fa940a2f1eb0ab5804ed8",
+    "real_http_contract.py_lf": "eaaeb3099d19221419a2825d81e79a1ad856cafa6a54f37761c755a0e118e617"
+  },
+  "offline": {"assertions": 628, "ctest_passed": true, "fake_http_scenarios": 12, "fake_http_concurrent_requests": 60},
+  "clean_build_passed": true,
+  "native_model_gates": [
+    {"model": "12B", "pass": true, "context_tokens": 512, "slots": 0, "prompt_tokens": 22, "completion_tokens": 10, "reused_tokens": 21, "whole_gate_seconds": 6.422},
+    {"model": "26B", "pass": true, "context_tokens": 512, "slots": 16, "prompt_tokens": 22, "completion_tokens": 11, "reused_tokens": 21, "whole_gate_seconds": 30.843,
+      "whole_gate_ews": {"callbacks": 5520, "hits": 25821, "misses": 18339, "payload_bytes": 61351437312, "read_bytes": 61501792256, "logical_expert_bytes": 12846366720, "physical_expert_bytes": 1605795840}}
+  ],
+  "real_http": {"initial_pass": false, "initial_failure": "nonstream context overflow returned HTTP 500 instead of 400", "after_fix_pass": true, "public_runner_pass": true, "embedding_dimensions": [768, 768], "loaded_models_before_and_after": 2},
+  "next_copied_state": {
+    "overall_pass": false,
+    "real_deep_contribution": true,
+    "offline_tool_observed": false,
+    "failure": "Resident attributed offline followup to the stopped 26B without a tool call; 24 tools remained exposed",
+    "all_turns_completed": true,
+    "resident_alive": true,
+    "final_arithmetic_answer": "42",
+    "original_state_unchanged": true,
+    "production_state_modified": false,
+    "configured_resident_context": 16384,
+    "configured_auxiliary_context": 4096,
+    "auxiliary_completion_tokens": 172,
+    "whole_gate_ews_payload_bytes": 85598954496,
+    "scope": "Actual Next source with existing local changes, not a pristine public client checkout; raw copied state and prompts remain private"
+  },
+  "local_raw_report_sha256": {
+    "12b-clean/report.json": "d6505f57d57ed510bad792d971bd2f83811f5079f8b028aefb0cbaf52f55a962",
+    "26b-clean/report.json": "55bd7a800761378bad255a2dac30cf069f47d8ab445d569440f7249a4a746875",
+    "http-clean/report.json": "32a2bb66f0b13e7f483ad528db19e7263f4d1cc5a9d09798bab3cf51c3589720",
+    "http-clean-v2/report.json": "f0ac72c3748b156bf78d93b43f60a4ed2140e31ea0e7748a35d6fbfeeaed31f8",
+    "http-public-runner/report.json": "c2c1ae571510bfdb1fa8e1ff68fbe8f3078c9efbd5af79342ddbbfdb58ad343a",
+    "next-roundtrip-v1/report.private.json": "9ec52f14b815b8d87c43059a0970d09aed924fe5f8a74db9fee3eb75b60b583a"
+  },
+  "limits": ["whole-test durations are not decode speeds", "hashes identify retained local evidence, not public raw-log availability", "no GLM qualification", "no full Next recovery/attribution qualification", "no all-model, all-context, platform or fleet guarantee"]
+}

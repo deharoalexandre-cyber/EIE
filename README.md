@@ -16,8 +16,7 @@ The newer EWS path has **locally verified consumed-weight and Next-coexistence r
 - [Claim-by-claim audit](docs/CLAIMS_AUDIT.md): code, evidence, qualifications.
 - [Remaining work and acceptance criteria](docs/ROADMAP_TO_CLAIMS.md): what must still be built or measured.
 - [Verification receipt](docs/benchmarks/claims-verification-20260907.md): checks actually performed, without another GPU campaign.
-- [Serving candidate receipt](docs/benchmarks/serving-functional-20260908.md): stop/stream, usage and metrics fixes; offline tests pass, new real-model qualification pending.
-- [Serving candidate receipt](docs/benchmarks/serving-functional-20260908.md): stop/stream, usage and metrics fixes; offline tests pass, new real-model qualification pending.
+- [Serving validation receipt](docs/benchmarks/serving-functional-20260908.md): clean build, real 12B/26B and chat/embedding checks pass. A real Next round-trip succeeds; its subsequent offline-tool scenario fails because the resident invents an auxiliary attribution without calling the tool. The full Next gate is **not** green.
 
 **Labels:** *implemented* means the code path exists; *locally verified* names a bounded executed test; *maintainer-reported* lacks a complete inspected raw evidence bundle; *planned/not validated* is not a product guarantee. Historical reports retain their original results with explicit scope corrections.
 
@@ -174,9 +173,9 @@ curl http://localhost:8090/v1/chat/completions \
 
 Text messages use the GGUF's native chat template when available, with a generic fallback. EIE does not add an identity/persona; it disables the optional thinking channel in template rendering. Raw `prompt` passthrough is available when messages are not supplied.
 
-**Compatibility limits:** native tool-call schemas/results, structured outputs, multimodal message arrays, seed handling and every SDK option are not implemented here. Unknown fields may be ignored. The serving candidate now reports retained tokenized prompt length, sampled completion tokens and reused-prefix tokens in both modes. [Accounting semantics and qualification limits](tests/serving/README.md): serializer tests pass; the new real-tokenizer gate is compiled but not yet executed.
+**Compatibility limits:** native tool-call schemas/results, structured outputs, multimodal message arrays, seed handling and every SDK option are not implemented here. Unknown fields may be ignored. Serving now reports retained tokenized prompt length, sampled completion tokens and reused-prefix tokens in both modes. [Accounting semantics and qualification limits](tests/serving/README.md): serializer tests and the real-tokenizer gate pass on the identified 12B and streamed 26B profiles.
 
-SSE and `one_shot` have earlier local regression evidence. The new candidate uses the same incremental stop/UTF-8 path for streamed and buffered generation: it no longer suppresses all callbacks when a stop is supplied. Offline and real-route/fake-model tests pass; the new real-model and Next-envelope gates remain pending. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error. `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
+SSE and `one_shot` use the same incremental stop/UTF-8 path for streamed and buffered generation: supplying a stop no longer suppresses all callbacks. Offline, real-route/fake-model, native real-model and real HTTP chat/embedding tests pass in the recorded Windows/CUDA profiles. Next's actual 12B -> 26B -> 12B exchange succeeds, but a subsequent false auxiliary attribution prevents full client-level qualification. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error (HTTP 400 with `context_length_exceeded` in nonstream mode). `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
 
 | Endpoint | Method | Status |
 |---|---|---|

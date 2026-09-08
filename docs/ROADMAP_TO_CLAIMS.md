@@ -20,22 +20,27 @@ These are not future milestones. [Evidence and exact scope](benchmarks/ews-consu
 
 ## First: eliminate practical serving surprises
 
-The [8 September candidate](benchmarks/serving-functional-20260908.md) implements
+The [8 September serving lot](benchmarks/serving-functional-20260908.md) implements
 incremental stop/UTF-8 output, usage counters, loaded-model counts and synchronized
 metrics. It also fixes stopped-token KV bookkeeping and exception-result
-construction. Offline tests pass; real-model and clean-clone inference gates
-are still pending. These are candidate fixes, not completed deployment claims.
+construction. Offline tests, a clean runtime build, real 12B/26B native gates and
+real HTTP chat/embedding checks pass. The actual Next auxiliary contribution
+and resident continuation also succeed, but **the full Next gate fails**: in
+the offline-followup scenario, the resident attributes an answer to the stopped
+26B without calling it. Preserve that failure; repair/test source attribution
+at the client separately from EIE's successful serving checks.
 
 | Deliverable | Why | Acceptance test |
 |---|---|---|
-| Clean distribution build | EWS patch and runtime libraries are mandatory dependencies | From a clean clone, apply pinned patch, build normal + EWS targets, load a known model, send chat/embedding requests; archive versions and hashes. Package Docker only after the same test passes inside it |
-| Complete streaming contract | Candidate fixes callback suppression; real-model output/recovery gate still pending | Same prompt streamed/unstreamed, stops spanning token pieces, normal end/length/error/disconnect; same visible result and intelligible recovery |
+| Clean distribution build | Windows/CUDA source build and real inference passed; packaging is still platform-specific | Retain the recorded build/model hashes and dependency workaround; package Docker only after the same chat/embedding test passes inside it |
+| Complete streaming contract | Real 12B/26B output/recovery gates passed on the recorded profile | Broaden prompts and clients: streamed/unstreamed, stops spanning token pieces, normal end/length/error/disconnect; same visible result and intelligible recovery |
 | Correct context/cache lifecycle | Overflow options exist; adaptive context recreation and prefix reuse need lifecycle coverage | Fresh, repeated-prefix, changed-prefix, one-shot, overflow, interrupted prefill/decode and next-request recovery; compare against fresh-context references |
-| Honest counters and readiness | Candidate fixes counts; tokenizer gate and inference readiness remain distinct | Prompt tokenizer agrees with usage; loaded registry agrees with health; optional readiness probe exercises inference; metrics withstand concurrent reads/writes |
+| Honest counters and readiness | Real-tokenizer and loaded-registry checks passed; inference readiness remains distinct | Expand model/load coverage; any future readiness probe must exercise inference rather than rename process health |
 | Multi-client regression | A model mutex is not complete API concurrency protection | Concurrent chat, embeddings, health and stats; no races, stale aliases, deadlocks or lost errors. Keep normal authorized requests working |
 
-No GPU run was made for this audit; execute the inference parts in a dedicated
-test window rather than disturbing a live Next session.
+The 8 September GPU checks used a dedicated window after the owner stopped
+production Next. Test processes were stopped and the original state digest was
+unchanged. They do not qualify all of Next's cognition or source attribution.
 
 ## Then: make advertised group behavior real, or remove the option
 

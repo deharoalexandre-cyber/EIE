@@ -3,9 +3,10 @@
 ## Scope and status
 
 Requested by Alexandre De Haro; performed with Codex through source inspection,
-offline diagnostic probes and re-verification of existing local evidence.
-This is a maintainer-side audit, **not independent replication, certification,
-or a new GPU campaign**.
+offline diagnostic probes and re-verification of existing local evidence on
+7 September, followed by new clean-build and real-model serving tests on
+8 September. This is a maintainer-side audit, **not independent replication
+or certification**.
 
 The initial public revision was `07b1500e6b5f68b5fb12a3118aff832d217bbfc6`.
 It lagged the locally tested EWS work based on `67a779d`. This publication
@@ -51,16 +52,17 @@ can borrow the other's performance, integrity or memory claims.
 | Published feature / implication | Current evidence and exact limitation |
 |---|---|
 | One or several LLMs | Single-model operation is valid. Multiple models are optional. The server owns loaded aliases, chat and embedding backends; agentic orchestration belongs to clients |
-| OpenAI compatibility | Text chat and embeddings use a subset of the format. Native tools/tool-call parsing, structured outputs, multimodal message arrays and request seed are absent; new usage fields have bounded offline evidence, not full SDK parity |
-| Streaming | Shared incremental stop/UTF-8 path implemented in streamed and buffered generation. Offline and real-route/fake-model tests pass; new real-model qualification pending |
-| Context / usage | Long prompts truncate by default; `truncate_prompt: false` rejects overflow. Candidate counts retained tokenized prompt, sampled tokens (including terminal EOG/stop) and reused prefix; real-tokenizer gate pending |
+| OpenAI compatibility | Text chat and embeddings use a subset of the format. Native tools/tool-call parsing, structured outputs, multimodal message arrays and request seed are absent; usage now has bounded real-model evidence, not full SDK parity |
+| Streaming | Shared incremental stop/UTF-8 path passes offline, real-route/fake-model, real 12B/26B native gates and real 12B HTTP checks on the clean build |
+| Context / usage | Long prompts truncate by default; `truncate_prompt: false` rejects overflow. Retained tokenized prompt, sampled tokens (including terminal EOG/stop) and reused prefix pass the real-tokenizer gate. Nonstream overflow now returns HTTP 400 / `context_length_exceeded`, with next-request recovery tested |
+| Next auxiliary attribution | Actual 12B -> 26B -> 12B contribution and later resident continuation succeed. **Full gate fails:** after stopping 26B, resident attributes an answer to it without an observed tool call. Do not claim reliable offline-tool recovery or universal source attribution |
 | Groups | Parallel, sequential and longest-successful-response fan-out implemented. This is not quality-based voting, continuous batching or proven throughput scaling |
 | `retry_once` / `replace_with` | **Incomplete.** One failure leads to a partial outcome or failure; there is no second call or replacement invocation |
 | Group KV overrides | **Incomplete.** Parser does not read them; nonempty struct defaults can mask global cache/context settings |
 | Pinned / multi-group isolation | **Not enforced as a memory guarantee.** Boot loading and response-quorum decisions exist; `multi-group` aliases pinned-group |
 | Generic FIFO, on-demand loading, LRU eviction | **Not established.** Model mutexes serialize inference, not FIFO admission. Discovery is boot-time; no integrated dynamic eviction path |
 | Latency limits | Group latency target is not a timeout; health latency remains zero |
-| Health / metrics | Process response/uptime and loaded-registry count, not inference readiness. Candidate metric maps are synchronized. Deep health and config reload remain stubs |
+| Health / metrics | Process response/uptime and loaded-registry count, not inference readiness. Metric maps are synchronized; two loaded chat/embedding models are counted before and after requests in the real HTTP gate. Deep health and config reload remain stubs |
 | Concurrency | Per-model inference mutex exists. Synchronized metric maps pass concurrent writes/reads and 60 fake-backend HTTP requests pass; real chat/embedding load and cross-endpoint state remain unqualified |
 
 Implementation sources:
@@ -130,6 +132,8 @@ The standalone Android wrapper is not a complete APK.
 
 The published EWS wrapper requires the supplied patch at the pinned submodule
 revision, including for ordinary non-EWS inference builds. Docker recipes do
-not yet apply it and may omit runtime libraries. A clean clone-to-inference
-packaging test is a remaining deliverable. A no-submodule placeholder build
-is never counted as a working inference deployment.
+not yet apply it and may omit runtime libraries. A clean Windows/CUDA build
+and chat/embedding inference passed on 8 September; the initial Git helper
+failure and native-Git dependency workaround are retained in that receipt.
+Docker and other platform packaging tests remain outstanding. A no-submodule
+placeholder build is never counted as a working inference deployment.
