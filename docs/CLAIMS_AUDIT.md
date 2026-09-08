@@ -115,9 +115,12 @@ every old design aspiration is neither necessary nor implicitly authorized.
 - **Mobile:** numbers are author-reported, without an app bundle, full build/model
   hashes and raw runs. Quantizations differ. NPU/CPU/GPU causal rankings cannot
   be inferred from the table alone.
-- **Large MoE / energy:** no GLM 320B inference qualification, no data-center
-  GPU-count reduction, no measured power/water savings, and no training-efficiency
-  result. These remain research hypotheses.
+- **Large MoE:** the [8 September native GLM receipt](benchmarks/glm53-native-next-20260908.md)
+  establishes bounded loading, generation and a real fresh-state Next roundtrip
+  on the laptop. It uses a separately built native runtime with CPU expert mmap,
+  not EIE/EWS. GLM expert streaming, long contexts and broader quality remain unqualified.
+- **Energy / training:** no data-center GPU-count reduction, measured power/water
+  savings or training-efficiency result. These remain research hypotheses.
 
 The README withdraws unpaired "30% less VRAM", "2x faster", universal competitor
 rankings, six-model sizing guarantees and unsupported deployment promises.

@@ -37,7 +37,9 @@ The [September report](docs/benchmarks/ews-consumed-20260905.md) links the evide
 
 **Do not combine different experiments.** The [August C+ archive](docs/benchmarks/ews-gemma4-a4b-rtx4090-laptop.md) reported 6.55–11.10 tok/s with real I/O inserted during decode, but its FFN still consumed resident weights. Those timings exclude prefill/loading and do not prove consumed streaming or physical VRAM savings. Its hotset/SLRU and first-read SHA scheme are **not** the policy of the September runtime, which uses an LRU-style slot cache without per-chunk SHA verification.
 
-**Not validated:** GLM 320B or other MoE architectures, arbitrary long contexts, multi-GPU EWS, Linux/ROCm/macOS/Android EWS performance, fleet reliability, power/water savings, or a 15–20% reduction in training GPUs. These are research or qualification targets, not consequences of the Gemma pilot.
+**Not validated for EWS:** GLM 320B or other MoE architectures, arbitrary long contexts, multi-GPU EWS, Linux/ROCm/macOS/Android EWS performance, fleet reliability, power/water savings, or a 15–20% reduction in training GPUs. These are research or qualification targets, not consequences of the Gemma pilot.
+
+**Separate GLM feasibility milestone, 8 September:** a [native llama.cpp baseline](docs/benchmarks/glm53-native-next-20260908.md) runs GLM 5.3 Flash UD-Q4_K_XL on the 32 GiB-class / RTX 4090 Laptop machine, with a real fresh-state Next 12B -> GLM -> 12B roundtrip. The complete auxiliary answer took 611.812 s, with no speed threshold. This uses CPU expert mmap and partial GPU offload, **not EIE/EWS**; the GLM EWS port remains to be done.
 
 ## Desktop performance — historical field measurements
 

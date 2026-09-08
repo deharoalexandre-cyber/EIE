@@ -78,18 +78,23 @@ separate capabilities; one should not be inferred from another.
 
 ## GLM and resource-efficiency research
 
-GLM 320B remains a separate feasibility campaign, not an advertised supported
-model. The first requested milestone is **functional, not fast**: on a fresh
-copy of Next, retain the resident 12B, replace only the auxiliary role with GLM,
-obtain a usable answer and return to the 12B. Record latency without a speed
-pass/fail threshold. Preserve the 26B baseline and original Next state.
+GLM 320B remains a separate feasibility campaign, not an advertised EIE-supported
+model. The first **functional, not fast** milestone passed on 8 September using
+a separate native runtime: actual fresh-state Next 12B -> GLM tool call -> 12B
+continuation, with a complete 188-token auxiliary answer. See the
+[native receipt and retained truncated first run](benchmarks/glm53-native-next-20260908.md).
+Latency has no speed pass/fail threshold. The 26B baseline and production Next
+state remain unchanged. This is a CPU-expert mmap baseline, not a GLM EWS result.
 
 The current EWS runtime is Gemma-specific (30 layers, 128 experts, fused gate/up,
 single GGUF reader), and its pinned llama.cpp lacks GLM-5-Next. The GLM GGUF
 publisher points to [a dedicated runtime port](https://github.com/ggml-org/llama.cpp/pull/27754).
-Model download alone does not implement that port or GLM expert streaming.
-Check artifact size, shards, free storage and architecture compatibility before
-download; adapt the runtime on the experimental checkout, not production.
+The artifact is now downloaded and rehashed; that native port is built and tested.
+Next is the actual EWS port: split-file addressing, separate gate/up/down tensors,
+42 routed trunk layers, 288 experts, physical slots with unchanged logical router
+IDs, and an explicit CPU/GPU placement that coexists with the resident. Compare
+its outputs and resource use to the measured native baseline, not a hypothetical
+alternative. Do not change production while qualifying the experimental runtime.
 
 After initial functional bring-up, the fuller measurement campaign can:
 

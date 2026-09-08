@@ -1,0 +1,411 @@
+{
+  "schema": "elyne.glm-native-feasibility/v1",
+  "date": "2026-09-08",
+  "scope": "Native llama.cpp baseline + real virgin Next roundtrip, NOT EIE/EWS",
+  "native_source_revision": "b9b8207fcfc2962093b9466df7af4ff29c2a81ef",
+  "model_revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+  "model_files": [
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00001-of-00006.gguf",
+      "bytes": 9429859,
+      "sha256": "00dceaf3ed08781b1e44513a44ebb19e96248d01ba2a80b17f675a2b6fa9a1ee"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00002-of-00006.gguf",
+      "bytes": 49198039200,
+      "sha256": "d3ecb6ff3957a99878f9a0352676a0913748a431a9a4a1b1ffa5ade9b8947a74"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00003-of-00006.gguf",
+      "bytes": 49988626304,
+      "sha256": "328073c004e7c5395b208247feed26089db247b94dd8fa4ab0f2569d86c1d770"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00004-of-00006.gguf",
+      "bytes": 48700701344,
+      "sha256": "6803ab7effa6da4a0b02c9c7865952fdd6c5b2e10e53903348da369e90bd13f9"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00006-of-00006.gguf",
+      "bytes": 2784497888,
+      "sha256": "c6ba510fafc1e12cc0addbc361a329c0c592ab96980098e7e25e107d8faa983e"
+    },
+    {
+      "name": "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00005-of-00006.gguf",
+      "bytes": 49026026752,
+      "sha256": "852f3df9dacde3d196796f9fe738468e80c8701555ff0a8c30bc010fb8974dd8"
+    }
+  ],
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4090 Laptop GPU",
+    "physical_ram_bytes": 34070192128,
+    "cpu": "Intel Core i9-14900HX",
+    "driver": "595.79",
+    "cuda_build": "13.2.78"
+  },
+  "build": {
+    "configuration": "Release",
+    "cuda_architecture": "89",
+    "native_cpu": false,
+    "shared_libraries": true,
+    "compiler": "MSVC 19.44"
+  },
+  "native_args_after_model": [
+    "--alias",
+    "glm-5.3-flash-native",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18280",
+    "--load-mode",
+    "mmap",
+    "--no-repack",
+    "--fit",
+    "off",
+    "--no-warmup",
+    "--flash-attn",
+    "off",
+    "-ngl",
+    "20",
+    "--cpu-moe",
+    "-c",
+    "2048",
+    "-b",
+    "32",
+    "-ub",
+    "1",
+    "-np",
+    "1",
+    "-t",
+    "8",
+    "-tb",
+    "8",
+    "--metrics",
+    "--jinja",
+    "--reasoning-budget",
+    "0"
+  ],
+  "environment": {
+    "NVIDIA_TF32_OVERRIDE": "0"
+  },
+  "runtime_files": {
+    "ggml-base.dll": "79c43253ffe06c14ca66d2fd87d7df284fdf5ad164fa6b4aa833356275aa4fc6",
+    "ggml-cpu.dll": "c9813144da75ebe418d8cb936dfbf9e401d37613bbe189f2e7ab5c4183a06f9e",
+    "ggml-cuda.dll": "bd45aec88f1cd97e2c1e114ace83dc8aba1d8925593bb31b97cd8b1d2a12b4fe",
+    "ggml.dll": "e3be831fd6db5e4c4c8d04be5e43a416c2ed8553613f1d47b774eaf65a56179b",
+    "llama-cli-impl.dll": "5cb8c701394302b987d8141a0722cde6dafbe5ee38298a4ac2a6543fb3698c0a",
+    "llama-cli.exe": "a69c4916bdda5c9a574af59c5ea3a223c35b13ffda6076c09c29f9a471861375",
+    "llama-common.dll": "68e3d74ba478ee720bc856798af3e2df96bac050b6169b522f7c4ca493e97b34",
+    "llama-server-impl.dll": "b1e90d81ad0ff37b68e707db5ebdca7bb201532e9d974b11ee6adaa86b1659a5",
+    "llama-server.exe": "fc272b7e47297b3e47520b7501ae97c235d5cd8c2ce49f1b7fb8261d920f1378",
+    "llama.dll": "e66fda89279fff2b3ec120a3882f5405187c6b43675877714e10d55a5bbcbfab",
+    "mtmd.dll": "949c3d7d9432bebc71ff2575673baa43f7ca24159c5c0cb343b34a5e1c90d0a3"
+  },
+  "native_probe": {
+    "request": {
+      "model": "glm-5.3-flash-native",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Combien font 17 + 25 ? Reponds uniquement avec le nombre."
+        }
+      ],
+      "temperature": 0,
+      "seed": 0,
+      "max_tokens": 16,
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    },
+    "content": "42",
+    "first_content_seconds": 65.875,
+    "http_seconds": 68.10900000005495,
+    "events": [
+      {
+        "choices": [
+          {
+            "finish_reason": null,
+            "index": 0,
+            "delta": {
+              "role": "assistant",
+              "content": null
+            }
+          }
+        ],
+        "created": 1788869476,
+        "id": "chatcmpl-xQ4oxibzIyS584MC9Ob3XmT12xDTk4W4",
+        "model": "glm-5.3-flash-native",
+        "system_fingerprint": "b1-b9b8207",
+        "object": "chat.completion.chunk"
+      },
+      {
+        "choices": [
+          {
+            "finish_reason": null,
+            "index": 0,
+            "delta": {
+              "content": "42"
+            }
+          }
+        ],
+        "created": 1788869477,
+        "id": "chatcmpl-xQ4oxibzIyS584MC9Ob3XmT12xDTk4W4",
+        "model": "glm-5.3-flash-native",
+        "system_fingerprint": "b1-b9b8207",
+        "object": "chat.completion.chunk"
+      },
+      {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "delta": {}
+          }
+        ],
+        "created": 1788869480,
+        "id": "chatcmpl-xQ4oxibzIyS584MC9Ob3XmT12xDTk4W4",
+        "model": "glm-5.3-flash-native",
+        "system_fingerprint": "b1-b9b8207",
+        "object": "chat.completion.chunk"
+      },
+      {
+        "choices": [],
+        "created": 1788869480,
+        "id": "chatcmpl-xQ4oxibzIyS584MC9Ob3XmT12xDTk4W4",
+        "model": "glm-5.3-flash-native",
+        "system_fingerprint": "b1-b9b8207",
+        "object": "chat.completion.chunk",
+        "usage": {
+          "completion_tokens": 3,
+          "prompt_tokens": 29,
+          "total_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 29,
+          "prompt_ms": 64537.631,
+          "prompt_per_token_ms": 2225.435551724138,
+          "prompt_per_second": 0.44935024032722864,
+          "predicted_n": 3,
+          "predicted_ms": 3544.486,
+          "predicted_per_token_ms": 1772.243,
+          "predicted_per_second": 0.5642567074605458
+        }
+      }
+    ],
+    "raw_report_sha256": "3c370f9fda0efa66b88504fd0f6a74a0d3f01dfecff149fb9effc8ee8fdae26b"
+  },
+  "next_runs": [
+    {
+      "run": 1,
+      "auxiliary_max_tokens": 128,
+      "auxiliary_timeout_seconds": 86400,
+      "original_state_unchanged": true,
+      "gate": {
+        "actual_glm_call_completed": true,
+        "all_turns_completed": true,
+        "resident_alive": true
+      },
+      "turns": [
+        {
+          "label": "resident-before",
+          "status": "completed",
+          "seconds": 2.594000000040978
+        },
+        {
+          "label": "roundtrip",
+          "status": "completed",
+          "seconds": 456.030999999959
+        },
+        {
+          "label": "resident-after",
+          "status": "completed",
+          "seconds": 4.469000000040978
+        }
+      ],
+      "resident_calls": [
+        {
+          "seconds": 2.484000000054948,
+          "completion_tokens": 3,
+          "exposed_tools": 23,
+          "tool_calls": []
+        },
+        {
+          "seconds": 4.467999999993481,
+          "completion_tokens": 73,
+          "exposed_tools": 23,
+          "tool_calls": [
+            "request_deep_analysis"
+          ]
+        },
+        {
+          "seconds": 4.85999999998603,
+          "completion_tokens": 154,
+          "exposed_tools": 23,
+          "tool_calls": []
+        },
+        {
+          "seconds": 4.25,
+          "completion_tokens": 3,
+          "exposed_tools": 23,
+          "tool_calls": []
+        }
+      ],
+      "source_hashes": {
+        "glm53_next_roundtrip_20260908.py": "4afa8cd81658840a70054898f65206839ae0d43ca97127ad88c2ec684573e0b8",
+        "elyne\\tools\\deep_analysis.py": "a4a033c12c036e33e38349a586b2d4b6dca3b74ddb75964c7eaaf2b2aafb65e5",
+        "elyne\\runtime\\session.py": "742c1caba1bedae143af551aa0a3dc99ba7eebedc074ad5c432d5371d49ca875",
+        "elyne\\runtime\\streaming_chat.py": "6f9cc4714cb94e1ca6c9d4a04ca0f558810786541277ffdaee64e6a9e799d2ea",
+        "elyne\\cognition\\turn_core.py": "a919dfc33b779d3af93d972f4cc59d5798465bb295c60c407d77b77e108aab5a"
+      },
+      "actual_deep_calls": [
+        {
+          "call_id": "turn-glm-native-10e22c22e48b4f7a8513e1ace4bcf749.tool-1",
+          "arguments": {
+            "question": "Fais un contre-examen en deux phrases de l'affirmation suivante : \"si une opération échoue dans 10 % des cas, la retenter une fois ramène toujours le risque à 1 %, même quand les deux tentatives dépendent du même serveur indisponible.\""
+          },
+          "started_unix": 1788869627.6156375,
+          "seconds": 446.51599999994505,
+          "result_type": "ToolCompleted",
+          "reason_code": null,
+          "result": {
+            "binary_sha256": null,
+            "completion_tokens": 128,
+            "config_sha256": null,
+            "finish_reason": "length",
+            "identity_basis": "external-unverified",
+            "incomplete": true,
+            "model": "glm-5.3-flash-native",
+            "model_sha256": null,
+            "owned": false,
+            "pid": null,
+            "text": "Voici le contre-examen en deux phrases :\n\nL'affirmation repose sur l'hypothèse implicite d'**indépendance** des échecs, or si les deux tentatives dépendent du même serveur, un échec initial révèle une probabilité de défaillance élevée (probablement proche de 100 % si le serveur est indisponible), ce qui rend la seconde tentative presque aussi vouée à l'échec que la première. Le vrai risque résiduel après une seule relance est donc bien supérieur à 1 % — il tend vers 10 % ("
+          }
+        }
+      ],
+      "initial_memory_head": {
+        "kind": "empty"
+      },
+      "resident_before": "13",
+      "resident_synthesis": "Voici le contre-examen du modèle auxiliaire :\n\nL'affirmation repose sur l'hypothèse implicite d'indépendance des échecs, or si les deux tentatives dépendent du même serveur, un échec initial révèle une probabilité de défaillance élevée (probablement proche de 100 % si le serveur est indisponible), ce qui rend la seconde tentative presque aussi vouée à l'échec que la première. Le vrai risque résiduel après une seule relance est donc bien supérieur à 1 % — il tend vers 10 %.\n\n**Mon verdict :** L'affirmation est fausse ; sans indépendance des événements, le risque ne diminue pas de manière multiplicative.",
+      "resident_after": "55",
+      "max_sampled_gpu_mib": 12813,
+      "raw_report_sha256": "b0a92d0d5a47ab1e26c1474815c5b3af57c6d68155e03e2b5a29813ce8fb8987"
+    },
+    {
+      "run": 2,
+      "auxiliary_max_tokens": 768,
+      "auxiliary_timeout_seconds": 86400,
+      "original_state_unchanged": true,
+      "gate": {
+        "actual_glm_call_completed": true,
+        "glm_response_complete": true,
+        "all_turns_completed": true,
+        "resident_alive": true
+      },
+      "turns": [
+        {
+          "label": "resident-before",
+          "status": "completed",
+          "seconds": 2.6410000000614673
+        },
+        {
+          "label": "roundtrip",
+          "status": "completed",
+          "seconds": 623.265999999945
+        },
+        {
+          "label": "resident-after",
+          "status": "completed",
+          "seconds": 4.547000000020489
+        }
+      ],
+      "resident_calls": [
+        {
+          "seconds": 2.530999999959022,
+          "completion_tokens": 3,
+          "exposed_tools": 23,
+          "tool_calls": []
+        },
+        {
+          "seconds": 4.984000000054948,
+          "completion_tokens": 94,
+          "exposed_tools": 23,
+          "tool_calls": [
+            "request_deep_analysis"
+          ]
+        },
+        {
+          "seconds": 6.312000000034459,
+          "completion_tokens": 214,
+          "exposed_tools": 23,
+          "tool_calls": []
+        },
+        {
+          "seconds": 4.35999999998603,
+          "completion_tokens": 3,
+          "exposed_tools": 23,
+          "tool_calls": []
+        }
+      ],
+      "source_hashes": {
+        "glm53_next_roundtrip_20260908.py": "8af87d4193f36938911cd8b3f3ad8abb62aa5e3e142e4b4f29ed8001d099e677",
+        "elyne\\tools\\deep_analysis.py": "a4a033c12c036e33e38349a586b2d4b6dca3b74ddb75964c7eaaf2b2aafb65e5",
+        "elyne\\runtime\\session.py": "742c1caba1bedae143af551aa0a3dc99ba7eebedc074ad5c432d5371d49ca875",
+        "elyne\\runtime\\streaming_chat.py": "6f9cc4714cb94e1ca6c9d4a04ca0f558810786541277ffdaee64e6a9e799d2ea",
+        "elyne\\cognition\\turn_core.py": "a919dfc33b779d3af93d972f4cc59d5798465bb295c60c407d77b77e108aab5a"
+      },
+      "actual_deep_calls": [
+        {
+          "call_id": "turn-glm-native-baa8a8c8f6a646bebe5d12e32c51cc4d.tool-1",
+          "arguments": {
+            "question": "Effectue un contre-examen en deux phrases de l'affirmation suivante : \"si une opération échoue dans 10 % des cas, la retenter une fois ramène toujours le risque à 1 %, même quand les deux tentatives dépendent du même serveur indisponible.\" Explique pourquoi cette logique est erronée si la cause de l'échec est persistante."
+          },
+          "started_unix": 1788870156.4697592,
+          "seconds": 611.8120000000345,
+          "result_type": "ToolCompleted",
+          "reason_code": null,
+          "result": {
+            "binary_sha256": null,
+            "completion_tokens": 188,
+            "config_sha256": null,
+            "finish_reason": "stop",
+            "identity_basis": "external-unverified",
+            "incomplete": false,
+            "model": "glm-5.3-flash-native",
+            "model_sha256": null,
+            "owned": false,
+            "pid": null,
+            "text": "# Contre-examen\n\nL'affirmation repose sur une confusion entre **échecs indépendants** et **échecs corrélés** : le calcul 10 % × 10 % = 1 % n'est valable que si les deux tentatives échouent pour des raisons statistiquement indépendantes, or ici les deux tentatives frappent le même serveur, donc partagent la même cause de défaillance. Si la panne est persistante (serveur hors ligne, processus planté, ressource saturée), la deuxième tentative a une probabilité d'échec proche de 100 %, et non 10 % — le risque réel reste donc ~10 %, et le retry n'apporte aucune résilience, il ne fait qu'ajouter de la latence et potentiellement aggraver la charge sur un système déjà défaillant."
+          }
+        }
+      ],
+      "initial_memory_head": {
+        "kind": "empty"
+      },
+      "resident_before": "13",
+      "resident_synthesis": "**Contre-examen :**\nL'affirmation repose sur une confusion entre des échecs indépendants et des échecs corrélés : le calcul 10 % × 10 % = 1 % n'est valable que si les deux tentatives échouent pour des raisons statistiquement indépendantes, or ici les deux tentatives frappent le même serveur, donc partagent la même cause de défaillance. Si la panne est persistante (serveur hors ligne, processus planté, ressource saturée), la deuxième tentative a une probabilité d'échec proche de 100 %, et non 10 % — le risque réel reste donc ~10 %, et le retry n'apporte aucune résilience, il ne fait qu'ajouter de la latence et potentiellement aggraver la charge sur un système déjà défaillant.\n\n**Verdict :**\nL'affirmation est fausse ; elle ignore totalement la corrélation des causes d'échec.",
+      "resident_after": "55",
+      "max_sampled_gpu_mib": 12826,
+      "raw_report_sha256": "5d163e412703981995e57866daf2ed24f6ff2e4b9a3614a0c21639f15939a9e9"
+    }
+  ],
+  "limitations": [
+    "Native CPU expert mmap, not EWS",
+    "No cold-cache protocol or repeated timing statistics",
+    "No consumed expert byte accounting for mmap",
+    "No long-context or vision acceptance",
+    "Idle drivers disabled",
+    "No production memories imported",
+    "Standalone endpoint provenance, no EIE launch attestation",
+    "Next internals and full prompt envelopes are proprietary; native probe is independently reproducible",
+    "The prior offline false-attribution finding is not retested here"
+  ]
+}
