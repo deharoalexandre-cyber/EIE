@@ -7,7 +7,27 @@
 
 EIE loads GGUF models and exposes chat and embedding endpoints using a subset of the OpenAI API format. It is inference infrastructure, not an agent: memory, tools, identity and application orchestration belong to its clients. **A single LLM is a supported use case; multiple models are not required.**
 
-## What is established — updated 8 September 2026
+## Latest milestone: GLM-5.3-Flash 320B on a laptop
+
+**A real 12B → GLM-5.3-Flash → 12B roundtrip, with hybrid CPU/GPU expert-weight streaming. Locally verified on 8 September 2026.**
+
+The quantized GLM artifact occupies **199.7 GB on disk** (six UD-Q4_K_XL shards). EWS does not keep every expert's weights in RAM or VRAM: it loads and reuses the experts selected by routing in bounded cache slots. On the tested laptop, GLM runs alongside Next's 12B resident.
+
+| Latest measured configuration | Result |
+|---|---|
+| Hardware | RTX 4090 Laptop, **16 GiB-class VRAM / 32 GiB-class RAM** |
+| Expert computation | **18 routed layers on GPU, 24 on CPU** |
+| Actual application path | Next's 12B calls GLM, incorporates its answer, then completes another resident turn |
+| Complete GLM answer | **148 tokens in 278.515 s — about 4 min 39 s** |
+| Sampled GPU peak / remaining headroom | 14,995 MiB used / **1,054 MiB free**, resident included |
+
+This is a **functional feasibility milestone**, not all-GPU inference, a speedup benchmark or a general quality guarantee. Numerical checks and Gemma non-regression tests accompany the result; their exact scope and the earlier truncated attempt are retained in the report.
+
+**Read the evidence:** [GPU/Next report](docs/benchmarks/glm53-ews-gpu-next-20260908.md) · [Measurements, outputs and hashes](docs/benchmarks/data/glm53-ews-gpu-next-20260908.json).
+
+**Reproduce GLM:** [Build the separate experimental runtime](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), then use the [hybrid GPU configuration and numerical checks](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). **The standard Gemma build below is a different runtime path.**
+
+## What is established — updated 9 September 2026
 
 The maintainers report single-model deployments in the Elyne lineage, sometimes with separate generation and embedding processes. This is not a public fleet-reliability study. EIE's group scheduler is implemented but not production/load-qualified.
 
@@ -16,7 +36,7 @@ The newer EWS path has **locally verified consumed-weight and Next-coexistence r
 - [Claim-by-claim audit](docs/CLAIMS_AUDIT.md): code, evidence, qualifications.
 - [Remaining work and acceptance criteria](docs/ROADMAP_TO_CLAIMS.md): what must still be built or measured.
 - [Verification receipt](docs/benchmarks/claims-verification-20260907.md): checks actually performed, without another GPU campaign.
-- [Serving validation receipt](docs/benchmarks/serving-functional-20260908.md): clean build, real 12B/26B and chat/embedding checks pass. A real Next round-trip succeeds; its subsequent offline-tool scenario fails because the resident invents an auxiliary attribution without calling the tool. The full Next gate is **not** green.
+- [Serving validation receipt](docs/benchmarks/serving-functional-20260908.md): clean build, real 12B/26B and chat/embedding checks pass. Its online Next roundtrip succeeds. A **separate 26B-offline attribution test remains unresolved**: after the auxiliary is stopped, the resident attributes an answer to it without calling the tool. The successful GLM online roundtrips above are distinct tests; they neither fail because of this earlier case nor establish that it is fixed.
 
 **Labels:** *implemented* means the code path exists; *locally verified* names a bounded executed test; *maintainer-reported* lacks a complete inspected raw evidence bundle; *planned/not validated* is not a product guarantee. Historical reports retain their original results with explicit scope corrections.
 
@@ -121,7 +141,12 @@ There is **no `auto` selector**; unknown names fall back to F16. Separate K/V se
 
 ## Build
 
-Initialize the pinned fork and apply the supplied runtime patch **once**, before any inference build, including non-EWS profiles. The wrapper references fields added by that patch:
+**Choose the runtime before building:**
+
+- **Standard EIE / Gemma:** use the pinned submodule and `ews-runtime-2168b0.patch` in the commands below.
+- **GLM-5.3-Flash 320B / EWS:** use the [separate-checkout recipe](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), with its GLM-specific runtime revision and patch. For the latest measured profile, follow the [hybrid GPU configuration](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). Do not stack the GLM patch on an already Gemma-patched runtime.
+
+For the **standard path below**, initialize the pinned fork and apply its runtime patch **once**, before inference builds, including non-EWS profiles. The wrapper references fields added by that patch:
 
 ```bash
 git clone https://github.com/deharoalexandre-cyber/EIE.git
@@ -159,6 +184,8 @@ The Windows EWS campaign does not qualify the portable reader, Metal, ROCm, or A
 
 ## Quick start
 
+**For GLM-5.3-Flash 320B streaming**, use the [GLM build and serving profile](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), then its [hybrid GPU settings](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). The commands below are normal loading for models that already fit, not the 320B streaming recipe.
+
 For a model that fits, after a successful build:
 
 ```bash
@@ -184,7 +211,7 @@ Text messages use the GGUF's native chat template when available, with a generic
 
 **Compatibility limits:** native tool-call schemas/results, structured outputs, multimodal message arrays, seed handling and every SDK option are not implemented here. Unknown fields may be ignored. Serving now reports retained tokenized prompt length, sampled completion tokens and reused-prefix tokens in both modes. [Accounting semantics and qualification limits](tests/serving/README.md): serializer tests and the real-tokenizer gate pass on the identified 12B and streamed 26B profiles.
 
-SSE and `one_shot` use the same incremental stop/UTF-8 path for streamed and buffered generation: supplying a stop no longer suppresses all callbacks. Offline, real-route/fake-model, native real-model and real HTTP chat/embedding tests pass in the recorded Windows/CUDA profiles. Next's actual 12B -> 26B -> 12B exchange succeeds, but a subsequent false auxiliary attribution prevents full client-level qualification. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error (HTTP 400 with `context_length_exceeded` in nonstream mode). `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
+SSE and `one_shot` use the same incremental stop/UTF-8 path for streamed and buffered generation: supplying a stop no longer suppresses all callbacks. Offline, real-route/fake-model, native real-model and real HTTP chat/embedding tests pass in the recorded Windows/CUDA profiles. Next's actual 12B -> 26B -> 12B exchange succeeds. The separate test with the 26B stopped exposes a false auxiliary attribution and prevents full failure-handling qualification; it is not the GLM online roundtrip reported above. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error (HTTP 400 with `context_length_exceeded` in nonstream mode). `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
 
 | Endpoint | Method | Status |
 |---|---|---|
