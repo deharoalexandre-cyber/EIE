@@ -8,7 +8,7 @@
 ## In brief
 
 - **What it is:** a C++ inference server that loads GGUF models locally and exposes HTTP chat and embedding endpoints using a subset of the OpenAI API format.
-- **Who it is for:** developers of local assistants, RAG clients and desktop or self-hosted applications. **One LLM is enough; multiple models are optional.**
+- **Who it is for:** developers of local assistants, RAG clients and desktop or self-hosted applications. **One LLM is enough; multiple models are optional.** [Elyne Next already uses EIE/EWS in production](#production-use-elyne-next-resident-12b-and-streamed-26b).
 - **What is verified:** bounded Windows/CUDA serving and EWS tests have local validation receipts; real Apple Silicon/Metal and Android operation is separately labelled *maintainer-reported*.
 - **What is experimental:** EWS, an optional expert-weight streaming path for selected MoE models; GLM-5.3-Flash uses a separate experimental runtime.
 - **Where to check:** [capability status](#capability-status), [claim-by-claim evidence](docs/CLAIMS_AUDIT.md) and [remaining work](docs/ROADMAP_TO_CLAIMS.md).
@@ -25,9 +25,9 @@ EIE provides inference, not the application itself: memory, document retrieval, 
 
 The results below describe specific configurations, not requirements for using EIE.
 
-## In use: Elyne Next, a resident 12B with a streamed 26B
+## Production use: Elyne Next, resident 12B and streamed 26B
 
-**Elyne Next uses a resident Gemma 4 12B for the ongoing conversation and a Gemma 4 26B A4B auxiliary served through EIE/EWS for deeper analysis. This working 12B + 26B setup is distinct from the experimental GLM replacement.**
+**EIE/EWS is already used in the maintainer's day-to-day production deployment of Elyne Next: a resident Gemma 4 12B handles the ongoing conversation, with a Gemma 4 26B A4B streamed auxiliary for deeper analysis.** This is an application in actual use, not only a benchmark fixture. The owner confirmed production use on 14 September 2026; the local launch configuration and retained application logs were also inspected. This working deployment is distinct from the experimental GLM replacement.
 
 Next's resident calls `request_deep_analysis`, supplies the question and context, then integrates the auxiliary's answer and continues the conversation. The 26B does not replace the resident or take over Next's memory and tools.
 
@@ -157,6 +157,7 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 | Automatic KV optimization | **Not operational**: no `auto` selector; health latency remains zero |
 | Device-memory telemetry | Runtime port queries device memory; no reserve/budget/eviction enforcement |
 | CUDA EWS | Local Windows/CUDA/Gemma validation, bounded above |
+| Elyne Next: resident 12B + streamed 26B | In the maintainer's actual production use; the real tool call, auxiliary answer, resident integration and continuation are also [locally validated](docs/benchmarks/serving-functional-20260908.md#real-next-positive-route-and-a-retained-failure) |
 | GLM EWS | Separate experimental runtime; host-cache and hybrid GPU-expert profiles have bounded numerical checks and actual fresh-state Next roundtrips; not all-GPU experts or general quality qualification |
 | Apple Silicon / Metal | Reported real MacBook Pro operation with 16 GB unified memory and Gemma 4 E2B QAT Q4_0; warm-prefix engine-only output rates 44–49 tok/s, with separate application timings; [receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
 | Other platforms | Build paths or portable code; not qualified by the Windows campaign |
