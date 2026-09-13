@@ -7,7 +7,23 @@
 
 EIE loads GGUF models and exposes chat and embedding endpoints using a subset of the OpenAI API format. It is inference infrastructure, not an agent: memory, tools, identity and application orchestration belong to its clients. **A single LLM is a supported use case; multiple models are not required.**
 
-## Latest milestone: GLM-5.3-Flash 320B on a laptop
+## Apple Silicon / Metal: running on a MacBook Pro
+
+**EIE is running in the Elyne macOS application on a MacBook Pro (2021), with Apple Silicon, 16 GB unified memory and Gemma 4 E2B QAT Q4_0.** This is reported operation on a real machine, beyond a build recipe.
+
+The Metal profile uses F16 KV and a 4,096-token context. With approximately **1,636 tokens of history already cached**, the engine-only trials report:
+
+| Generated output | Reported time | Reported output rate |
+|---|---|---|
+| 512 tokens | 13.0 s measured, including 2.6 s queueing; about 10.5 s excluding that wait | 49 tok/s |
+| 1,024 tokens | 21.7 s | 47 tok/s |
+| 2,048 tokens | 46.4 s | 44 tok/s |
+
+Time to first output in these warm-prefix trials is **0.07–0.10 s**. In actual application conversations, a 612-token answer took **22.3 s total**, including **14.3 s reported generation time**. Application timings also include memory, preparation and any web tools; they are not the engine-only figures above.
+
+**Evidence status: maintainer-reported**, with timing-summary photographs reviewed on 14 September; no new Mac benchmark or independent replication was performed here. These are ordinary Metal inference results, not Apple Silicon EWS or GLM qualification. [Setup, full measurements and limits](docs/benchmarks/macos-apple-silicon-20260913.md) · [Build script](scripts/build-macos-arm64.sh) · [Metal preset](presets/macos-silicon.yaml).
+
+## GLM/EWS milestone: GLM-5.3-Flash 320B on a laptop
 
 **A real 12B → GLM-5.3-Flash → 12B roundtrip, with hybrid CPU/GPU expert-weight streaming. Locally verified on 8 September 2026.**
 
@@ -27,7 +43,7 @@ This is a **functional feasibility milestone**, not all-GPU inference, a speedup
 
 **Reproduce GLM:** [Build the separate experimental runtime](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), then use the [hybrid GPU configuration and numerical checks](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). **The standard Gemma build below is a different runtime path.**
 
-## What is established — updated 9 September 2026
+## What is established — updated 14 September 2026
 
 The maintainers report single-model deployments in the Elyne lineage, sometimes with separate generation and embedding processes. This is not a public fleet-reliability study. EIE's group scheduler is implemented but not production/load-qualified.
 
@@ -112,6 +128,7 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 | Device-memory telemetry | Runtime port queries device memory; no reserve/budget/eviction enforcement |
 | CUDA EWS | Local Windows/CUDA/Gemma validation, bounded above |
 | GLM EWS | Separate experimental runtime; host-cache and hybrid GPU-expert profiles have bounded numerical checks and actual fresh-state Next roundtrips; not all-GPU experts or general quality qualification |
+| Apple Silicon / Metal | Reported real MacBook Pro operation with 16 GB unified memory and Gemma 4 E2B QAT Q4_0; warm-prefix engine-only output rates 44–49 tok/s, with separate application timings; [receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
 | Other platforms | Build paths or portable code; not qualified by the Windows campaign |
 | Audit logging | Optional FNV-derived prototype, not a cryptographic/verifiable audit ledger |
 | Custom strategy plugins | Interface exists; dynamic library loading planned |
@@ -132,6 +149,8 @@ Parallel execution sends the prompt to multiple loaded backends using asynchrono
 ### KV cache and memory management
 
 The backend maps `f32`, `f16`, `q8_0`, `q4_0` and discovers `turbo2`, `turbo3`, `turbo4` by the runtime's KV type names. On the pinned Gemma fork these select `GGML_TYPE_TURBO*_0`, not the similarly named weight formats. The experimental native GLM fork has no TurboQuant KV types and uses explicit F16 in its measured profile. `turbo3` remains the default for the standard build, not a universal quality recommendation. Missing types or failed quantized context initialization may fall back to F16; check the logs.
+
+On Apple Silicon, `turbo*` requests explicitly fall back to F16 with a logged warning: this fork's TurboQuant KV kernels are not available on Metal. The [measured Metal preset](presets/macos-silicon.yaml) selects F16 directly. Intel macOS remains a separate CPU-only profile.
 
 There is **no `auto` selector**; unknown names fall back to F16. Separate K/V settings are available but are not qualified for every architecture. Quantizer bit widths do not equal whole-process VRAM savings.
 
@@ -178,7 +197,7 @@ After the same submodule/patch setup, recipes are available:
 | Linux AMD | `./scripts/build-rocm.sh` | ROCm target, not a validated first-class device matrix |
 | CPU | `./scripts/build-cpu.sh` | Model/kernel compatibility and available RAM still apply |
 | macOS 15 Intel | CPU recipe + `presets/macos-cpu.yaml` | Maintainer-reported operation; Metal disabled by this project |
-| Apple Silicon | `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Maintainer-reported operation on an M1 Pro (Metal, Gemma 4 E2B): first token 0.02 s on a warm KV prefix, 29–60 tok/s — [receipt](docs/benchmarks/macos-apple-silicon-20260913.md); raw log excerpt pending |
+| Apple Silicon | `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Reported MacBook Pro operation: Metal, 16 GB memory, Gemma 4 E2B QAT Q4_0; 44–49 tok/s with a warm ~1.6k history, first output 0.07–0.10 s — [engine/application receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
 
 The Windows EWS campaign does not qualify the portable reader, Metal, ROCm, or Android EWS. There is no “any OS / any GGUF” guarantee. Build duration depends on the machine.
 

@@ -3,13 +3,18 @@
 **Label: maintainer-reported.** Figures were measured by a Claude Code session
 on the tester's machine and relayed by the maintainer; the raw log excerpt
 (`ggml_metal_init`, `offloaded … layers`, `[KV]` lines) is not yet retained
-here. When it is appended, this receipt becomes *locally verified*.
+here. On 14 September the maintainer confirmed 16 GB RAM and Gemma E2B QAT,
+and supplied photographs of the engine/application timing summaries. The
+figures below were checked against those visible summaries, not rerun here.
+The label remains maintainer-reported until the raw evidence and its exact
+execution profile can be inspected. Photos and private conversation content
+are not published; only technical measurements are transcribed.
 
 ## Setup
 
 | Item | Value |
 |---|---|
-| Machine | MacBook Pro M1 Pro (2021), 16 GB unified memory |
+| Machine | MacBook Pro (2021, as reported), Apple Silicon M1 family, 16 GB unified memory |
 | OS | macOS Tahoe 26.6.2 |
 | Engine | `eie-server` arm64, static, Metal embedded — EIE `0e8d824`, submodule `2168b0c` + `patches/ews-runtime-2168b0.patch` |
 | Engine SHA-256 | `037155fbeedefe8b911d625765fcf5c15ec7bb2336df2da48e4e0ded160c122f` |
@@ -17,6 +22,12 @@ here. When it is appended, this receipt becomes *locally verified*.
 | Preset | `presets/macos-silicon.yaml` — f16 KV, n_ctx 4096, flash attention off, all layers offloaded |
 | Models | `gemma-4-E2B-it-QAT-Q4_0.gguf` (generation), `bge-m3-Q8_0.gguf` (embeddings) |
 | Client | Elyne macOS 0.7 (KV-reuse context, SSE streaming) |
+
+The first report called the chip M1 Pro; the maintainer identifies the machine
+as a MacBook Pro M1. The exact SoC identifier is not present in the supplied
+timing photographs, so the summary uses Apple Silicon/M1 family. The OS,
+binary hash, model filenames and build details above remain those of the
+original report, not values remeasured during the photograph review.
 
 ## Reported figures (single user, interactive session, warm cache)
 
@@ -35,23 +46,31 @@ memory recall; it is not a decode-rate measurement.
 
 ### Engine alone, ~1,636-token history already in the KV cache (same session, later)
 
-| Requested | Generated | Wall time | First token | Decode rate |
+| Requested | Generated | Reported wall / adjusted time | First output | Reported output rate |
 |---|---|---|---|---|
 | 512 | 512 | ≈ 10.5 s (13.0 s measured, 2.6 s queued behind another request) | 0.1 s | 49 tok/s |
 | 1024 | 1024 | 21.7 s | 0.07 s | 47 tok/s |
 | 2048 | 2048 | 46.4 s | 0.09 s | 44 tok/s |
 
-Decode rate declines gently with answer length (61 → 44 tok/s from a short
-context to 2,048 generated tokens on top of 1.6k history).
+The 512-token adjusted figure is reproduced as reported, with its rounded
+wall/queue components; it is not an independent pure-decode timer. The other
+rates are also the displayed summary rates, not newly measured kernel timings.
+The earlier short-context sample reports approximately 61 tok/s versus 44 tok/s
+for the longer run. These different prompts/cache states do not isolate a
+causal effect of answer length. Generating the requested token count alone
+does not establish a natural end-of-answer; finish reasons are not supplied
+for these three engine-only trials.
 
 ### Application end-to-end (real conversation, after the cap was raised)
 
 | Case | Reply | Total |
 |---|---|---|
-| First message after an engine restart | 788 tokens | 37.3 s, of which 20.3 s generation — the ~17 s remainder is the full history prefill (≈ 1.6k tokens), done once, then reused |
+| First message after an engine restart | 788 tokens | 37.3 s total, of which 20.3 s reported generation; about 17 s additional preparation, attributed to history reconstruction by the original report, not an isolated prefill measurement |
 | Next long reply | 612 tokens | 22.3 s (14.3 s generation) |
 | Short replies | 53–323 chars | 1.2–4.1 s |
+| Longer reply without web search | 832 chars | 7.8 s |
 | With 1–2 web searches | 224–361 chars | 6.2–10.8 s (1.3–4.0 s per search) |
+| With one web search | 775 chars | 11.2 s, including 1.3 s reported search time |
 
 Web search: DuckDuckGo answered 1.2 s when it returned results and 0.3–0.4 s
 with an anti-bot page (zero results) — two of three test queries from the same
@@ -66,7 +85,8 @@ must run on a separate engine instance, not on the one in use.
   a client that rewrites its history each turn will see full prefill instead.
 - Not a comparison with llama.cpp or Ollama on the same machine.
 - Gemma 4 12B on this hardware is not measured (estimate only: 15–20 tok/s).
-- The 17 s first prefill (≈ 96 tok/s) is far below what Metal should reach for this model; it may include first-use pipeline creation. Cold-prefix prefill throughput is a separate measurement still to do.
+- The approximately 17 s first-request preparation may include history prefill and first-use pipeline creation, but their individual costs were not isolated. It is not a measured prefill throughput; a cold-prefix measurement remains to be done.
+- This receipt establishes no EWS-on-Metal or GLM-on-Metal result. The displayed application conversation is not a benchmark of cognition or answer quality.
 - With 2,048-token answers, 1.6k of history plus the reply fills ~3,700 of the 4,096-token context; a larger `n_ctx` is needed for that usage.
 
 ## Incident retained

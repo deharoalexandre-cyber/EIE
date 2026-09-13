@@ -1,6 +1,6 @@
 # From current implementation to defensible claims
 
-Status: updated 8 September 2026. This is an acceptance backlog, not a promise that
+Status: updated 14 September 2026. This is an acceptance backlog, not a promise that
 every possible feature will be built. Removing an unnecessary claim is a
 valid resolution. Priority is useful working inference, not more blocking
 layers.
@@ -75,6 +75,23 @@ separate capabilities; one should not be inferred from another.
 6. Benchmark policy changes against equal budgets: slot capacity, RAM cache,
    resident model/context and instrumentation must match. Do not combine the
    August simulated SLRU claims with the September consumed LRU implementation.
+
+## Apple Silicon / Metal: operation reported, evidence to extend
+
+The [13 September MacBook Pro report](benchmarks/macos-apple-silicon-20260913.md)
+now records real Elyne macOS use on Apple Silicon, 16 GB unified memory and
+Gemma 4 E2B QAT Q4_0. Engine-only warm-prefix rates of 44–49 tok/s and actual
+application timings are separate measurements. The 14 September photograph
+review corroborates the displayed summaries; it is not a new benchmark run.
+Basic operation is therefore no longer just a future build objective.
+
+Next, retain the model hash, Metal/offload/KV logs, prompts and raw timings for
+that exact setup; measure cold and warm requests separately and keep queueing
+distinct from generation. Repeat the workload on an idle engine before
+generalizing throughput or first-output latency. EWS, large MoE models and
+other Apple chips require separate tests; the reported Gemma E2B operation
+does not establish those results. No runtime change is required by this
+documentation update; the existing Apple Silicon F16 KV fallback is retained.
 
 ## GLM and resource-efficiency research
 

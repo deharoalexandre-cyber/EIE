@@ -1,5 +1,9 @@
 # Public claims audit - 7 September 2026, serving update 8 September
 
+Apple Silicon documentation update: 14 September 2026, incorporating the
+13 September on-device report and the maintainer's supplied timing photographs.
+This update does not rerun the Mac workload or qualify EWS on Metal.
+
 ## Scope and status
 
 Requested by Alexandre De Haro; performed with Codex through source inspection,
@@ -115,6 +119,17 @@ every old design aspiration is neither necessary nor implicitly authorized.
 - **Mobile:** numbers are author-reported, without an app bundle, full build/model
   hashes and raw runs. Quantizations differ. NPU/CPU/GPU causal rankings cannot
   be inferred from the table alone.
+- **Apple Silicon / Metal:** real MacBook Pro operation is now
+  [maintainer-reported](benchmarks/macos-apple-silicon-20260913.md), with 16 GB
+  unified memory and Gemma 4 E2B QAT Q4_0. Three engine-only warm-prefix trials
+  report 44–49 tok/s for 512–2,048 generated tokens and 0.07–0.10 s to first
+  output. The first trial's 13.0 s wall time includes 2.6 s queueing; its
+  approximately 10.5 s adjusted figure is retained as reported. Application
+  totals include preparation/memory/web work and are recorded separately.
+  Photographs show timing summaries, not complete raw timing/Metal logs.
+  This is ordinary inference, not EWS/GLM-on-Metal or a cross-platform speedup.
+  Apple Silicon `turbo*` KV requests now explicitly map to F16 with a warning;
+  the measured preset selects F16 directly. The Intel CPU profile is distinct.
 - **Large MoE:** the [native GLM receipt](benchmarks/glm53-native-next-20260908.md)
   establishes a CPU-expert mmap baseline and fresh-state Next roundtrip. The
   subsequent [experimental EWS port](GLM_EWS_EXPERIMENT.md) has its own paired
@@ -148,8 +163,10 @@ It does **not** withdraw the September consumed-weight measurements.
 ## Platform and reproduction boundary
 
 Windows/CUDA/Gemma has the identified local evidence. Linux CUDA operation
-and Intel macOS operation are maintainer-reported; ROCm, Apple Silicon and
-Android have build paths, not coverage by the Windows campaign.
+and Intel macOS operation are maintainer-reported. Apple Silicon now has a
+separate reported on-device Metal run, not just a build path; its evidence
+status and scope are described above. ROCm and Android build paths are not
+qualified by the Windows campaign, and no Metal EWS result is established.
 The standalone Android wrapper is not a complete APK.
 
 The published EWS wrapper requires the supplied patch at the pinned submodule
