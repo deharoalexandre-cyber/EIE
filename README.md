@@ -178,7 +178,7 @@ After the same submodule/patch setup, recipes are available:
 | Linux AMD | `./scripts/build-rocm.sh` | ROCm target, not a validated first-class device matrix |
 | CPU | `./scripts/build-cpu.sh` | Model/kernel compatibility and available RAM still apply |
 | macOS 15 Intel | CPU recipe + `presets/macos-cpu.yaml` | Maintainer-reported operation; Metal disabled by this project |
-| Apple Silicon | `./scripts/build-macos-arm64.sh` | arm64/Metal build recipe; native qualification still required |
+| Apple Silicon | `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Maintainer-reported operation on an M1 Pro (Metal, Gemma 4 E2B): first token 0.02 s on a warm KV prefix, 29–60 tok/s — [receipt](docs/benchmarks/macos-apple-silicon-20260913.md); raw log excerpt pending |
 
 The Windows EWS campaign does not qualify the portable reader, Metal, ROCm, or Android EWS. There is no “any OS / any GGUF” guarantee. Build duration depends on the machine.
 
