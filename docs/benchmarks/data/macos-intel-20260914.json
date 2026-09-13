@@ -1,0 +1,99 @@
+{
+  "schema": "eie.macos-receipt/v1",
+  "date": "2026-09-14",
+  "provenance": "maintainer-side local execution of the distributed bundle; not independent replication",
+  "server_source": "03be806",
+  "runtime_base": "2168b0cd8b87c75c29a1e6588692ebbb805b9bd2",
+  "runtime_patch": "patches/ews-runtime-2168b0.patch",
+  "profile": {
+    "arch": "x86_64",
+    "macos": "15.7.9",
+    "model": "MacBookPro15,2",
+    "cpu": "Intel(R) Core(TM) i5-8279U CPU @ 2.40GHz",
+    "memory_gb": 8.6,
+    "preset": "macos-cpu.yaml",
+    "n_ctx": "4096",
+    "type_k": "f16",
+    "type_v": "f16",
+    "flash_attn": "false",
+    "metal_device": null,
+    "gpu_layers_offloaded": "0 (CPU)",
+    "effective_kv_and_ctx_per_model": [
+      {
+        "model": "gemma-4-E2B-it-QAT-Q4_0",
+        "kv": "f16/f16",
+        "ctx": 4096,
+        "threads": 4
+      },
+      {
+        "model": "bge-m3-Q8_0",
+        "kv": "f16/f16",
+        "ctx": 4096,
+        "threads": 4
+      }
+    ]
+  },
+  "sha256": {
+    "eie-server": "1b092f2782b3ac0ff2d50dea5b3b97d456e35710574abe6d08d9d0c4dfd2f09c",
+    "bge-m3-Q8_0.gguf": "950f4a8e5e19477a6d3c26d2f162233c20002c601f75e4b002e3239997821167",
+    "gemma-4-E2B-it-QAT-Q4_0.gguf": "aa6eb6d481b583a304269649d467fbff66267f7d9c480b18911bdcf081102790"
+  },
+  "load_seconds_until_two_models_healthy": 5.25,
+  "health": {
+    "status": "ok",
+    "uptime": 4,
+    "models": 2
+  },
+  "embeddings": {
+    "model": "bge-m3-Q8_0",
+    "dimensions": 1024,
+    "l2_norm": 1.0,
+    "wall_seconds": 0.108
+  },
+  "chat": {
+    "model": "gemma-4-E2B-it-QAT-Q4_0",
+    "cold_prefix_64": {
+      "wall_seconds": 8.863,
+      "engine_ms": 8858,
+      "queue_and_transport_ms": 5.0,
+      "prompt_tokens": 172,
+      "completion_tokens": 64,
+      "cached_prefix_tokens": 0,
+      "kv_reused": 0,
+      "kv_gen": 64,
+      "finish_reason": "length",
+      "tokens_per_engine_second": 7.2
+    },
+    "warm_prefix_64": {
+      "wall_seconds": 5.767,
+      "engine_ms": 5759,
+      "queue_and_transport_ms": 8.0,
+      "prompt_tokens": 264,
+      "completion_tokens": 64,
+      "cached_prefix_tokens": 236,
+      "kv_reused": 236,
+      "kv_gen": 64,
+      "finish_reason": "length",
+      "tokens_per_engine_second": 11.1
+    },
+    "warm_prefix_256": {
+      "wall_seconds": 20.543,
+      "engine_ms": 20530,
+      "queue_and_transport_ms": 13.0,
+      "prompt_tokens": 351,
+      "completion_tokens": 245,
+      "cached_prefix_tokens": 328,
+      "kv_reused": 328,
+      "kv_gen": 245,
+      "finish_reason": "stop",
+      "tokens_per_engine_second": 11.9
+    }
+  },
+  "limits": [
+    "one machine, one session, warm page cache for the model files",
+    "engine_ms is the server-side request time from the [KV] log line; queue_and_transport_ms is wall minus engine",
+    "tokens_per_engine_second includes prefill of the new turn; warm_prefix_256 approximates decode rate",
+    "no comparison with llama.cpp or Ollama on the same machine",
+    "no cold-cache protocol, no dispersion"
+  ]
+}
