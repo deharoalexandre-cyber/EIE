@@ -40,6 +40,14 @@ static void ensureBackendInit() {
 // llama-cpp-turboquant fork; on plain CPU builds the safe choices are
 // f16 / q8_0 / q4_0.
 static ggml_type mapKvType(const std::string& t) {
+#if defined(__APPLE__) && defined(__aarch64__)
+    // Apple Silicon : le cache KV vit sur Metal, qui n'a pas les noyaux
+    // TurboQuant du fork (tq3_1s & co. font échouer le contexte). f16 d'office.
+    if (t.rfind("turbo", 0) == 0) {
+        std::cerr << "[KV] '" << t << "' non pris en charge par Metal, cache KV en f16" << std::endl;
+        return GGML_TYPE_F16;
+    }
+#endif
     if (t == "f32")    return GGML_TYPE_F32;
     if (t == "f16")    return GGML_TYPE_F16;
     if (t == "q8_0")   return GGML_TYPE_Q8_0;
