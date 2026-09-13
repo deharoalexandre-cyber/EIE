@@ -1,11 +1,41 @@
-# EIE — Elyne Inference Engine
+# EIE - Elyne Inference Engine
 
-**Local GGUF inference for one or several models, with experimental expert-weight streaming.**
+**A local inference server for GGUF models: chat, embeddings and configurable multi-model execution.**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-brightgreen.svg)](https://en.cppreference.com/w/cpp/17)
 
-EIE loads GGUF models and exposes chat and embedding endpoints using a subset of the OpenAI API format. It is inference infrastructure, not an agent: memory, tools, identity and application orchestration belong to its clients. **A single LLM is a supported use case; multiple models are not required.**
+## In brief
+
+- **What it is:** a C++ inference server that loads GGUF models locally and exposes HTTP chat and embedding endpoints using a subset of the OpenAI API format.
+- **Who it is for:** developers of local assistants, RAG clients and desktop or self-hosted applications. **One LLM is enough; multiple models are optional.**
+- **What is verified:** bounded Windows/CUDA serving and EWS tests have local validation receipts; real Apple Silicon/Metal and Android operation is separately labelled *maintainer-reported*.
+- **What is experimental:** EWS, an optional expert-weight streaming path for selected MoE models; GLM-5.3-Flash uses a separate experimental runtime.
+- **Where to check:** [capability status](#capability-status), [claim-by-claim evidence](docs/CLAIMS_AUDIT.md) and [remaining work](docs/ROADMAP_TO_CLAIMS.md).
+
+## What you can build with EIE
+
+Start with a single GGUF model for a local chat application. Add an embedding model for a RAG client, or configure several loaded models for parallel, sequential or fan-out execution. The HTTP interface lets the client remain separate from model execution; [API compatibility is partial](#api---an-openai-shaped-subset-not-full-parity) and [group policies have documented limits](#scheduling-and-model-groups).
+
+EIE provides inference, not the application itself: memory, document retrieval, tools, identity and agent orchestration belong to its clients. It is also distinct from the model weights it runs.
+
+**EIE is the engine. EWS is one optional execution path.** Ordinary inference with a model that fits does not require expert streaming. EWS extends the engine to experiment with selected MoE models whose expert weights do not fit entirely in RAM or VRAM.
+
+**Start here:** [Build](#build) → [Run one model](#quick-start) → [Call the API](#api---an-openai-shaped-subset-not-full-parity) → [Configure models and groups](#configuration). For streaming specifically: [Gemma EWS](docs/ews/runtime-port.md) · [GLM EWS](docs/GLM_EWS_EXPERIMENT.md).
+
+The results below describe specific configurations, not requirements for using EIE.
+
+## In use: Elyne Next, a resident 12B with a streamed 26B
+
+**Elyne Next uses a resident Gemma 4 12B for the ongoing conversation and a Gemma 4 26B A4B auxiliary served through EIE/EWS for deeper analysis. This working 12B + 26B setup is distinct from the experimental GLM replacement.**
+
+Next's resident calls `request_deep_analysis`, supplies the question and context, then integrates the auxiliary's answer and continues the conversation. The 26B does not replace the resident or take over Next's memory and tools.
+
+The [real application validation](docs/benchmarks/serving-functional-20260908.md#real-next-positive-route-and-a-retained-failure) records the complete **12B → streamed 26B → 12B** path: a 172-token auxiliary answer, resident integration and a subsequent resident turn. That profile uses a **16,384-token resident context**, a **4,096-token auxiliary context**, **F16 KV** and **16 EWS slots per layer**.
+
+The [earlier coexistence measurements](docs/benchmarks/ews-consumed-20260905.md#real-next-not-just-an-empty-resident) separately report 26B output at **5.76–5.97 tokens per request-wall-second** alongside Next, with a sampled total GPU peak of **13,408 MiB**. Those timings include prefill and contention and used a 2,048-token auxiliary context; they are not throughput measurements of the later 4,096-token profile.
+
+Next is a separate client application, not bundled in this repository. The GLM results below explore a larger auxiliary on a fresh Next copy; they do not redefine the working Gemma pair.
 
 ## Apple Silicon / Metal: running on a MacBook Pro
 
@@ -34,7 +64,7 @@ The quantized GLM artifact occupies **199.7 GB on disk** (six UD-Q4_K_XL shards)
 | Hardware | RTX 4090 Laptop, **16 GiB-class VRAM / 32 GiB-class RAM** |
 | Expert computation | **18 routed layers on GPU, 24 on CPU** |
 | Actual application path | Next's 12B calls GLM, incorporates its answer, then completes another resident turn |
-| Complete GLM answer | **148 tokens in 278.515 s — about 4 min 39 s** |
+| Complete GLM answer | **148 tokens in 278.515 s - about 4 min 39 s** |
 | Sampled GPU peak / remaining headroom | 14,995 MiB used / **1,054 MiB free**, resident included |
 
 This is a **functional feasibility milestone**, not all-GPU inference, a speedup benchmark or a general quality guarantee. Numerical checks and Gemma non-regression tests accompany the result; their exact scope and the earlier truncated attempt are retained in the report.
@@ -43,7 +73,7 @@ This is a **functional feasibility milestone**, not all-GPU inference, a speedup
 
 **Reproduce GLM:** [Build the separate experimental runtime](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), then use the [hybrid GPU configuration and numerical checks](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). **The standard Gemma build below is a different runtime path.**
 
-## What is established — updated 14 September 2026
+## What is established - updated 14 September 2026
 
 The maintainers report single-model deployments in the Elyne lineage, sometimes with separate generation and embedding processes. This is not a public fleet-reliability study. EIE's group scheduler is implemented but not production/load-qualified.
 
@@ -52,7 +82,7 @@ The newer EWS path has **locally verified consumed-weight and Next-coexistence r
 - [Claim-by-claim audit](docs/CLAIMS_AUDIT.md): code, evidence, qualifications.
 - [Remaining work and acceptance criteria](docs/ROADMAP_TO_CLAIMS.md): what must still be built or measured.
 - [Verification receipt](docs/benchmarks/claims-verification-20260907.md): checks actually performed, without another GPU campaign.
-- [Serving validation receipt](docs/benchmarks/serving-functional-20260908.md): clean build, real 12B/26B and chat/embedding checks pass. Its online Next roundtrip succeeds. A **separate 26B-offline attribution test remains unresolved**: after the auxiliary is stopped, the resident attributes an answer to it without calling the tool. The successful GLM online roundtrips above are distinct tests; they neither fail because of this earlier case nor establish that it is fixed.
+- [Serving validation receipt](docs/benchmarks/serving-functional-20260908.md): clean build, real 12B/26B and chat/embedding checks pass; Next's online 12B -> 26B -> 12B roundtrip succeeds.
 
 **Labels:** *implemented* means the code path exists; *locally verified* names a bounded executed test; *maintainer-reported* lacks a complete inspected raw evidence bundle; *planned/not validated* is not a product guarantee. Historical reports retain their original results with explicit scope corrections.
 
@@ -83,7 +113,7 @@ The [actual fresh-state Next 12B -> GLM through EIE/EWS -> 12B roundtrip](docs/b
 
 **Separate native GLM baseline:** a [native llama.cpp run](docs/benchmarks/glm53-native-next-20260908.md) already completed a fresh-state Next 12B -> GLM -> 12B roundtrip on the same laptop. Its 611.812 s auxiliary answer uses CPU expert mmap, **not EWS**. It is a working reference, not evidence that EWS is the only feasible path or a paired speed comparison.
 
-## Desktop performance — historical field measurements
+## Desktop performance - historical field measurements
 
 Maintainer-reported RTX 4090 Laptop / Windows 11 results. These are not a fresh benchmark of the current C++ server. E2B/E4B figures have no complete raw run bundle here. The [26B report](docs/benchmarks/gemma4-26b-a4b-rtx4090-laptop.md) identifies an earlier router plus `llama-server` runtime, with a configuration and JSON summary but no complete raw logs/prompts.
 
@@ -91,9 +121,9 @@ Maintainer-reported RTX 4090 Laptop / Windows 11 results. These are not a fresh 
 |---|---|---|---|---|
 | Gemma 4 E2B | Q6_K | ~2.5 GB | 3,146 t/s | 126 t/s |
 | Gemma 4 E4B | Q6_K | ~4.5 GB | 1,883 t/s | 70 t/s |
-| E2B + E4B loaded | Q6_K | ~7.5 GB | — | — |
+| E2B + E4B loaded | Q6_K | ~7.5 GB | - | - |
 | Gemma 4 26B A4B, 16k | QAT Q4_0 | 15,299–15,585 MiB | 2,442–2,614 t/s | 78.68–81.70 t/s |
-| Same 26B, separate 8k sample | QAT Q4_0 | not separately reported | — | 99.63 t/s |
+| Same 26B, separate 8k sample | QAT Q4_0 | not separately reported | - | 99.63 t/s |
 
 The old **“30% less VRAM / 2x faster than Ollama”** assertions are withdrawn as comparative claims: matched versions, context/cache settings and raw paired measurements are missing. Prefix reuse exists, but a prefix-similarity observation is not a throughput benchmark. The earlier three/six-model VRAM sizing table is also withdrawn as a sizing reference: complete model identities, memory accounting and measured peaks were missing.
 
@@ -197,15 +227,13 @@ After the same submodule/patch setup, recipes are available:
 | Linux AMD | `./scripts/build-rocm.sh` | ROCm target, not a validated first-class device matrix |
 | CPU | `./scripts/build-cpu.sh` | Model/kernel compatibility and available RAM still apply |
 | macOS 15 Intel | CPU recipe + `presets/macos-cpu.yaml` | Maintainer-reported operation; Metal disabled by this project |
-| Apple Silicon | `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Reported MacBook Pro operation: Metal, 16 GB memory, Gemma 4 E2B QAT Q4_0; 44–49 tok/s with a warm ~1.6k history, first output 0.07–0.10 s — [engine/application receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
+| Apple Silicon | `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Reported MacBook Pro operation: Metal, 16 GB memory, Gemma 4 E2B QAT Q4_0; 44–49 tok/s with a warm ~1.6k history, first output 0.07–0.10 s - [engine/application receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
 
 The Windows EWS campaign does not qualify the portable reader, Metal, ROCm, or Android EWS. There is no “any OS / any GGUF” guarantee. Build duration depends on the machine.
 
 ## Quick start
 
-**For GLM-5.3-Flash 320B streaming**, use the [GLM build and serving profile](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), then its [hybrid GPU settings](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). The commands below are normal loading for models that already fit, not the 320B streaming recipe.
-
-For a model that fits, after a successful build:
+**Start with one model that fits your machine.** After a successful build:
 
 ```bash
 # Linux / macOS build directory
@@ -216,9 +244,11 @@ For a model that fits, after a successful build:
 
 On Windows, use `build-ews/Release/eie-server.exe` with its DLL directory on `PATH`. This is normal loading; streaming requires an `ews_slots` setting as described in the [EWS guide](docs/ews/runtime-port.md).
 
+**For GLM-5.3-Flash 320B streaming**, use the [separate GLM build and serving profile](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), then its [hybrid GPU settings](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). That experiment is not required for the single-model setup above.
+
 `--models-dir` discovers files but **does not load them by itself**. Set `preload: [all]` in a preset only when all discovered models fit, or use repeatable `-m`. Other flags: `--config`/`-c`, `--host`, `--port`, `--ctx`.
 
-## API — an OpenAI-shaped subset, not full parity
+## API - an OpenAI-shaped subset, not full parity
 
 ```bash
 curl http://localhost:8090/v1/chat/completions \
@@ -230,7 +260,7 @@ Text messages use the GGUF's native chat template when available, with a generic
 
 **Compatibility limits:** native tool-call schemas/results, structured outputs, multimodal message arrays, seed handling and every SDK option are not implemented here. Unknown fields may be ignored. Serving now reports retained tokenized prompt length, sampled completion tokens and reused-prefix tokens in both modes. [Accounting semantics and qualification limits](tests/serving/README.md): serializer tests and the real-tokenizer gate pass on the identified 12B and streamed 26B profiles.
 
-SSE and `one_shot` use the same incremental stop/UTF-8 path for streamed and buffered generation: supplying a stop no longer suppresses all callbacks. Offline, real-route/fake-model, native real-model and real HTTP chat/embedding tests pass in the recorded Windows/CUDA profiles. Next's actual 12B -> 26B -> 12B exchange succeeds. The separate test with the 26B stopped exposes a false auxiliary attribution and prevents full failure-handling qualification; it is not the GLM online roundtrip reported above. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error (HTTP 400 with `context_length_exceeded` in nonstream mode). `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
+SSE and `one_shot` use the same incremental stop/UTF-8 path for streamed and buffered generation: supplying a stop no longer suppresses all callbacks. Offline, real-route/fake-model, native real-model and real HTTP chat/embedding tests pass in the recorded Windows/CUDA profiles. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error (HTTP 400 with `context_length_exceeded` in nonstream mode). `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
 
 | Endpoint | Method | Status |
 |---|---|---|
@@ -248,6 +278,10 @@ SSE and `one_shot` use the same incremental stop/UTF-8 path for streamed and buf
 | `/v1/admin/health/deep` | GET | Stub; no inference probe |
 | `/v1/admin/config/reload` | POST | Stub |
 | `/v1/completions`, admin load/unload | POST | Planned, not implemented |
+
+### Known client integration issue
+
+A [separate Next test with the 26B auxiliary stopped](docs/benchmarks/serving-functional-20260908.md) remains unresolved: the resident falsely attributes an answer to the auxiliary without calling the tool. This prevents full failure-handling qualification of that client workflow. The successful online GLM roundtrips are distinct tests; they neither fail because of this case nor establish that it is fixed.
 
 ## Configuration
 
@@ -287,7 +321,23 @@ Acknowledgments: [llama.cpp](https://github.com/ggml-org/llama.cpp), [TheTom's T
 
 ## Citation
 
-The historical archived title includes an adaptive-cache design objective; it is not evidence that automatic KV adaptation is operational. Cite a report and revision for performance claims.
+For the current software project, cite the repository and identify the exact source revision you used. For a performance result, also cite its specific measurement report; the project citation alone does not establish a benchmark result.
+
+```bibtex
+@misc{deharo2026eie_software,
+  author       = {De Haro, Alexandre},
+  title        = {EIE: Elyne Inference Engine},
+  year         = {2026},
+  howpublished = {GitHub repository},
+  url          = {https://github.com/deharoalexandre-cyber/EIE},
+  note         = {Specify the source revision and, for performance claims, the measurement report used.}
+}
+```
+
+<details>
+<summary>Historical Zenodo archive: original title includes an adaptive-cache design objective, not an operational guarantee</summary>
+
+The entry below preserves the archive's original bibliographic title and DOI. **Automatic KV adaptation is not operational in the current implementation.** This qualification is included in the BibTeX itself so it travels with the citation; the historical title is not the current feature summary.
 
 ```bibtex
 @misc{deharo2026eie,
@@ -296,6 +346,9 @@ The historical archived title includes an adaptive-cache design objective; it is
   year         = {2026},
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.19439972},
-  url          = {https://doi.org/10.5281/zenodo.19439972}
+  url          = {https://doi.org/10.5281/zenodo.19439972},
+  note         = {Historical archive title describes an adaptive-cache design objective; automatic KV adaptation is not operational in the current implementation.}
 }
 ```
+
+</details>
