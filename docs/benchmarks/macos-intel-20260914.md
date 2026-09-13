@@ -1,6 +1,6 @@
-# macOS Intel — bundle validation receipt, 2026-09-14
+# macOS Intel: bundle validation receipt, 2026-09-14
 
-**Label: locally verified** — produced by `scripts/receipt-macos.sh` against the
+**Label: locally verified**: produced by `scripts/receipt-macos.sh` against the
 published bundle, on its own engine instance (port 8091). JSON:
 [`data/macos-intel-20260914.json`](data/macos-intel-20260914.json).
 Maintainer-side execution; not independent replication.
@@ -9,11 +9,11 @@ Maintainer-side execution; not independent replication.
 
 | Item | Value |
 |---|---|
-| Machine | MacBookPro15,2 — Intel(R) Core(TM) i5-8279U CPU @ 2.40GHz, 8.6 GB |
+| Machine | MacBookPro15,2: Intel(R) Core(TM) i5-8279U CPU @ 2.40GHz, 8.6 GB |
 | OS | macOS 15.7.9 (x86_64) |
 | EIE source | `03be806`; submodule `2168b0c` + `patches/ews-runtime-2168b0.patch` |
 | Bundle binary SHA-256 | `1b092f2782b3ac0ff2d50dea5b3b97d456e35710574abe6d08d9d0c4dfd2f09c` |
-| Preset | `macos-cpu.yaml` — n_ctx 4096, KV f16/f16, flash_attn false, backend 0 (CPU) |
+| Preset | `macos-cpu.yaml`: n_ctx 4096, KV f16/f16, flash_attn false, backend 0 (CPU) |
 | Effective per model (from the engine log) | gemma-4-E2B-it-QAT-Q4_0: kv=f16/f16 ctx=4096 threads=4, bge-m3-Q8_0: kv=f16/f16 ctx=4096 threads=4 |
 | Models | gemma-4-E2B-it-QAT-Q4_0 `aa6eb6d481b583a3…`, bge-m3-Q8_0 `950f4a8e5e19477a…` |
 | Load until both models healthy | 5.25 s (warm page cache) |

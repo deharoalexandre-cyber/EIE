@@ -1,5 +1,5 @@
 #!/bin/bash
-# EIE — assemble un bundle macOS distribuable depuis un répertoire de build.
+# EIE: assemble un bundle macOS distribuable depuis un répertoire de build.
 # Usage : bash scripts/bundle-macos.sh arm64|x86_64 [build-dir]
 set -e
 cd "$(dirname "$0")/.."

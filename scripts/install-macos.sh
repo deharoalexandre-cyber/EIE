@@ -1,5 +1,5 @@
 #!/bin/bash
-# EIE — installation d'un bundle macOS (Intel ou Apple Silicon).
+# EIE: installation d'un bundle macOS (Intel ou Apple Silicon).
 # Usage : bash install-macos.sh [--download-models] [--dest DIR]
 #   - copie eie-server et les presets dans DIR (défaut ~/Elyne)
 #   - télécharge les modèles de référence sur demande (--download-models, ~3,7 Go)
@@ -79,7 +79,7 @@ launchctl bootstrap "gui/$(id -u)" "$PLIST"
 printf "Démarrage du moteur"
 for i in $(seq 1 90); do
   if curl -s -m 2 http://127.0.0.1:8090/health > /dev/null 2>&1; then
-    echo " — prêt : $(curl -s -m 2 http://127.0.0.1:8090/health)"; exit 0
+    echo ": prêt : $(curl -s -m 2 http://127.0.0.1:8090/health)"; exit 0
   fi
   printf "."; sleep 2
 done

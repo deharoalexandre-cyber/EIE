@@ -1,5 +1,5 @@
 #!/bin/bash
-# EIE — reçu de validation macOS : lance le moteur d'un bundle sur un port de
+# EIE: reçu de validation macOS : lance le moteur d'un bundle sur un port de
 # test, mesure santé / embeddings / chat à préfixe froid puis chaud, et écrit
 # un JSON au format des reçus du dépôt (docs/benchmarks/data/).
 # Usage : bash receipt-macos.sh --bundle DIR --models DIR [--port 8091] [--out FILE.json] [--rev GITREV]

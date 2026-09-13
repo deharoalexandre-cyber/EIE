@@ -1,4 +1,4 @@
-# EIE on macOS — prebuilt bundles (Intel and Apple Silicon)
+# EIE on macOS: prebuilt bundles (Intel and Apple Silicon)
 
 Two bundles are published on the [releases page](https://github.com/deharoalexandre-cyber/EIE/releases):
 
@@ -7,7 +7,7 @@ Two bundles are published on the [releases page](https://github.com/deharoalexan
 | `eie-macos-arm64-<rev>.tar.gz` | Apple Silicon (M1 and later), macOS 13+ | Metal, all layers on GPU | see the [Apple Silicon receipt](benchmarks/macos-apple-silicon-20260913.md) |
 | `eie-macos-x86_64-<rev>.tar.gz` | Intel Macs, macOS 13+ | CPU (Accelerate); Metal disabled on purpose | see the [Intel receipt](benchmarks/macos-intel-20260914.md) |
 
-Each bundle contains a **static `eie-server`** (no Homebrew, no dylib, no OpenSSL — the
+Each bundle contains a **static `eie-server`** (no Homebrew, no dylib, no OpenSSL: the
 server speaks plain HTTP on `127.0.0.1`), the two macOS presets, `install-macos.sh`,
 `SHA256SUMS` and this file. Model weights are **not** bundled.
 
@@ -25,7 +25,7 @@ bash install-macos.sh --download-models      # ~3.7 GB, hashes verified
 ```
 
 `install-macos.sh` copies the engine and presets into `~/Elyne`, optionally downloads
-the reference models (Gemma 4 E2B QAT Q4_0 for generation, bge-m3 Q8_0 for embeddings —
+the reference models (Gemma 4 E2B QAT Q4_0 for generation, bge-m3 Q8_0 for embeddings -
 the same files as the receipts, SHA-256 checked), registers a LaunchAgent
 (`com.elyne.eie`, port 8090, started with the session, `Interactive` priority) and
 waits for `/health`. Bring your own GGUF instead by dropping it into `~/Elyne/models/`.
@@ -56,7 +56,7 @@ bash scripts/receipt-macos.sh --bundle ~/Elyne --models ~/Elyne/models --port 80
 The script starts **its own** engine instance on the test port (never benchmark the
 instance someone is talking to), then records: load time until both models are healthy,
 an embedding, a cold-prefix chat, a warm-prefix chat and a 256-token warm-prefix
-generation — with `prompt_tokens`, `completion_tokens`, `cached_tokens`, the server-side
+generation: with `prompt_tokens`, `completion_tokens`, `cached_tokens`, the server-side
 `[KV]` time, and queue/transport time separated from engine time. It also records the
 Metal device and offloaded layers seen in the log, the effective KV type and context per
 model, and the SHA-256 of the binary and of every GGUF. The JSON goes next to the

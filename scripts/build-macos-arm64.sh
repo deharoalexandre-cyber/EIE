@@ -1,5 +1,5 @@
 #!/bin/bash
-# EIE — build macOS Apple Silicon (Metal), binaire statique et portable.
+# EIE: build macOS Apple Silicon (Metal), binaire statique et portable.
 # Fonctionne aussi en cross-compilation depuis un Mac Intel.
 set -e
 cd "$(dirname "$0")/.."

@@ -1,5 +1,5 @@
 #!/bin/bash
-# EIE — build macOS Intel (CPU + Accelerate, Metal désactivé : iGPU Intel = résultats faux),
+# EIE: build macOS Intel (CPU + Accelerate, Metal désactivé : iGPU Intel = résultats faux),
 # binaire statique et portable (GGML_NATIVE=OFF : pas de -march=native).
 set -e
 cd "$(dirname "$0")/.."

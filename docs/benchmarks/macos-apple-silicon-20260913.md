@@ -1,4 +1,4 @@
-# macOS Apple Silicon — first operation receipt, 13 September 2026
+# macOS Apple Silicon: first operation receipt, 13 September 2026
 
 **Label: maintainer-reported.** Figures were measured by a Claude Code session
 on the tester's machine and relayed by the maintainer; the raw log excerpt
@@ -16,10 +16,10 @@ are not published; only technical measurements are transcribed.
 |---|---|
 | Machine | MacBook Pro (2021, as reported), Apple Silicon M1 family, 16 GB unified memory |
 | OS | macOS Tahoe 26.6.2 |
-| Engine | `eie-server` arm64, static, Metal embedded — EIE `0e8d824`, submodule `2168b0c` + `patches/ews-runtime-2168b0.patch` |
+| Engine | `eie-server` arm64, static, Metal embedded: EIE `0e8d824`, submodule `2168b0c` + `patches/ews-runtime-2168b0.patch` |
 | Engine SHA-256 | `037155fbeedefe8b911d625765fcf5c15ec7bb2336df2da48e4e0ded160c122f` |
 | Build | `scripts/build-macos-arm64.sh` (cross-compiled from an Intel Mac; `-DLLAMA_OPENSSL=OFF -DBUILD_SHARED_LIBS=OFF -DGGML_METAL_EMBED_LIBRARY=ON`) |
-| Preset | `presets/macos-silicon.yaml` — f16 KV, n_ctx 4096, flash attention off, all layers offloaded |
+| Preset | `presets/macos-silicon.yaml`: f16 KV, n_ctx 4096, flash attention off, all layers offloaded |
 | Models | `gemma-4-E2B-it-QAT-Q4_0.gguf` (generation), `bge-m3-Q8_0.gguf` (embeddings) |
 | Client | Elyne macOS 0.7 (KV-reuse context, SSE streaming) |
 
@@ -73,7 +73,7 @@ for these three engine-only trials.
 | With one web search | 775 chars | 11.2 s, including 1.3 s reported search time |
 
 Web search: DuckDuckGo answered 1.2 s when it returned results and 0.3–0.4 s
-with an anti-bot page (zero results) — two of three test queries from the same
+with an anti-bot page (zero results): two of three test queries from the same
 address were blocked. Requests are served one at a time: the tester's own
 messages queued behind benchmark requests (16.7 s, 41.6 s, 25.3 s). Benchmarks
 must run on a separate engine instance, not on the one in use.
@@ -95,7 +95,7 @@ A first start on this machine failed with a TurboQuant KV type (`tq3_1s`). Root
 cause found on 14 September while producing the Intel receipt: the preset's
 `type_k/type_v: f16` was **not applied to the generation model**. Models listed
 in a `groups:` entry were loaded with the group's KV override, whose
-default-constructed value is `turbo3` (the parser never reads group overrides —
+default-constructed value is `turbo3` (the parser never reads group overrides -
 the "Group KV overrides" finding of the claims audit). On Intel the CPU kernels
 hide it; on Metal, which has no TurboQuant KV kernels in the pinned fork, the
 context fails. Two fixes:
