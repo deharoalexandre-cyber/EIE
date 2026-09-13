@@ -25,7 +25,10 @@ struct GroupConfig {
     std::string replacement;
     std::string type = "parallel"; // parallel/sequential/fanout/standard
     float max_latency_ms = 5000;
-    KvConfig kv_override;
+    // Surcharge KV du groupe : VIDE par défaut (type_k/type_v ""), sinon les
+    // valeurs par défaut de KvConfig (turbo3) masquent le réglage global du
+    // preset — les modèles de groupe se chargeaient en turbo3 malgré `type_k: f16`.
+    KvConfig kv_override = [] { KvConfig k; k.type_k.clear(); k.type_v.clear(); return k; }();
 };
 
 struct GroupResult {

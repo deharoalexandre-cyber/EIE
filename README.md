@@ -229,8 +229,8 @@ After the same submodule/patch setup, recipes are available:
 | Linux NVIDIA | `./scripts/build-cuda.sh` | Prior Linux operation reported; no complete published native run bundle |
 | Linux AMD | `./scripts/build-rocm.sh` | ROCm target, not a validated first-class device matrix |
 | CPU | `./scripts/build-cpu.sh` | Model/kernel compatibility and available RAM still apply |
-| macOS 15 Intel | CPU recipe + `presets/macos-cpu.yaml` | Maintainer-reported operation; Metal disabled by this project |
-| Apple Silicon | `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Reported MacBook Pro operation: Metal, 16 GB memory, Gemma 4 E2B QAT Q4_0; 44–49 tok/s with a warm ~1.6k history, first output 0.07–0.10 s - [engine/application receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
+| macOS Intel | [prebuilt bundle](docs/macos.md) or `./scripts/build-macos-x86_64.sh` + `presets/macos-cpu.yaml` | Locally verified on a 2018 MacBook Pro (i5-8279U, 8 GB, CPU only): [receipt](docs/benchmarks/macos-intel-20260914.md) + [JSON](docs/benchmarks/data/macos-intel-20260914.json); Metal disabled by this project |
+| Apple Silicon | [prebuilt bundle](docs/macos.md) or `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Maintainer-reported MacBook Pro operation (JSON receipt from `scripts/receipt-macos.sh` pending): Metal, 16 GB memory, Gemma 4 E2B QAT Q4_0; 44–49 tok/s with a warm ~1.6k history, first output 0.07–0.10 s - [engine/application receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
 
 The Windows EWS campaign does not qualify the portable reader, Metal, ROCm, or Android EWS. There is no “any OS / any GGUF” guarantee. Build duration depends on the machine.
 

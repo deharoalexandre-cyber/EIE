@@ -91,8 +91,24 @@ must run on a separate engine instance, not on the one in use.
 
 ## Incident retained
 
-A first start on this machine failed with a TurboQuant KV type (`tq3_1s`):
-the engine had run without its preset, taking the built-in default
-`type_k/type_v = turbo3`, for which the pinned fork has no Metal kernels.
-Fixed in `0e8d824`: on arm64 Apple builds, `turbo*` KV types fall back to
-f16 with a logged warning. The default remains `turbo3` on other platforms.
+A first start on this machine failed with a TurboQuant KV type (`tq3_1s`). Root
+cause found on 14 September while producing the Intel receipt: the preset's
+`type_k/type_v: f16` was **not applied to the generation model**. Models listed
+in a `groups:` entry were loaded with the group's KV override, whose
+default-constructed value is `turbo3` (the parser never reads group overrides —
+the "Group KV overrides" finding of the claims audit). On Intel the CPU kernels
+hide it; on Metal, which has no TurboQuant KV kernels in the pinned fork, the
+context fails. Two fixes:
+
+- `0e8d824`: on arm64 Apple builds, `turbo*` KV types fall back to f16 with a warning;
+- the bundle revision: group overrides are empty unless set, so the preset's KV type applies
+  to every model, on every platform (the `[CPU] loaded: … kv=` log line shows the effective type).
+
+Also corrected in the same revision: the default thread count was a fixed 2,
+not half the cores; presets can still force it with `threads:`.
+
+## Upgrade path to *locally verified*
+
+Run `scripts/receipt-macos.sh` on this machine against the published bundle
+(its own instance on a test port, never the one in use) and add the JSON under
+`data/`; the README label changes in the same commit.

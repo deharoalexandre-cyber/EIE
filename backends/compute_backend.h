@@ -33,7 +33,8 @@ struct KvConfig {
 
 struct ModelParams {
     std::string path, alias;
-    int n_gpu_layers = 99, n_threads = 2;
+    int n_gpu_layers = 99;
+    int n_threads = 0; // 0 = automatique (moitié des cœurs) ; `threads:` du preset pour forcer
     int ews_slots = 0; // Per-model expert cache; 0 preserves normal loading.
     bool cpu_moe = false;
     KvConfig kv;
