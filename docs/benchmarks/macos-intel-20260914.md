@@ -1,6 +1,6 @@
 # macOS Intel: bundle validation receipt, 2026-09-14
 
-**Label: locally verified**: produced by `scripts/receipt-macos.sh` against the
+**Label: locally verified.** Produced by `scripts/receipt-macos.sh` against the
 published bundle, on its own engine instance (port 8091). JSON:
 [`data/macos-intel-20260914.json`](data/macos-intel-20260914.json).
 Maintainer-side execution; not independent replication.
