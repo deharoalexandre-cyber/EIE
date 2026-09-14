@@ -1,0 +1,15 @@
+# EIE Preset: Windows x64 CPU
+# Static CPU build (scripts/build-windows-cpu.bat), f16 KV cache, no GPU offload.
+# Start the engine with: eie-server.exe --config presets\windows-cpu.yaml
+host: 127.0.0.1
+port: 8090
+strategy: generic
+model_dir: models
+auto_discover: true
+preload: all
+type_k: f16
+type_v: f16
+flash_attn: false
+n_ctx: 4096
+reserve_mb: 256
+log_level: info
