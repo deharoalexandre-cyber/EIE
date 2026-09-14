@@ -4,6 +4,12 @@ Apple Silicon documentation update: 14 September 2026, incorporating the
 13 September on-device report and the maintainer's supplied timing photographs.
 This update does not rerun the Mac workload or qualify EWS on Metal.
 
+Android update, 14 September: native CPU `dotprod` and `i8mm` bundles pass on a
+Z Flip6 / SM8650 / Android 16 with Gemma E2B QAT Q4_0. The
+[device receipt](benchmarks/android-neon-zflip6-20260914.md) publishes raw logs,
+exact model/library hashes and both preliminary and release trials. This is
+maintainer-side CPU text-chat validation, not independent replication or Android EWS.
+
 ## Scope and status
 
 Requested by Alexandre De Haro; performed with Codex through source inspection,
@@ -62,7 +68,7 @@ can borrow the other's performance, integrity or memory claims.
 | Next auxiliary attribution | Actual 12B -> 26B -> 12B contribution and later resident continuation succeed. **Full gate fails:** after stopping 26B, resident attributes an answer to it without an observed tool call. Do not claim reliable offline-tool recovery or universal source attribution |
 | Groups | Parallel, sequential and longest-successful-response fan-out implemented. This is not quality-based voting, continuous batching or proven throughput scaling |
 | `retry_once` / `replace_with` | **Incomplete.** One failure leads to a partial outcome or failure; there is no second call or replacement invocation |
-| Group KV overrides | **Incomplete.** Parser does not read them; nonempty struct defaults can mask global cache/context settings |
+| Group KV overrides | **Partially corrected on 14 September.** Empty type defaults no longer mask the global KV type (`03be806`); parsing/qualification of explicit per-group overrides remains incomplete |
 | Pinned / multi-group isolation | **Not enforced as a memory guarantee.** Boot loading and response-quorum decisions exist; `multi-group` aliases pinned-group |
 | Generic FIFO, on-demand loading, LRU eviction | **Not established.** Model mutexes serialize inference, not FIFO admission. Discovery is boot-time; no integrated dynamic eviction path |
 | Latency limits | Group latency target is not a timeout; health latency remains zero |
@@ -116,9 +122,11 @@ every old design aspiration is neither necessary nor implicitly authorized.
 - **Cross-model / independent:** another model family is not an independent
   auditor. Mixtral's measured lack of a useful hotset on those traces is not a
   theorem about every workload.
-- **Mobile:** numbers are author-reported, without an app bundle, full build/model
-  hashes and raw runs. Quantizations differ. NPU/CPU/GPU causal rankings cannot
-  be inferred from the table alone.
+- **Mobile:** the historical six-row table is maintainer-reported, without matched
+  full build/model hashes and raw runs. The separate 14 September CPU bundles
+  have a [raw Z Flip6 receipt](benchmarks/android-neon-zflip6-20260914.md) and exact
+  QAT Q4_0 identity. Its request-wall rates are not the historical decode rates.
+  Different quantizations and unmatched setups preclude NPU/CPU/GPU rankings.
 - **Apple Silicon / Metal:** real MacBook Pro operation is now
   [maintainer-reported](benchmarks/macos-apple-silicon-20260913.md), with 16 GB
   unified memory and Gemma 4 E2B QAT Q4_0. Three engine-only warm-prefix trials
@@ -163,11 +171,14 @@ It does **not** withdraw the September consumed-weight measurements.
 ## Platform and reproduction boundary
 
 Windows/CUDA/Gemma has the identified local evidence. Linux CUDA operation
-and Intel macOS operation are maintainer-reported. Apple Silicon now has a
+is maintainer-reported; Intel macOS now has a separate
+[14 September bundle receipt](benchmarks/macos-intel-20260914.md). Apple Silicon has a
 separate reported on-device Metal run, not just a build path; its evidence
 status and scope are described above. ROCm and Android build paths are not
 qualified by the Windows campaign, and no Metal EWS result is established.
-The standalone Android wrapper is not a complete APK.
+The standalone Android wrapper is not a complete APK. The new native HTTP bundles
+are independently packaged from that wrapper and locally tested on the Z Flip6;
+Windows results are not used to qualify them.
 
 The published EWS wrapper requires the supplied patch at the pinned submodule
 revision, including for ordinary non-EWS inference builds. Docker recipes do

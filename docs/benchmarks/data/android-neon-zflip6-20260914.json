@@ -1,0 +1,1190 @@
+{
+  "schema": "eie.android.public-campaign/v1",
+  "runs": [
+    {
+      "label": "preliminary-i8mm",
+      "pass": true,
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "variant": "i8mm",
+      "manifest_sha256": "7ccbf3e6c50634ea5c40beca9545063ae638605f499ee265540bd4e884f05481",
+      "unit_stdout": "[Models] registered: idle\r\n[CPU] GPU 0 init\r\n[CPU] loaded (placeholder): idle kv=turbo3/turbo3 ctx=4096\r\n[CPU] unloaded: idle\r\nPASS: 628 assertions (no model/GPU).",
+      "excluded_artifacts": [
+        {
+          "name": "battery-after.stderr",
+          "reason": "charging history outside the test scope"
+        },
+        {
+          "name": "battery-after.stdout",
+          "reason": "charging history outside the test scope"
+        },
+        {
+          "name": "battery-before.stderr",
+          "reason": "charging history outside the test scope"
+        },
+        {
+          "name": "battery-before.stdout",
+          "reason": "charging history outside the test scope"
+        }
+      ]
+    },
+    {
+      "label": "preliminary-dotprod",
+      "pass": true,
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "variant": "dotprod",
+      "manifest_sha256": "6c31c40485e319c90384a7c0a2cf615ffa9e5ba1bd61857ad1d7c44e0258d728",
+      "unit_stdout": "[Models] registered: idle\r\n[CPU] GPU 0 init\r\n[CPU] loaded (placeholder): idle kv=turbo3/turbo3 ctx=4096\r\n[CPU] unloaded: idle\r\nPASS: 628 assertions (no model/GPU).",
+      "excluded_artifacts": [
+        {
+          "name": "battery-after.stderr",
+          "reason": "charging history outside the test scope"
+        },
+        {
+          "name": "battery-after.stdout",
+          "reason": "charging history outside the test scope"
+        },
+        {
+          "name": "battery-before.stderr",
+          "reason": "charging history outside the test scope"
+        },
+        {
+          "name": "battery-before.stdout",
+          "reason": "charging history outside the test scope"
+        }
+      ]
+    },
+    {
+      "label": "release-i8mm",
+      "pass": true,
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "variant": "i8mm",
+      "manifest_sha256": "431cc4f8c36403f51f001d0373864b439580977f5f00910322948c567dcacbf2",
+      "unit_stdout": "[Models] registered: idle\r\n[CPU] GPU 0 init\r\n[CPU] loaded (placeholder): idle kv=turbo3/turbo3 ctx=4096\r\n[CPU] unloaded: idle\r\nPASS: 628 assertions (no model/GPU).",
+      "excluded_artifacts": []
+    },
+    {
+      "label": "release-dotprod",
+      "pass": true,
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "variant": "dotprod",
+      "manifest_sha256": "8933b099297fb2810bc313f6b447bc934b2698ee90333073272d3c9f3cea3f84",
+      "unit_stdout": "[Models] registered: idle\r\n[CPU] GPU 0 init\r\n[CPU] loaded (placeholder): idle kv=turbo3/turbo3 ctx=4096\r\n[CPU] unloaded: idle\r\nPASS: 628 assertions (no model/GPU).",
+      "excluded_artifacts": []
+    }
+  ],
+  "measurements": [
+    {
+      "run": "preliminary-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+      "library_sha256": {
+        "bin/eie-server": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+        "bin/eie-serving-tests": "47ee4b486cf3e5da90d2c2c0d43f7d8c0b06ea9aeae9df7d5b44a8aa5869305e",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "arithmetic-buffered",
+      "text": "42",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 25,
+        "completion_tokens": 3,
+        "total_tokens": 28,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "request_wall_seconds": 4.092999999993481,
+      "first_content_seconds": null,
+      "output_tokens_per_request_wall_second": 0.7329587099938378
+    },
+    {
+      "run": "preliminary-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+      "library_sha256": {
+        "bin/eie-server": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+        "bin/eie-serving-tests": "47ee4b486cf3e5da90d2c2c0d43f7d8c0b06ea9aeae9df7d5b44a8aa5869305e",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "arithmetic-streamed",
+      "text": "42",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 25,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 28
+      },
+      "request_wall_seconds": 0.5310000000172295,
+      "first_content_seconds": 0.40600000001722947,
+      "output_tokens_per_request_wall_second": 5.649717513940976
+    },
+    {
+      "run": "preliminary-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+      "library_sha256": {
+        "bin/eie-server": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+        "bin/eie-serving-tests": "47ee4b486cf3e5da90d2c2c0d43f7d8c0b06ea9aeae9df7d5b44a8aa5869305e",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-1",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 7.438000000023749,
+      "first_content_seconds": 0.4529999999795109,
+      "output_tokens_per_request_wall_second": 8.604463565447118
+    },
+    {
+      "run": "preliminary-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+      "library_sha256": {
+        "bin/eie-server": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+        "bin/eie-serving-tests": "47ee4b486cf3e5da90d2c2c0d43f7d8c0b06ea9aeae9df7d5b44a8aa5869305e",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-2",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 4.75,
+      "first_content_seconds": 0.46899999998277053,
+      "output_tokens_per_request_wall_second": 13.473684210526315
+    },
+    {
+      "run": "preliminary-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+      "library_sha256": {
+        "bin/eie-server": "7dc04d467f74a06e7a34b2a960ce5e331311b410913d66bac556d40f377aa2c7",
+        "bin/eie-serving-tests": "47ee4b486cf3e5da90d2c2c0d43f7d8c0b06ea9aeae9df7d5b44a8aa5869305e",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-3",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 5.047000000020489,
+      "first_content_seconds": 0.45400000002700835,
+      "output_tokens_per_request_wall_second": 12.680800475478538
+    },
+    {
+      "run": "preliminary-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+      "library_sha256": {
+        "bin/eie-server": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+        "bin/eie-serving-tests": "8b86891a3e18abb4b4abe84c0c306f2fad7c21ef37d5a6cff1c5a8b2243334b6",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "arithmetic-buffered",
+      "text": "42",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 25,
+        "completion_tokens": 3,
+        "total_tokens": 28,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "request_wall_seconds": 0.9689999999827705,
+      "first_content_seconds": null,
+      "output_tokens_per_request_wall_second": 3.095975232253191
+    },
+    {
+      "run": "preliminary-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+      "library_sha256": {
+        "bin/eie-server": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+        "bin/eie-serving-tests": "8b86891a3e18abb4b4abe84c0c306f2fad7c21ef37d5a6cff1c5a8b2243334b6",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "arithmetic-streamed",
+      "text": "42",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 25,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 28
+      },
+      "request_wall_seconds": 1.0,
+      "first_content_seconds": 0.7029999999795109,
+      "output_tokens_per_request_wall_second": 3.0
+    },
+    {
+      "run": "preliminary-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+      "library_sha256": {
+        "bin/eie-server": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+        "bin/eie-serving-tests": "8b86891a3e18abb4b4abe84c0c306f2fad7c21ef37d5a6cff1c5a8b2243334b6",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-1",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 4.8439999999827705,
+      "first_content_seconds": 0.5619999999762513,
+      "output_tokens_per_request_wall_second": 13.212221304753848
+    },
+    {
+      "run": "preliminary-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+      "library_sha256": {
+        "bin/eie-server": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+        "bin/eie-serving-tests": "8b86891a3e18abb4b4abe84c0c306f2fad7c21ef37d5a6cff1c5a8b2243334b6",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-2",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 5.01500000001397,
+      "first_content_seconds": 0.7650000000139698,
+      "output_tokens_per_request_wall_second": 12.76171485539815
+    },
+    {
+      "run": "preliminary-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+      "library_sha256": {
+        "bin/eie-server": "6c9870cc619842f39167cd58bac7c15498b7dacd6d3e114f94f56eb5195aaa84",
+        "bin/eie-serving-tests": "8b86891a3e18abb4b4abe84c0c306f2fad7c21ef37d5a6cff1c5a8b2243334b6",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma-4-E2B-it-QAT",
+        "quantization": "QAT-Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "8186c76291b69c49fa3b49dade1f22824df46a4f",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-3",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 5.922000000020489,
+      "first_content_seconds": 0.5939999999827705,
+      "output_tokens_per_request_wall_second": 10.807159743292566
+    },
+    {
+      "run": "release-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+      "library_sha256": {
+        "bin/eie-server": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+        "bin/eie-serving-tests": "688c9dbb22cec2bed324c1d845ebd19588dd5bd3691b561ed1fc80b5933f0229",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "arithmetic-buffered",
+      "text": "42",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 25,
+        "completion_tokens": 3,
+        "total_tokens": 28,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "request_wall_seconds": 0.5630000000237487,
+      "first_content_seconds": null,
+      "output_tokens_per_request_wall_second": 5.328596802617145
+    },
+    {
+      "run": "release-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+      "library_sha256": {
+        "bin/eie-server": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+        "bin/eie-serving-tests": "688c9dbb22cec2bed324c1d845ebd19588dd5bd3691b561ed1fc80b5933f0229",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "arithmetic-streamed",
+      "text": "42",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 25,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 28
+      },
+      "request_wall_seconds": 0.5619999999762513,
+      "first_content_seconds": 0.3899999999557622,
+      "output_tokens_per_request_wall_second": 5.338078292040521
+    },
+    {
+      "run": "release-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+      "library_sha256": {
+        "bin/eie-server": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+        "bin/eie-serving-tests": "688c9dbb22cec2bed324c1d845ebd19588dd5bd3691b561ed1fc80b5933f0229",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-1",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 8.125,
+      "first_content_seconds": 0.625,
+      "output_tokens_per_request_wall_second": 7.876923076923077
+    },
+    {
+      "run": "release-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+      "library_sha256": {
+        "bin/eie-server": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+        "bin/eie-serving-tests": "688c9dbb22cec2bed324c1d845ebd19588dd5bd3691b561ed1fc80b5933f0229",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-2",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 13.827999999979511,
+      "first_content_seconds": 0.35899999999674037,
+      "output_tokens_per_request_wall_second": 4.62829042523104
+    },
+    {
+      "run": "release-i8mm",
+      "variant": "i8mm",
+      "cpu_arch": "armv8.6-a+dotprod+i8mm+nosve",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+      "library_sha256": {
+        "bin/eie-server": "e71142a4a6091ec3d17bb09cd1c95f46a9fef09ce412f4b4f1f639e2b14eafc6",
+        "bin/eie-serving-tests": "688c9dbb22cec2bed324c1d845ebd19588dd5bd3691b561ed1fc80b5933f0229",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "3d65c30b1b02b917670592ec9d7ec3a7fc20eb6cf93333f8584923f1258cad8f",
+        "lib/libggml-cpu.so": "8c962010c0bbf9a21f3483f559954b438d995ad72d44e24f72fc1f8fd760c3fa",
+        "lib/libggml.so": "c3cca4e8b7e9b1f35ea14047fbdd46c6347f9a7136be26015bbb65e488c70fd2",
+        "lib/libllama-common.so": "999645eec3277e54e1fb1db61324a60216a3b629cc31f59c4a30e42599d09d37",
+        "lib/libllama.so": "5f884c9cad2936f25d380377951982c06e6bb6d841a480fac7275778f095e65d"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-3",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 9.219000000040978,
+      "first_content_seconds": 0.5,
+      "output_tokens_per_request_wall_second": 6.942184618691346
+    },
+    {
+      "run": "release-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+      "library_sha256": {
+        "bin/eie-server": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+        "bin/eie-serving-tests": "6a7005149524b7b7bad0c697c45626e7ad6c25bf82478afe787d30470dfbb573",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "arithmetic-buffered",
+      "text": "42",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 25,
+        "completion_tokens": 3,
+        "total_tokens": 28,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "request_wall_seconds": 0.8130000000237487,
+      "first_content_seconds": null,
+      "output_tokens_per_request_wall_second": 3.6900369002612132
+    },
+    {
+      "run": "release-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+      "library_sha256": {
+        "bin/eie-server": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+        "bin/eie-serving-tests": "6a7005149524b7b7bad0c697c45626e7ad6c25bf82478afe787d30470dfbb573",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "arithmetic-streamed",
+      "text": "42",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 25,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 28
+      },
+      "request_wall_seconds": 0.7969999999622814,
+      "first_content_seconds": 0.6399999999557622,
+      "output_tokens_per_request_wall_second": 3.764115433051414
+    },
+    {
+      "run": "release-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+      "library_sha256": {
+        "bin/eie-server": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+        "bin/eie-serving-tests": "6a7005149524b7b7bad0c697c45626e7ad6c25bf82478afe787d30470dfbb573",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-1",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 6.422000000020489,
+      "first_content_seconds": 0.6099999999860302,
+      "output_tokens_per_request_wall_second": 9.965742759233231
+    },
+    {
+      "run": "release-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+      "library_sha256": {
+        "bin/eie-server": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+        "bin/eie-serving-tests": "6a7005149524b7b7bad0c697c45626e7ad6c25bf82478afe787d30470dfbb573",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-2",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 5.5,
+      "first_content_seconds": 0.6410000000032596,
+      "output_tokens_per_request_wall_second": 11.636363636363637
+    },
+    {
+      "run": "release-dotprod",
+      "variant": "dotprod",
+      "cpu_arch": "armv8.2-a+dotprod+fp16",
+      "device": {
+        "ro.product.model": "SM-F741B",
+        "ro.product.manufacturer": "samsung",
+        "ro.soc.model": "SM8650",
+        "ro.board.platform": "pineapple",
+        "ro.product.cpu.abilist": "arm64-v8a",
+        "ro.build.version.release": "16",
+        "ro.build.version.sdk": "36",
+        "ro.build.version.security_patch": "2026-08-05"
+      },
+      "binary_sha256": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+      "library_sha256": {
+        "bin/eie-server": "c51cff822309a8b077b5635a52599f6e4d921d222945751adb6c4196bea1e4dd",
+        "bin/eie-serving-tests": "6a7005149524b7b7bad0c697c45626e7ad6c25bf82478afe787d30470dfbb573",
+        "lib/libc++_shared.so": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+        "lib/libggml-base.so": "78c75fa4b2edfe4e18ac08217749731ff415eea5e45f7d9e526833dc10b2a9a7",
+        "lib/libggml-cpu.so": "6fcda19a9fcfdc288eab3a834ba080be4d80c420097b7d3d8f4b464011c5a33f",
+        "lib/libggml.so": "4d22c678e3150b266426ee38212ad01807caafe90b3126a0256cf1c99cb1440b",
+        "lib/libllama-common.so": "1badb6cc2d4a1e2739cf44f052ecd3d4b2d332c46f213c079b99053608aa0aa2",
+        "lib/libllama.so": "61fa2f0c4ca0717c6c2a88d5ace68903723fbcd623c5fdcfa95f9b747c9fc108"
+      },
+      "model": {
+        "name": "Gemma 4 E2B QAT",
+        "quantization": "QAT_Q4_0",
+        "sha256": "3646b4c147cd235a44d91df1546d3b7d8e29b547dbe4e1f80856419aa455e6fd"
+      },
+      "source_revision": "50f49079a6a5a3e1cc6f01048329ec608322c475",
+      "settings": {
+        "context": 1024,
+        "type_k": "f16",
+        "type_v": "f16",
+        "threads": 4,
+        "temperature": 0,
+        "one_shot": true,
+        "openmp": false
+      },
+      "label": "generation-3",
+      "text": "A bicycle operates through a clever interplay of physics, primarily involving the rider's pedaling action and the bike\u2019s geometry. When you pedal, your legs apply force to the pedals, which are connected by a chain or belt to the rear wheel. This rotational energy is transferred to the back wheel, propelling it forward",
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 24,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "total_tokens": 88
+      },
+      "request_wall_seconds": 5.60899999999674,
+      "first_content_seconds": 0.6869999999762513,
+      "output_tokens_per_request_wall_second": 11.410233553224673
+    }
+  ],
+  "rate_definition": "API completion_tokens / complete host request wall time, including prefill and transport; not decode-only",
+  "model_bytes": 3349514112,
+  "scope": "Maintainer-run CPU text-chat validation on one Z Flip6 / SM8650 / Android 16, not independent replication",
+  "limitations": [
+    "Two short prompts; 64-token length-limited generations are intentionally incomplete",
+    "Sequential, non-randomized trials; uncontrolled background load and cache/thermal state",
+    "No matched CPU/GPU/NPU comparison, Android EWS, vision, JNI or APK qualification"
+  ],
+  "evidence_archive": {
+    "name": "android-neon-zflip6-20260914-raw.zip",
+    "sha256": "ce26158dbe8751ffcc289b92e2f0ca9a60eaed89c0c2be8cb04c5d23b0f28d4a",
+    "bytes": 189881
+  }
+}

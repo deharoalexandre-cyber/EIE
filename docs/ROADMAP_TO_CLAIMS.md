@@ -93,6 +93,19 @@ other Apple chips require separate tests; the reported Gemma E2B operation
 does not establish those results. No runtime change is required by this
 documentation update; the existing Apple Silicon F16 KV fallback is retained.
 
+## Android CPU: native bundles and first raw device receipt
+
+The [14 September Z Flip6 campaign](benchmarks/android-neon-zflip6-20260914.md)
+qualifies the released `dotprod` and `i8mm` HTTP bundles for the two recorded
+Gemma E2B QAT Q4_0 text-chat prompts. It retains native test output, SSE and
+buffered replies, device/SoC/OS data, model/library hashes and every timed trial.
+No additional application permissions or security layer were added.
+
+Next, measure decode/prefill separately with controlled cache and thermal state,
+exercise longer conversations and recovery, and repeat on the other named SoCs.
+JNI/APK integration, HTP/OpenCL, embeddings, vision and mobile EWS need their own
+device tests; the historical mixed-quantization table cannot supply those gates.
+
 ## GLM and resource-efficiency research
 
 GLM 320B remains a separate experimental runtime path, not a generally qualified

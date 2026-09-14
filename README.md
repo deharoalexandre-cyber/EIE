@@ -9,7 +9,7 @@
 
 - **What it is:** a C++ inference server that loads GGUF models locally and exposes HTTP chat and embedding endpoints using a subset of the OpenAI API format.
 - **Who it is for:** developers of local assistants, RAG clients and desktop or self-hosted applications. **One LLM is enough; multiple models are optional.** [Elyne Next uses EIE/EWS daily at Elyne Corp](#production-use-elyne-next-resident-12b-and-streamed-26b).
-- **What is verified:** the maintainers have locally validated bounded Windows/CUDA serving and EWS tests, with linked receipts; real Apple Silicon/Metal and Android operation is separately labelled *maintainer-reported*.
+- **What is verified:** bounded Windows/CUDA serving and EWS tests, Intel macOS serving, and Android CPU text chat on a Z Flip6 have local maintainer-run receipts. Apple Silicon/Metal and the older multi-device Android timings remain separately labelled *maintainer-reported*.
 - **What is experimental:** EWS, an optional expert-weight streaming path for selected MoE models; GLM-5.3-Flash uses a separate experimental runtime.
 - **Where to check:** [capability status](#capability-status), [claim-by-claim evidence](docs/CLAIMS_AUDIT.md) and [remaining work](docs/ROADMAP_TO_CLAIMS.md).
 
@@ -131,9 +131,13 @@ The old **“30% less VRAM / 2x faster than Ollama”** assertions are withdrawn
 
 ## EIE Mobile (Android)
 
-[`mobile/`](mobile/README.md) contains a JNI wrapper and Android arm64 build recipes for CPU variants, OpenCL/Adreno and Hexagon HTP. This is **not a ready-to-build APK**: the application, prebuilt libraries, headers and external build paths must be supplied. Prefix reuse avoids re-evaluating a retained identical prefix; it does not make the entire attention computation O(new tokens).
+**Downloadable native CPU bundles:** [Android arm64 `dotprod` and `i8mm`](https://github.com/deharoalexandre-cyber/EIE/releases/tag/android-neon-2026.09.14), with EIE HTTP server, shared libraries, headers, licenses and SHA-256 manifests. [Run/rebuild guide](mobile/ANDROID_BUNDLE.md).
 
-Maintainer-reported on-device results (Gemma 4 E2B, QAT Q4_0 unless noted). No raw device logs, complete model/build hashes or reproducible app bundle are included. **No independent replication is claimed**; see the [claims audit](docs/CLAIMS_AUDIT.md) for evidence scope.
+**Locally verified on 14 September:** both CPU variants run **Gemma 4 E2B QAT Q4_0** on a **Galaxy Z Flip6 (SM8650, Android 16)**. The release tests pass 628 native serving assertions per variant, matching buffered/SSE arithmetic answers and three 64-token generations per variant. [Receipt and limits](docs/benchmarks/android-neon-zflip6-20260914.md) / [per-request JSON, exact binaries and model hashes](docs/benchmarks/data/android-neon-zflip6-20260914.json). Raw dedicated ADB/server/HTTP outputs are downloadable with the release; earlier trials are retained too. These are CPU text-chat bundles, **not an APK, Android EWS, GPU/NPU or vision qualification**. Model weights are not included.
+
+[`mobile/`](mobile/README.md) also contains the separate JNI wrapper and OpenCL/Adreno and Hexagon HTP build recipes. That integration still requires an application and externally supplied build dependencies; it is not validated by the new HTTP-bundle test. Prefix reuse avoids re-evaluating a retained identical prefix; it does not make the entire attention computation O(new tokens).
+
+**Historical field measurements below, unchanged:** Gemma 4 E2B, QAT Q4_0 unless noted. These six rows still lack matched raw device/model/build bundles. They are maintainer-reported, not measurements of the new release. **No independent replication is claimed**; see the [claims audit](docs/CLAIMS_AUDIT.md).
 
 | SoC | Backend | Decode | Prompt eval |
 |---|---|---|---|

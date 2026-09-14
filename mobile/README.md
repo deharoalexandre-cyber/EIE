@@ -1,17 +1,25 @@
-# EIE Mobile - embedded Android components
+# EIE Mobile: Android engine bundles and embedded components
 
 The Android arm64 flavor of EIE uses a TurboQuant llama.cpp fork and a JNI
 wrapper. It loads GGUF models and emits tokens; memory, identity, orchestration
 and application behavior belong to the client.
 
-**Publication status, 7 September 2026:** wrapper code and build recipes,
-not a complete APK. Device numbers below are maintainer-reported; no complete
-app, raw device logs or pinned build/model evidence bundle is published here.
+**Publication status, 14 September 2026:** [native CPU bundles](https://github.com/deharoalexandre-cyber/EIE/releases/tag/android-neon-2026.09.14)
+are available for arm64 `dotprod` and `i8mm`: EIE HTTP server, shared libraries,
+headers, notices, manifests and a device-validation script. Both passed on a
+Galaxy Z Flip6 / SM8650 / Android 16 with **Gemma 4 E2B QAT Q4_0**, not Q4_K_M.
+[Bundle instructions](ANDROID_BUNDLE.md) / [raw-evidence receipt](../docs/benchmarks/android-neon-zflip6-20260914.md).
+
+The native bundle is not an APK and does not replace the JNI integration below.
+The older six-row performance table remains maintainer-reported; this new CPU
+campaign does not retroactively qualify those devices, builds or backends.
 
 ## Contents and prerequisites
 
 | Path | Purpose |
 |---|---|
+| `../scripts/build_android_neon.py` | Package the native EIE server and libraries with an explicit CPU instruction set |
+| `../scripts/validate_android_neon.py` | Raw, isolated ADB and HTTP tests against a hash-identified GGUF |
 | `jni/native_inference.cpp` | JNI wrapper and package forwarders |
 | `jni/CMakeLists.txt` | Links externally supplied prebuilt fork libraries |
 | `scripts/build_cpu_variants.sh` | Android CPU-variant build recipe |
@@ -51,10 +59,10 @@ The desktop EWS patch/campaign is not Android EWS qualification.
 CPU/NEON quantized-cache selection also depends on client-side code not
 bundled here. Do not infer that every desktop KV mode is available on mobile.
 
-## Reported performance
+## Historical reported performance: separate from the native bundle
 
-Gemma 4 E2B, QAT Q4_0 unless noted. These are field figures, not independently
-verified results of this audit or a controlled cross-backend comparison.
+Gemma 4 E2B, QAT Q4_0 unless noted. These are maintainer-reported field figures,
+not a controlled cross-backend comparison or independently replicated results.
 
 | SoC | Backend | Decode tok/s | Prefill tok/s |
 |---|---|---:|---:|
@@ -77,8 +85,10 @@ and incomplete device/build details preclude a general NPU/GPU/CPU ranking.
   matrix does not guarantee operation on every ROM or SoC revision.
 - No general concurrent-caller / secondary-context allocation-failure gate
   is provided. Do not describe one-shot isolation as unconditional.
-- Reproducibility needs pinned image/library/model hashes, a minimal buildable
-  client, raw device runs, context/sampling/thermal settings and repeat statistics.
+- Reproducing the historical JNI/HTP/OpenCL rows still needs pinned build/model
+  hashes, a minimal client and raw runs. The separate CPU HTTP bundles now include
+  these build/model identities and raw test outputs for the Z Flip6 only; they do
+  not establish decode-only rates or controlled thermal/cache repeatability.
 
 See the [repository audit](../docs/CLAIMS_AUDIT.md). Hardware availability
 and a build recipe alone do not certify production operation.
