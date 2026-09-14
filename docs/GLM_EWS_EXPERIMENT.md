@@ -1,5 +1,29 @@
 # Experimental GLM-5.3-Flash EWS port
 
+**Guide revision 2, updated 14 September 2026.** The measurements below were
+performed on **8 September 2026**; this is a documentation update, not a new run.
+Exact measured source revisions, binary/model hashes and failed attempts remain
+in the linked receipts.
+
+## In brief
+
+- **Locally verified, hybrid EWS:** GLM-5.3-Flash **320B**, a **199.7 GB** six-shard GGUF artifact, generated alongside Next's resident 12B on a laptop with **16 GiB-class VRAM and 32 GiB-class RAM**. Its complete **148-token answer took 278.515 s (about 4 min 39 s)**, followed by resident synthesis and continuation. [GPU/Next receipt](benchmarks/glm53-ews-gpu-next-20260908.md#actual-next-cohabitation).
+- **Locally verified, bounded numerical equivalence:** native mmap and an **8-slot EWS cache produced 619,520 bit-identical logits, maximum absolute difference 0**, with identical generated token IDs. This held for **one six-token prompt and four predictions**, with experts computed on CPU in both arms. [Paired numerical receipt](benchmarks/glm53-ews-next-20260908.md#paired-numerical-test).
+- **Locally verified, CPU-expert EWS integration:** an earlier, separate placement completed the real Next loop with a **702-token GLM answer in 1,090.547 s**, resident synthesis and a subsequent resident turn. This is not the 148-token GPU-placement trial. [CPU EWS/Next receipt](benchmarks/glm53-ews-next-20260908.md#actual-next-loop-and-retained-failures).
+- **Locally verified baseline, not EWS:** unmodified native CPU-expert mmap also generated successfully on this laptop and completed a Next roundtrip. EWS is therefore **not claimed to be the only feasible execution path**. [Native baseline](benchmarks/glm53-native-next-20260908.md#observed-results).
+- **Not established:** a speedup, controlled cold-cache performance, equivalence on all inputs, or all-GPU expert execution. The 148-token trial uses **18 routed layers on GPU and 24 on CPU**; its larger-placement numerical checks compare cache sizes, not a full native reference. [GPU boundaries](benchmarks/glm53-ews-gpu-next-20260908.md#numerical-checks-and-the-controls-boundary). All results are maintainer-run, not independent replication.
+- **Reproduction scope:** the [standalone build and HTTP recipe](#reproduce-in-a-separate-checkout) and [GPU numerical tests](#gpu-placement-reproduction) do not require Next. Replaying the complete application loop does require that separate application. [Integration scope](benchmarks/glm53-ews-next-20260908.md#reproduction-and-boundaries).
+
+## Terms used in this guide
+
+| Term | Meaning |
+|---|---|
+| **Next / Elyne Next** | A separate local assistant application providing conversation state, memory and tools. EIE supplies inference; Next itself is not bundled here. |
+| **Resident** | The model kept loaded for the ongoing conversation, Gemma 4 12B in these tests. It calls the auxiliary and incorporates the returned analysis. |
+| **Auxiliary** | The additional model consulted through `request_deep_analysis`, GLM-5.3-Flash here. It does not replace the resident or take over the application's memory. |
+| **Virgin-Next / fresh-state Next** | Next's real session and tool implementation started with new empty state, without copying production memories or documents. Vision and idle drivers were disabled for these measurements. |
+| **Next roundtrip** | An actual resident tool call -> auxiliary inference -> resident synthesis, followed by another resident turn to check continuation. It is not a scripted exchange between fake backends. |
+
 This is a separate runtime path, not a replacement of EIE's pinned Gemma runtime.
 The [native laptop run](benchmarks/glm53-native-next-20260908.md) established
 CPU/mmap feasibility; it did not establish EWS. Keep those measurements separate.
