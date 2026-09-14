@@ -22,6 +22,7 @@ struct ServerConfig {
     std::map<std::string, GroupConfig> groups;
     std::map<std::string, std::string> models; // alias -> path
     std::map<std::string, int> ews_slots;      // alias -> physical expert slots
+    std::map<std::string, bool> ews_trace;    // alias -> opt-in last-request routing histogram
     std::map<std::string, int> gpu_layers;     // alias -> offloaded layers
     std::map<std::string, bool> cpu_moe;       // alias -> CPU expert matmuls
     std::map<std::string, int> threads;       // alias -> inference threads
@@ -42,7 +43,7 @@ inline ServerConfig loadConfig(const std::string& path) {
         return cfg;
     }
 
-    enum class Section { TOP, GROUPS, MODELS, EWS_SLOTS, GPU_LAYERS, CPU_MOE, THREADS };
+    enum class Section { TOP, GROUPS, MODELS, EWS_SLOTS, EWS_TRACE, GPU_LAYERS, CPU_MOE, THREADS };
     Section section = Section::TOP;
     GroupConfig cur;
     bool has_cur = false;
@@ -96,6 +97,7 @@ inline ServerConfig loadConfig(const std::string& path) {
             if (key == "groups" && val.empty()) { section = Section::GROUPS; continue; }
             if (key == "models" && val.empty()) { section = Section::MODELS; continue; }
             if (key == "ews_slots" && val.empty()) { section = Section::EWS_SLOTS; continue; }
+            if (key == "ews_trace" && val.empty()) { section = Section::EWS_TRACE; continue; }
             if (key == "gpu_layers" && val.empty()) { section = Section::GPU_LAYERS; continue; }
             if (key == "cpu_moe" && val.empty()) { section = Section::CPU_MOE; continue; }
             if (key == "threads" && val.empty()) { section = Section::THREADS; continue; }
@@ -135,6 +137,8 @@ inline ServerConfig loadConfig(const std::string& path) {
             if (!key.empty() && !val.empty()) cfg.models[key] = val;
         } else if (section == Section::EWS_SLOTS) {
             if (!key.empty() && !val.empty()) cfg.ews_slots[key] = std::stoi(val);
+        } else if (section == Section::EWS_TRACE) {
+            if (!key.empty() && !val.empty()) cfg.ews_trace[key] = (val == "true");
         } else if (section == Section::GPU_LAYERS) {
             if (!key.empty() && !val.empty()) cfg.gpu_layers[key] = std::stoi(val);
         } else if (section == Section::CPU_MOE) {

@@ -99,6 +99,25 @@ def run(binary):
         checks += 1
         print(json.dumps({'result': 'pass', 'http_scenarios': checks,
                           'concurrent_requests': 60, 'backend': 'fake', 'gpu_used': False}))
+        for route in ['/v1/batch/execute', '/v1/chain/execute']:
+            for action in ['retry_once', 'replace_with']:
+                status, raw = request(route, {'group': action, 'prompt': 'recover-' + route + action})
+                result = json.loads(raw)
+                assert status == 200 and result['status'] == 'complete', raw
+                assert result['completed'] == 1 and len(result['attempts']) == 2, raw
+                assert result['attempts'][0]['error'] == 'first call failed', raw
+                assert result['attempts'][1]['ok'] and result['responses'][0]['ok'], raw
+                assert result['responses'][0]['model'] == ('fixture' if action == 'retry_once' else 'idle')
+        chat({'ews_trace': True})
+        h = json.loads(request('/v1/admin/ews/routing')[1])['fixture']
+        assert h['enabled'] and h['layers'][0]['prefill']['experts'][-1]['expert'] == 287
+        seq = h['request_sequence']
+        chat({})
+        h = json.loads(request('/v1/admin/ews/routing')[1])['fixture']
+        assert not h['enabled'] and not h['layers'] and h['request_sequence'] == seq + 1
+        request('/v1/chat/completions', {'model': 'idle', 'prompt': 'test'})
+        assert json.loads(request('/v1/admin/ews/routing')[1])['idle']['enabled']
+        print(json.dumps({'result': 'pass', 'http_recovery_scenarios': 4, 'trace_request_flag_and_reset': True}))
     finally:
         proc.terminate()
         proc.wait(timeout=10)

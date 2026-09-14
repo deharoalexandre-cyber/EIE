@@ -120,6 +120,7 @@ struct ExpertStream::Impl {
     std::vector<std::unique_ptr<SlabFile>> files;
     std::string error;
     ExpertStreamStats stats;
+    RoutingHistogram routing;
     Impl(const std::string & path, int n) : slots(n) {
         int count = 1, first_layer = 0, last_layer = 0;
         std::string arch;
@@ -189,10 +190,26 @@ struct ExpertStream::Impl {
     }
 };
 
-ExpertStream::ExpertStream(const std::string & path, int slots) : impl_(new Impl(path, slots)) {}
+ExpertStream::ExpertStream(const std::string & path, int slots) : impl_(new Impl(path, slots)) {
+    impl_->routing.supported = true;
+    impl_->routing.expert_count = impl_->expert_count;
+    impl_->routing.top_k = impl_->top_k;
+    impl_->routing.slots = slots;
+}
 ExpertStream::~ExpertStream() = default;
 const std::string & ExpertStream::error() const { return impl_->error; }
 ExpertStreamStats ExpertStream::stats() const { return impl_->stats; }
+
+void ExpertStream::beginTrace(bool enabled) {
+    auto& s = *impl_;
+    std::map<int, uint64_t> bytes;
+    if (enabled) for (const auto& layer : s.layers)
+        for (const auto& weight : layer.second.weights) bytes[layer.first] += weight.second.slab;
+    s.routing.begin(enabled, s.expert_count, s.top_k, s.slots, bytes);
+}
+void ExpertStream::tracePhase(RoutingPhase phase) { impl_->routing.phase(phase); }
+void ExpertStream::endTrace(const std::string& outcome) { impl_->routing.end(outcome); }
+RoutingHistogram ExpertStream::routing() const { return impl_->routing; }
 
 void ExpertStream::bind(llama_model * model) {
     auto & s = *impl_;
@@ -230,11 +247,15 @@ bool ExpertStream::callback(ggml_tensor * t, bool ask, void * user) {
         ggml_backend_tensor_get(t, ids.data(), 0, ids.size() * sizeof(int32_t));
         const std::set<int> active(ids.begin(), ids.end());
         check(active.size() == ids.size(), "EWS: duplicate route IDs");
-        auto & layer = s.layers.at(std::stoi(t->name + strlen(prefix)));
+        const int layer_id = std::stoi(t->name + strlen(prefix));
+        auto & layer = s.layers.at(layer_id);
         ++s.stats.callbacks;
+        s.routing.callback(layer_id);
         for (auto & id : ids) {
             check(id >= 0 && id < s.expert_count, "EWS: expert ID out of range");
             auto slot = layer.acquire(id, active);
+            // Logical ID, BEFORE physical-slot rewriting; count hits as well as misses.
+            s.routing.access(layer_id, id, slot.second);
             if (slot.second) ++s.stats.hits;
             else {
                 ++s.stats.misses;

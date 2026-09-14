@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <map>
 #include <functional>
+#include "routing_histogram.h"
 
 namespace eie {
 
@@ -37,6 +38,7 @@ struct ModelParams {
     int n_threads = 0; // 0 = automatique (moitié des cœurs) ; `threads:` du preset pour forcer
     int ews_slots = 0; // Per-model expert cache; 0 preserves normal loading.
     bool cpu_moe = false;
+    bool ews_trace = false;
     KvConfig kv;
 };
 
@@ -48,6 +50,7 @@ struct SamplingParams {
     // le cache KV de la conversation principale est préservé.
     // (Fix « bug n°1 » d'Elyne Mobile, porté serveur : 2e contexte, KV du chat intact.)
     bool one_shot = false;
+    bool ews_trace = false; // Opt-in hard top-k / reuse-distance measurement.
     bool truncate_prompt = true; // legacy default; callers can request an intact task
     // Streaming : appelé pour chaque morceau de texte généré (SSE côté API).
     // Retourne false pour interrompre la génération (client parti).
@@ -89,6 +92,7 @@ public:
     virtual VramStatus vram() = 0;
     virtual HealthStatus health() = 0;
     virtual std::map<std::string, uint64_t> streamingStats() { return {}; }
+    virtual RoutingHistogram streamingRouting() { return {}; }
     virtual void unload() = 0;
     virtual bool adaptKv(const KvConfig& kv) { return false; }
     bool loaded = false;

@@ -31,9 +31,15 @@ struct GroupConfig {
     KvConfig kv_override = [] { KvConfig k; k.type_k.clear(); k.type_v.clear(); return k; }();
 };
 
+struct GroupAttempt {
+    std::string requested_model, action;
+    InferenceResult result;
+};
+
 struct GroupResult {
     std::string group;
     std::vector<InferenceResult> responses;
+    std::vector<GroupAttempt> attempts; // Initial failures remain visible after recovery.
     int completed = 0, required = 0;
     std::string status;
     float latency_ms = 0;
@@ -194,6 +200,66 @@ inline std::string renderPrompt(ComputeBackend* b,
 
 class GroupScheduler {
     PolicyStrategy* policy_;
+    PolicyStrategy::Fallback fallback(const GroupConfig& g, int completed) {
+        if (g.fallback == "retry_once") return PolicyStrategy::Fallback::RETRY;
+        if (g.fallback == "replace_with") return PolicyStrategy::Fallback::REPLACE;
+        if (g.fallback == "partial") return PolicyStrategy::Fallback::PARTIAL;
+        return policy_->onFailure(g.name, completed, g.required);
+    }
+
+    InferenceResult invoke(const std::string& alias, const GroupConfig& g,
+                           const std::vector<ChatMessage>& msgs, const std::string& prompt,
+                           const SamplingParams& sp, const std::map<std::string, ComputeBackend*>& backends) {
+        InferenceResult result;
+        result.model = alias;
+        bool emitted = false;
+        try {
+            if (sp.should_continue && !sp.should_continue()) {
+                result.ok = false; result.error = "request cancelled"; result.finish_reason = "cancelled";
+                return result;
+            }
+            auto it = backends.find(alias);
+            if (it == backends.end() || !it->second || !it->second->loaded) {
+                result.ok = false; result.error = "model not loaded: " + alias; result.finish_reason = "error";
+                return result;
+            }
+            auto* backend = it->second;
+            const auto health = backend->health();
+            if (health.latency_ms > g.max_latency_ms)
+                backend->adaptKv(policy_->adaptKv(Slot{alias, g.name, g.pinned, 0, g.kv_override}, health));
+            auto sampling = sp;
+            if (sp.on_token) sampling.on_token = [&](const std::string& piece) {
+                if (!piece.empty()) emitted = true;
+                return sp.on_token(piece);
+            };
+            result = backend->chat(renderPrompt(backend, msgs, prompt), sampling);
+            result.model = alias;
+        } catch (const std::exception& e) {
+            result.ok = false; result.error = e.what(); result.finish_reason = "error";
+        } catch (...) {
+            result.ok = false; result.error = "unknown backend exception"; result.finish_reason = "error";
+        }
+        // Never append a second generation after externally visible partial output.
+        if (!result.ok && emitted) result.finish_reason = "partial_output";
+        return result;
+    }
+
+    void recover(InferenceResult& result, const std::string& requested, const GroupConfig& g,
+                 const std::vector<ChatMessage>& msgs, const std::string& prompt,
+                 const SamplingParams& sp, const std::map<std::string, ComputeBackend*>& backends,
+                 GroupResult& group) {
+        if (result.ok || result.finish_reason == "cancelled" || result.finish_reason == "partial_output" ||
+            (sp.should_continue && !sp.should_continue())) return;
+        auto action = fallback(g, group.completed);
+        if (action != PolicyStrategy::Fallback::RETRY && action != PolicyStrategy::Fallback::REPLACE) return;
+        const auto target = action == PolicyStrategy::Fallback::RETRY ? requested : g.replacement;
+        if (target.empty()) {
+            result = InferenceResult{};
+            result.ok = false; result.finish_reason = "error";
+            result.error = "replace_with requires a replacement alias in the group configuration";
+        } else result = invoke(target, g, msgs, prompt, sp, backends);
+        group.attempts.push_back({requested, action == PolicyStrategy::Fallback::RETRY ? "retry" : "replace", result});
+    }
 public:
     GroupScheduler(PolicyStrategy* p) : policy_(p) {}
 
@@ -212,34 +278,21 @@ public:
 
         std::vector<std::future<InferenceResult>> futs;
         for (auto& alias : g.models) {
-            auto it = backends.find(alias);
-            if (it == backends.end() || !it->second->loaded) continue;
-
-            // Health-check pre-inference
-            auto h = it->second->health();
-            if (h.latency_ms > g.max_latency_ms) {
-                auto kv = policy_->adaptKv(
-                    Slot{alias, g.name, g.pinned, 0, g.kv_override}, h);
-                it->second->adaptKv(kv);
-            }
-
-            auto* b = it->second;
-            std::string prompt = renderPrompt(b, msgs, fallback_prompt);
             futs.push_back(std::async(std::launch::async,
-                [b, prompt, &sp] { return b->chat(prompt, sp); }));
+                [&, alias] { return invoke(alias, g, msgs, fallback_prompt, sp, backends); }));
         }
 
-        for (auto& f : futs) {
-            try {
-                auto res = f.get();
-                r.responses.push_back(res);
-                if (res.ok) r.completed++;
-            } catch (const std::exception& e) {
-                InferenceResult failed;
-                failed.error = e.what();
-                failed.ok = false;
-                r.responses.push_back(std::move(failed));
-            }
+        for (size_t i = 0; i < futs.size(); ++i) {
+            auto res = futs[i].get();
+            r.attempts.push_back({g.models[i], "initial", res});
+            if (res.ok) ++r.completed;
+            r.responses.push_back(std::move(res));
+        }
+        // Recover only missing successes, in declared order, never successful members.
+        for (size_t i = 0; i < r.responses.size() && r.completed < r.required; ++i) {
+            if (r.responses[i].ok) continue;
+            recover(r.responses[i], g.models[i], g, msgs, fallback_prompt, sp, backends, r);
+            if (r.responses[i].ok) ++r.completed;
         }
 
         r.latency_ms = std::chrono::duration<float, std::milli>(
@@ -248,9 +301,7 @@ public:
         if (r.completed >= r.required) {
             r.status = "complete";
         } else {
-            auto fb = policy_->onFailure(g.name, r.completed, r.required);
-            r.status = (fb == PolicyStrategy::Fallback::PARTIAL ||
-                        fb == PolicyStrategy::Fallback::RETRY) ? "partial" : "failed";
+            r.status = fallback(g, r.completed) == PolicyStrategy::Fallback::PARTIAL ? "partial" : "failed";
         }
         return r;
     }
@@ -273,28 +324,24 @@ public:
         auto t0 = std::chrono::steady_clock::now();
         GroupResult r;
         r.group = g.name;
-        r.required = 1;
+        r.required = static_cast<int>(g.models.size());
 
         std::vector<ChatMessage> step_msgs = msgs;
         std::string step_fallback = fallback_prompt;
         for (auto& alias : g.models) {
-            auto it = backends.find(alias);
-            if (it == backends.end() || !it->second->loaded) {
-                r.status = "failed";
-                return r;
-            }
-            std::string prompt = renderPrompt(it->second, step_msgs, step_fallback);
-            auto res = it->second->chat(prompt, sp);
+            auto res = invoke(alias, g, step_msgs, step_fallback, sp, backends);
+            r.attempts.push_back({alias, "initial", res});
+            recover(res, alias, g, step_msgs, step_fallback, sp, backends, r);
             r.responses.push_back(res);
-            if (!res.ok) { r.status = "failed"; return r; }
-            step_msgs = {{"user", res.text}};
+            if (!res.ok) break;
+            step_msgs = msgs.empty() ? std::vector<ChatMessage>{} : std::vector<ChatMessage>{{"user", res.text}};
             step_fallback = res.text;
             r.completed++;
         }
 
         r.latency_ms = std::chrono::duration<float, std::milli>(
             std::chrono::steady_clock::now() - t0).count();
-        r.status = "complete";
+        r.status = !g.models.empty() && r.completed == r.required ? "complete" : "failed";
         return r;
     }
 
@@ -302,29 +349,7 @@ public:
     GroupResult execSequential(const GroupConfig& g, const std::string& prompt,
                               const SamplingParams& sp,
                               std::map<std::string, ComputeBackend*>& backends) {
-        auto t0 = std::chrono::steady_clock::now();
-        GroupResult r;
-        r.group = g.name;
-        r.required = 1;
-
-        std::string input = prompt;
-        for (auto& alias : g.models) {
-            auto it = backends.find(alias);
-            if (it == backends.end() || !it->second->loaded) {
-                r.status = "failed";
-                return r;
-            }
-            auto res = it->second->chat(input, sp);
-            r.responses.push_back(res);
-            if (!res.ok) { r.status = "failed"; return r; }
-            input = res.text;
-            r.completed++;
-        }
-
-        r.latency_ms = std::chrono::duration<float, std::milli>(
-            std::chrono::steady_clock::now() - t0).count();
-        r.status = "complete";
-        return r;
+        return execSequential(g, {}, prompt, sp, backends);
     }
 
     // ── Fan-out: same prompt, best response wins ──
@@ -338,6 +363,7 @@ public:
         r.group = g.name;
         r.required = 1;
         r.latency_ms = pr.latency_ms;
+        r.attempts = pr.attempts;
 
         InferenceResult best;
         for (auto& res : pr.responses) {

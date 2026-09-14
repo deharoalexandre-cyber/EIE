@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
               "watermarks and isolation fixture settings are ignored");
         auto g = cfg.groups.at("core");
         auto effective = g.kv_override.type_k.empty() ? cfg.default_kv : g.kv_override;
-        check(effective.n_ctx == 4096 && effective.type_k == "turbo3",
-              "group defaults mask configured f16 / 8192 global KV settings");
+        check(effective.n_ctx == 8192 && effective.type_k == "f16",
+              "empty group defaults preserve configured f16 / 8192 global KV settings");
 
         eie::PinnedGroupStrategy policy;
         policy.groups[g.name] = g;
@@ -44,13 +44,14 @@ int main(int argc, char** argv) {
         std::map<std::string, eie::ComputeBackend*> backends{{"primary", &primary}, {"backup", &replacement}};
         eie::SamplingParams sp;
         auto retry = scheduler.execParallel(g, "probe", sp, backends);
-        check(primary.calls == 1 && retry.status == "partial", "retry_once performs one call, then returns partial");
+        check(primary.calls == 2 && retry.status == "failed" && retry.attempts.size() == 2,
+              "retry_once performs two failed calls and retains both attempts");
         g.fallback = "replace_with";
         g.replacement = "backup";
         policy.groups[g.name] = g;
         auto replaced = scheduler.execParallel(g, "probe", sp, backends);
-        check(primary.calls == 2 && replacement.calls == 0 && replaced.status == "failed",
-              "replace_with never invokes the replacement backend");
+        check(primary.calls == 3 && replacement.calls == 1 && replaced.status == "failed",
+              "replace_with invokes the replacement backend; both injected failures remain failures");
         check(primary.health().latency_ms == 0, "backend health supplies zero latency");
 
         eie::CudaBackend cuda;

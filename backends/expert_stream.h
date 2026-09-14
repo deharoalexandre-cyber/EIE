@@ -1,6 +1,7 @@
 // EIE - on-demand expert weights (Apache-2.0)
 #pragma once
 #include "llama.h"
+#include "routing_histogram.h"
 #include <memory>
 #include <string>
 #include <cstdint>
@@ -22,6 +23,10 @@ public:
     void configure(llama_context_params & params);
     const std::string & error() const;
     ExpertStreamStats stats() const;
+    void beginTrace(bool enabled);
+    void tracePhase(RoutingPhase phase);
+    void endTrace(const std::string& outcome);
+    RoutingHistogram routing() const;
     static bool callback(ggml_tensor * tensor, bool ask, void * user);
 private:
     struct Impl;

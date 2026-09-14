@@ -93,6 +93,7 @@ protected:
     common_chat_templates_ptr tmpls_;
     std::mutex infer_mutex_;
     std::unique_ptr<ExpertStream> expert_stream_;
+    bool trace_default_ = false;
     bool embed_mode_ = false;
     // KV-reuse : tokens (prompt + génération) encore présents dans le cache KV.
     // Le préfixe commun avec la requête suivante n'est pas re-préfillé.
@@ -146,6 +147,7 @@ public:
     bool load(const ModelParams& p) override {
         ensureBackendInit();
         path_ = p.path;
+        trace_default_ = p.ews_trace;
         alias = p.alias;
         threads_ = p.n_threads > 0 ? p.n_threads
                  : (int)std::max(1u, std::thread::hardware_concurrency() / 2);
@@ -251,8 +253,10 @@ public:
             return r;
         }
 
+        bool trace_cancelled = false;
         auto cancelled = [&] { return s.should_continue && !s.should_continue(); };
         auto mark_cancelled = [&] {
+            trace_cancelled = true;
             r.ok = false;
             r.error = "request cancelled";
             r.finish_reason = "cancelled";
@@ -263,6 +267,18 @@ public:
         std::lock_guard<std::mutex> lock(infer_mutex_);
         // A request may have disconnected while waiting for another inference.
         if (cancelled()) { mark_cancelled(); return r; }
+
+        if (expert_stream_) expert_stream_->beginTrace(trace_default_ || s.ews_trace);
+        struct TraceEnd {
+            ExpertStream* stream;
+            InferenceResult& result;
+            bool& cancelled;
+            int exceptions = std::uncaught_exceptions();
+            ~TraceEnd() {
+                if (stream) stream->endTrace(std::uncaught_exceptions() > exceptions ? "exception" :
+                    cancelled ? "cancelled" : result.ok ? "complete" : "error");
+            }
+        } trace_end{expert_stream_.get(), r, trace_cancelled};
 
         if (expert_stream_ && !expert_stream_->error().empty()) {
             r.ok = false; r.error = expert_stream_->error(); return r;
@@ -330,6 +346,7 @@ public:
         // Prompt evaluation (chunked), à partir du préfixe réutilisé
         bool decode_ok = true;
         bool was_cancelled = false;
+        if (expert_stream_) expert_stream_->tracePhase(RoutingPhase::Prefill);
         for (size_t off = prefix; off < tokens.size(); off += chunk) {
             if (cancelled()) { was_cancelled = true; break; }
             size_t end = std::min(tokens.size(), off + chunk);
@@ -374,6 +391,7 @@ public:
         if (!s.one_shot) cache_tokens_ = tokens; // les tokens générés s'y ajoutent
         int n_past = (int)tokens.size();
         r.finish_reason = "length";
+        if (expert_stream_) expert_stream_->tracePhase(RoutingPhase::Decode);
         for (int i = 0; i < s.max_tokens && n_past < n_ctx; i++) {
             if (cancelled()) { was_cancelled = true; break; }
             llama_token id = llama_sampler_sample(smpl, run_ctx, -1);
@@ -461,6 +479,11 @@ public:
             break;
         }
         return result;
+    }
+
+    RoutingHistogram streamingRouting() override {
+        std::lock_guard<std::mutex> lock(infer_mutex_);
+        return expert_stream_ ? expert_stream_->routing() : RoutingHistogram{};
     }
 
     std::map<std::string, uint64_t> streamingStats() override {

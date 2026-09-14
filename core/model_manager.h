@@ -14,11 +14,13 @@ class ModelManager {
     std::map<std::string, std::unique_ptr<ComputeBackend>> backends_;
     std::map<std::string, Slot> slots_;
     std::map<std::string, int> expert_slots_;
+    std::map<std::string, bool> expert_trace_;
     std::map<std::string, int> gpu_layers_;
     std::map<std::string, bool> cpu_moe_;
     std::map<std::string, int> threads_;
 public:
     void setExpertSlots(const std::string & alias, int count) { expert_slots_[alias] = count; }
+    void setExpertTrace(const std::string & alias, bool enabled) { expert_trace_[alias] = enabled; }
     void setGpuLayers(const std::string & alias, int count) { gpu_layers_[alias] = count; }
     void setCpuMoe(const std::string & alias, bool enabled) { cpu_moe_[alias] = enabled; }
     void setThreads(const std::string & alias, int count) { threads_[alias] = count; }
@@ -51,6 +53,7 @@ public:
         p.alias = alias;
         p.kv = kv;
         if (expert_slots_.count(alias)) p.ews_slots = expert_slots_.at(alias);
+        if (expert_trace_.count(alias)) p.ews_trace = expert_trace_.at(alias);
         if (gpu_layers_.count(alias)) p.n_gpu_layers = gpu_layers_.at(alias);
         if (cpu_moe_.count(alias)) p.cpu_moe = cpu_moe_.at(alias);
         if (threads_.count(alias)) p.n_threads = threads_.at(alias);

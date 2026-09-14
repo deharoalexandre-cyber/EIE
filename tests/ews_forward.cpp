@@ -20,11 +20,12 @@ static bool reference_boundary(ggml_tensor * t, bool ask, void *) {
 }
 int main(int argc, char ** argv) {
     try {
-        check(argc >= 6 && argc <= 8, "usage: ews-forward MODEL PROMPT OUTPUT_PREFIX SLOTS PREDICT [gemma-gpu|glm-cpu|glm-gpu] [GPU_LAYERS]");
+        check(argc >= 6 && argc <= 9, "usage: ews-forward MODEL PROMPT OUTPUT_PREFIX SLOTS PREDICT [gemma-gpu|glm-cpu|glm-gpu] [GPU_LAYERS] [TRACE:0|1]");
         const std::string profile = argc >= 7 ? argv[6] : "gemma-gpu";
         const bool glm = profile == "glm-cpu" || profile == "glm-gpu";
         check(glm || profile == "gemma-gpu", "unknown test profile");
-        const int gpu_layers = argc == 8 ? std::stoi(argv[7]) : (glm ? 20 : 99);
+        const int gpu_layers = argc >= 8 ? std::stoi(argv[7]) : (glm ? 20 : 99);
+        const bool trace = argc == 9 && std::string(argv[8]) == "1";
         const int slots = std::stoi(argv[4]), predict = std::stoi(argv[5]);
         check(predict > 0 && predict <= 512, "invalid prediction count");
         std::string prefix = argv[3];
@@ -70,11 +71,13 @@ int main(int argc, char ** argv) {
             if (stream) check(stream->error().empty(), stream->error().c_str());
         };
         const auto start = std::chrono::steady_clock::now();
+        if (stream) stream->beginTrace(trace);
         for (auto & t : tokens) decode(t);
         const auto prefilled = std::chrono::steady_clock::now();
         std::ofstream logits(prefix + ".logits.bin", std::ios::binary);
         check(bool(logits), "cannot create logits output");
         const int n_vocab = llama_vocab_n_tokens(vocab);
+        if (stream) stream->tracePhase(eie::RoutingPhase::Decode);
         for (int i = 0; i < predict; ++i) {
             const float * values = llama_get_logits_ith(ctx.get(), -1);
             check(values != nullptr, "missing logits");
@@ -92,6 +95,8 @@ int main(int argc, char ** argv) {
             {"prefill_seconds", std::chrono::duration<double>(prefilled - start).count()},
             {"decode_seconds_including_logit_write", std::chrono::duration<double>(end - prefilled).count()}};
         if (stream) {
+            stream->endTrace("complete");
+            report["routing"] = json::parse(stream->routing().json());
             auto s = stream->stats();
             report["ews"] = {{"callbacks", s.callbacks}, {"hits", s.hits}, {"misses", s.misses},
                 {"payload_bytes", s.payload_bytes}, {"read_bytes", s.read_bytes},

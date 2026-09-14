@@ -69,6 +69,7 @@ static SamplingParams samplingFromJson(const json& body) {
     sp.top_k       = body.value("top_k", sp.top_k);
     sp.max_tokens  = body.value("max_tokens", 256);
     sp.one_shot    = body.value("one_shot", false);
+    sp.ews_trace   = body.value("ews_trace", false);
     sp.truncate_prompt = body.value("truncate_prompt", true);
     if (body.contains("stop")) {
         if (body["stop"].is_string()) sp.stop.push_back(body["stop"]);
@@ -121,13 +122,24 @@ static std::string chatCompletionJson(const InferenceResult& r, const std::strin
 
 static std::string groupResultJson(const GroupResult& r) {
     std::ostringstream ss;
-    ss << "{\"group\":\"" << r.group << "\",\"responses\":[";
+    ss << "{\"group\":\"" << escapeJson(r.group) << "\",\"responses\":[";
     for (size_t i = 0; i < r.responses.size(); i++) {
         if (i > 0) ss << ",";
-        ss << "{\"model\":\"" << r.responses[i].model << "\","
+        ss << "{\"model\":\"" << escapeJson(r.responses[i].model) << "\","
            << "\"content\":\"" << escapeJson(r.responses[i].text) << "\","
+           << "\"error\":\"" << escapeJson(r.responses[i].error) << "\","
            << "\"latency_ms\":" << r.responses[i].latency_ms << ","
            << "\"ok\":" << (r.responses[i].ok ? "true" : "false") << "}";
+    }
+    ss << "],\"attempts\":[";
+    for (size_t i = 0; i < r.attempts.size(); ++i) {
+        if (i) ss << ',';
+        const auto& a = r.attempts[i];
+        ss << "{\"requested_model\":\"" << escapeJson(a.requested_model)
+           << "\",\"action\":\"" << a.action << "\",\"model\":\"" << escapeJson(a.result.model)
+           << "\",\"ok\":" << (a.result.ok ? "true" : "false")
+           << ",\"error\":\"" << escapeJson(a.result.error) << "\",\"content\":\"" << escapeJson(a.result.text)
+           << "\",\"finish_reason\":\"" << escapeJson(a.result.finish_reason) << "\"}";
     }
     ss << "],\"completed\":" << r.completed
        << ",\"required\":" << r.required
@@ -165,12 +177,48 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
     signal(SIGINT, stopHandler);
     signal(SIGTERM, stopHandler);
 
+    // Optional existing preset credential. An empty token preserves local use.
+    // Check before application handlers, including streaming and administration.
+    auto authorize = [&cfg](const httplib::Request& req, httplib::Response& res) {
+        if (cfg.auth_token.empty()) return httplib::Server::HandlerResponse::Unhandled;
+        bool authorized = false;
+        if (req.get_header_value_count("Authorization") == 1) {
+            const auto value = req.get_header_value("Authorization");
+            const auto separator = value.find(' ');
+            std::string scheme = value.substr(0, separator);
+            for (char& c : scheme) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            if (scheme == "bearer" && separator != std::string::npos) {
+                const auto token = value.substr(separator + 1);
+                unsigned difference = token.size() == cfg.auth_token.size() ? 0 : 1;
+                for (size_t i = 0; i < cfg.auth_token.size(); ++i)
+                    difference |= static_cast<unsigned char>(cfg.auth_token[i]) ^
+                        (i < token.size() ? static_cast<unsigned char>(token[i]) : 0);
+                authorized = difference == 0;
+            }
+        }
+        if (authorized) return httplib::Server::HandlerResponse::Unhandled;
+        res.status = 401;
+        res.set_header("WWW-Authenticate", "Bearer");
+        res.set_content("{\"error\":{\"type\":\"authentication_error\",\"message\":\"A valid Authorization: Bearer token is required.\"}}", "application/json");
+        return httplib::Server::HandlerResponse::Handled;
+    };
+    svr.set_pre_routing_handler([&](const httplib::Request& req, httplib::Response& res) {
+        // Let httplib consume POST bodies before replying, avoiding a Windows
+        // reset if the body arrives after an early 401. No application work yet.
+        return req.method == "POST" ? httplib::Server::HandlerResponse::Unhandled : authorize(req, res);
+    });
+    auto post = [&](const std::string& path, httplib::Server::Handler handler) {
+        svr.Post(path, [&, handler](const httplib::Request& req, httplib::Response& res) {
+            if (authorize(req, res) == httplib::Server::HandlerResponse::Unhandled) handler(req, res);
+        });
+    };
+
     // ════════════════════════════════════
     // LAYER 1 — OpenAI Compatible
     // ════════════════════════════════════
 
     // POST /v1/chat/completions
-    svr.Post("/v1/chat/completions", [&](const httplib::Request& req, httplib::Response& res) {
+    post("/v1/chat/completions", [&](const httplib::Request& req, httplib::Response& res) {
         json body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) {
             res.status = 400;
@@ -279,7 +327,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
     });
 
     // POST /v1/embeddings — OpenAI-compatible
-    svr.Post("/v1/embeddings", [&](const httplib::Request& req, httplib::Response& res) {
+    post("/v1/embeddings", [&](const httplib::Request& req, httplib::Response& res) {
         json body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) {
             res.status = 400;
@@ -335,7 +383,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
     // ════════════════════════════════════
 
     // POST /v1/batch/execute — parallel group execution
-    svr.Post("/v1/batch/execute", [&](const httplib::Request& req, httplib::Response& res) {
+    post("/v1/batch/execute", [&](const httplib::Request& req, httplib::Response& res) {
         json body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) {
             res.status = 400;
@@ -364,7 +412,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
     });
 
     // POST /v1/chain/execute — sequential chain
-    svr.Post("/v1/chain/execute", [&](const httplib::Request& req, httplib::Response& res) {
+    post("/v1/chain/execute", [&](const httplib::Request& req, httplib::Response& res) {
         json body = json::parse(req.body, nullptr, false);
         if (body.is_discarded()) {
             res.status = 400;
@@ -405,6 +453,13 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
         res.set_content(json({{"devices_by_model", data}}).dump(), "application/json");
     });
 
+    svr.Get("/v1/admin/ews/routing", [&](const httplib::Request&, httplib::Response& res) {
+        json data = json::object();
+        for (auto& [alias, backend] : models.getAll())
+            data[alias] = json::parse(backend->streamingRouting().json());
+        res.set_content(data.dump(), "application/json");
+    });
+
     svr.Get("/v1/admin/ews/status", [&](const httplib::Request&, httplib::Response& res) {
         json data = json::object();
         for (auto & [alias, backend] : models.getAll()) data[alias] = backend->streamingStats();
@@ -420,7 +475,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
     });
 
     // POST /v1/admin/config/reload
-    svr.Post("/v1/admin/config/reload", [&](const httplib::Request&, httplib::Response& res) {
+    post("/v1/admin/config/reload", [&](const httplib::Request&, httplib::Response& res) {
         // TODO: reload config from file
         res.set_content("{\"status\":\"reload not yet implemented\"}", "application/json");
     });

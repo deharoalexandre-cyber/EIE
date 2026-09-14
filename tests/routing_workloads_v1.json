@@ -1,0 +1,17 @@
+{
+  "schema": "eie.routing-workloads/v1",
+  "scope": "Short-context raw-completion pilot, not a Next session or a long-context hotset qualification",
+  "predict": 16,
+  "items": [
+    {"id": "code-cal", "domain": "code", "split": "calibration", "prompt": "Write a Python function that merges two sorted lists without sorting again.\n"},
+    {"id": "writing-cal", "domain": "writing", "split": "calibration", "prompt": "Redige un court courrier professionnel pour reporter une livraison de deux jours.\n"},
+    {"id": "math-cal", "domain": "math", "split": "calibration", "prompt": "Prove that the sum of the first n odd positive integers is n squared.\n"},
+    {"id": "conversation-cal", "domain": "conversation", "split": "calibration", "prompt": "Bonjour, je cherche une idee de promenade tranquille pour dimanche. Que proposes-tu ?\n"},
+    {"id": "documents-cal", "domain": "documents", "split": "calibration", "prompt": "Review this note for contradictions: The backup runs daily. No backup has run this week. All data is protected.\n"},
+    {"id": "code-test", "domain": "code", "split": "test", "prompt": "Explain the bug in this Python function and fix it: def append_item(x, items=[]): items.append(x); return items\n"},
+    {"id": "writing-test", "domain": "writing", "split": "test", "prompt": "Write a concise product description for a reusable steel water bottle without unsupported environmental claims.\n"},
+    {"id": "math-test", "domain": "math", "split": "test", "prompt": "Solve 3x + 7 = 31, then explain how to verify the answer independently.\n"},
+    {"id": "conversation-test", "domain": "conversation", "split": "test", "prompt": "I finished a difficult project today and want to unwind. Suggest a simple way to celebrate.\n"},
+    {"id": "documents-test", "domain": "documents", "split": "test", "prompt": "Relis ce compte rendu : livraison promise mardi, tests prevus mercredi, validation obligatoire avant livraison. Identifie le probleme.\n"}
+  ]
+}

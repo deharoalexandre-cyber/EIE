@@ -158,7 +158,7 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 |---|---|
 | One-model chat / embeddings | Implemented; local use reported; API limits below |
 | Parallel / sequential / fan-out groups | Implemented; basic API smoke tests, not full group acceptance/load qualification |
-| `strict` / `partial` outcomes | Implemented; `retry_once` does not retry, `replace_with` does not invoke a replacement |
+| Group recovery | `strict` / `partial`, bounded `retry_once` and `replace_with`; [injected-failure and HTTP checks](docs/RUNTIME_AUTH_ROUTING_RECOVERY.md#bounded-group-recovery), not fleet qualification |
 | Explicit KV formats | KV format mapping implemented; F16 numerical EWS gate and Turbo3 API smoke, not an all-format quality benchmark |
 | Automatic KV optimization | **Not operational**: no `auto` selector; health latency remains zero |
 | Device-memory telemetry | Runtime port queries device memory; no reserve/budget/eviction enforcement |
@@ -181,7 +181,7 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 
 Parallel execution sends the prompt to multiple loaded backends using asynchronous calls. Sequential execution makes each response the next model's input. Fan-out selects the **longest successful response**, not the best-quality response. A threshold in `max_latency_ms` is not an execution timeout.
 
-`retry_once` currently returns a partial outcome after one failed call; `replace_with` fails without invoking the replacement. Group KV overrides are not parsed, and their non-empty struct defaults can mask global KV/context settings. These are [known unfinished behaviors](docs/ROADMAP_TO_CLAIMS.md), not advertised recovery guarantees.
+`retry_once` makes at most one extra call for a failed member; `replace_with` invokes the configured, already loaded alternate. Successful members are not rerun and original failures remain in `attempts`. See [recovery semantics and tests](docs/RUNTIME_AUTH_ROUTING_RECOVERY.md#bounded-group-recovery). Explicit group KV overrides remain incompletely parsed; empty group defaults now preserve global settings.
 
 ### KV cache and memory management
 
@@ -311,7 +311,11 @@ preload: [model]
 
 Groups use `name`, `models`, `required_responses`, `type`, `pinned`, `fallback` and `max_latency_ms`; their limitations are documented above. `dual-core-six.yaml` is a strategy skeleton, **not** a ready six-model configuration.
 
-`auth_token` is parsed but is not checked by HTTP handlers; it provides no authentication. Choose network exposure accordingly. The optional audit prototype uses an FNV-derived digest, omits inputs needed to reconstruct it, and resets its chain on restart. It is **not** a cryptographic tamper-evident or append-only integrity guarantee. These qualifications do not add a security layer to the runtime.
+In the updated source, a non-empty `auth_token` requires `Authorization: Bearer <token>` on API/admin/health/metrics requests. An empty token preserves local unauthenticated operation. **Previously published bundles are unchanged** and must be rebuilt to gain this behavior. See [configuration and transport limits](docs/RUNTIME_AUTH_ROUTING_RECOVERY.md#optional-authentication).
+
+EWS also has opt-in [per-expert routing and reuse-distance measurements](docs/RUNTIME_AUTH_ROUTING_RECOVERY.md#opt-in-ews-routing-measurements), split by prefill/decode. Hard-selection concentration and a theoretical serial-LRU curve are distinct from actual EWS hits.
+
+The optional audit prototype uses an FNV-derived digest, omits inputs needed to reconstruct it, and resets its chain on restart. It is **not** a cryptographic tamper-evident or append-only integrity guarantee.
 
 ## Docker and migration
 

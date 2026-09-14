@@ -67,7 +67,7 @@ can borrow the other's performance, integrity or memory claims.
 | Context / usage | Long prompts truncate by default; `truncate_prompt: false` rejects overflow. Retained tokenized prompt, sampled tokens (including terminal EOG/stop) and reused prefix pass the real-tokenizer gate. Nonstream overflow now returns HTTP 400 / `context_length_exceeded`, with next-request recovery tested |
 | Next auxiliary attribution | Actual 12B -> 26B -> 12B contribution and later resident continuation succeed. **Full gate fails:** after stopping 26B, resident attributes an answer to it without an observed tool call. Do not claim reliable offline-tool recovery or universal source attribution |
 | Groups | Parallel, sequential and longest-successful-response fan-out implemented. This is not quality-based voting, continuous batching or proven throughput scaling |
-| `retry_once` / `replace_with` | **Incomplete.** One failure leads to a partial outcome or failure; there is no second call or replacement invocation |
+| `retry_once` / `replace_with` | **Implemented in updated source, 14 September.** Bounded second/replacement calls, retained errors and cancellation handling pass [scheduler and real-route/fake-backend checks](RUNTIME_AUTH_ROUTING_RECOVERY.md#bounded-group-recovery). Not a real multi-model fault/load campaign |
 | Group KV overrides | **Partially corrected on 14 September.** Empty type defaults no longer mask the global KV type (`03be806`); parsing/qualification of explicit per-group overrides remains incomplete |
 | Pinned / multi-group isolation | **Not enforced as a memory guarantee.** Boot loading and response-quorum decisions exist; `multi-group` aliases pinned-group |
 | Generic FIFO, on-demand loading, LRU eviction | **Not established.** Model mutexes serialize inference, not FIFO admission. Discovery is boot-time; no integrated dynamic eviction path |
@@ -90,15 +90,21 @@ remaining failures; a passing probe does **not** mean those features work.
 | VRAM reserve, watermarks, group budgets | `reserve_mb` is parsed but unused by loading/request admission; watermarks, isolation and budgets are not parsed. Telemetry alone does not implement resource policy |
 | Compression ratio equals whole-system saving | Invalid inference: bit widths describe one storage format. Weights, KV, buffers, alignment and driver accounting must be measured separately |
 | Audit hashes / replayable tamper evidence | **Prototype only.** FNV-derived repeated digest, not SHA-256; emitted fields omit reconstruction inputs, only batch path is logged, chain restarts from zero |
-| `auth_token` | Parsed, not checked by HTTP handlers. No authentication guarantee |
+| `auth_token` | **Enforced when configured in updated source, 14 September.** [139 real HTTP checks](RUNTIME_AUTH_ROUTING_RECOVERY.md#optional-authentication). Empty token remains unauthenticated; TLS is not added. Already published binaries retain their old behavior |
 | Dynamic plugins | Strategy interface exists, dynamic loading is planned |
 | Backend portability | Abstraction and build paths exist; not a guarantee of identical kernels, quality or performance across hardware |
 
-No new access-control layer or mandatory integrity machinery was introduced
-by this audit. The immediate correction is truthful documentation; implementing
-every old design aspiration is neither necessary nor implicitly authorized.
+The original audit changed documentation, not access control. The explicitly
+authorized 14 September follow-up wires the existing optional token, routing
+measurement and bounded recovery. It adds no mandatory token or integrity machinery;
+unrelated design aspirations remain unimplemented.
 
 ## Performance and research claims
+
+- **14 September GLM routing pilot:** real hard top-k histograms and reuse
+  distances across five domains, calibration/test split and bit-identical
+  tracing-off/on logits on one short control. [Raw evidence and limits](benchmarks/glm53-routing-20260914.md).
+  This is not router probability mass, long-context hotset sizing or evidence for Kimi.
 
 - **Historical desktop:** E2B/E4B speeds are maintainer-reported; no paired
   Ollama baseline. The historical 26B report uses an earlier router plus

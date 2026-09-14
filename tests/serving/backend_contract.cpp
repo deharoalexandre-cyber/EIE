@@ -19,6 +19,42 @@ public:
 
 int main(int argc, char** argv) {
     try {
+        if (argc == 4 && std::string(argv[1]) == "--trace-smoke") {
+            ProbeBackend b; b.init(0);
+            eie::ModelParams p;
+            p.path = argv[2]; p.alias = "routing-smoke"; p.ews_slots = std::stoi(argv[3]);
+            p.n_gpu_layers = 20; p.n_threads = 8; p.kv.n_ctx = 512;
+            p.kv.type_k = p.kv.type_v = "f16"; p.kv.flash_attn = false;
+            check(p.ews_slots > 0 && b.load(p), "trace model load failed");
+            const std::string prompt = "The capital of France is";
+            eie::SamplingParams s; s.temperature = 0; s.max_tokens = 4; s.one_shot = true; s.ews_trace = true;
+            const auto traced = b.chat(prompt, s);
+            auto hist = b.streamingRouting();
+            check(traced.ok && hist.enabled && hist.outcome == "complete", "complete trace missing");
+            uint64_t hits = 0, misses = 0, callbacks = 0;
+            for (const auto& layer : hist.layers) for (const auto& phase : layer.second.phases) {
+                callbacks += phase.callbacks;
+                for (const auto& e : phase.experts) { hits += e.hits; misses += e.misses; }
+            }
+            const auto stats = b.streamingStats();
+            check(hits == stats.at("hits") && misses == stats.at("misses") && callbacks == stats.at("callbacks"), "backend trace counters differ");
+            s.ews_trace = false;
+            const auto plain = b.chat(prompt, s);
+            check(plain.ok && plain.text == traced.text && plain.tokens == traced.tokens, "trace altered backend output");
+            check(!b.streamingRouting().enabled && b.streamingRouting().layers.empty(), "last trace was not cleared");
+            s.ews_trace = true; s.truncate_prompt = false; s.max_tokens = 512;
+            check(!b.chat(prompt, s).ok && b.streamingRouting().outcome == "error", "overflow trace mislabeled");
+            s.max_tokens = 4; s.on_token = [](const std::string&) { return false; };
+            const auto cancelled = b.chat(prompt, s);
+            check(!cancelled.ok && b.streamingRouting().outcome == "cancelled", "cancelled trace mislabeled");
+            s.on_token = {};
+            const auto recovered = b.chat(prompt, s);
+            check(recovered.ok && b.streamingRouting().outcome == "complete", "trace failed to recover");
+            std::cout << nlohmann::json({{"result", "pass"}, {"scope", "real CpuBackend trace lifecycle, hybrid GPU experts"},
+                {"first_trace", nlohmann::json::parse(hist.json())}, {"output", traced.text},
+                {"plain_output_identical", true}, {"overflow", "error"}, {"cancel", "cancelled"}, {"recovery", "complete"}}).dump() << '\n';
+            return 0;
+        }
         if (argc == 2 && std::string(argv[1]) == "--api-only") {
             check(eie::mapKvType("f16") == GGML_TYPE_F16, "F16 mapping changed");
             auto * sampler = eie::penaltySampler(llama_sampler_init_penalties, 1024);

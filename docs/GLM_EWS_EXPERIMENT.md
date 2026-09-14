@@ -1,7 +1,8 @@
 # Experimental GLM-5.3-Flash EWS port
 
-**Guide revision 2, updated 14 September 2026.** The measurements below were
-performed on **8 September 2026**; this is a documentation update, not a new run.
+**Guide revision 3, updated 14 September 2026.** The integration measurements below
+were performed on **8 September 2026**. A separate [14 September routing pilot](benchmarks/glm53-routing-20260914.md)
+now measures hard expert selections and reuse distances; it does not rerun Next.
 Exact measured source revisions, binary/model hashes and failed attempts remain
 in the linked receipts.
 
@@ -15,6 +16,10 @@ in the linked receipts.
 - **Reproduction scope:** the [standalone build and HTTP recipe](#reproduce-in-a-separate-checkout) and [GPU numerical tests](#gpu-placement-reproduction) do not require Next. Replaying the complete application loop does require that separate application. [Integration scope](benchmarks/glm53-ews-next-20260908.md#reproduction-and-boundaries).
 
 ## Terms used in this guide
+
+**New measurement:** [five-domain routing curves and raw evidence](benchmarks/glm53-routing-20260914.md),
+with calibration/test separation, prefill/decode counters and a tracing-off/on
+numerical control. [Instrumentation and reproduction](RUNTIME_AUTH_ROUTING_RECOVERY.md#opt-in-ews-routing-measurements).
 
 | Term | Meaning |
 |---|---|

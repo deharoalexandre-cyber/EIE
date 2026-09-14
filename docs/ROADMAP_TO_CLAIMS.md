@@ -46,7 +46,7 @@ unchanged. They do not qualify all of Next's cognition or source attribution.
 
 | Deliverable | Acceptance |
 |---|---|
-| Real retry/replacement | Inject first-call failure: retry invokes exactly one second call; replacement invokes the declared alternate model; original error and final result stay observable |
+| Real retry/replacement | Source gate passed 14 September: injected first-call failure, exactly one second call, declared alternate and retained errors. See [checks and remaining deployment scope](RUNTIME_AUTH_ROUTING_RECOVERY.md#bounded-group-recovery) |
 | Explicit group configuration inheritance | Global settings apply when no override exists; per-group settings parse and override only specified fields; verify actual instantiated context/cache |
 | Group policies | Separate strict/partial/quorum, longest-response fan-out and sequential chaining tests; multi-group should have distinct behavior before a distinct guarantee is advertised |
 | Memory policy, only if retained as a feature | Parse settings, feed actual device measurements into the real loader, exercise representative fits/pressure/recovery; document fallback and uncertainty. Do not silently turn speculative budgets into blanket request blockers |

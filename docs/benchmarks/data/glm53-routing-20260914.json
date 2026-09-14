@@ -1,0 +1,170 @@
+{
+  "schema": "eie.glm-routing-pilot/v1",
+  "date": "2026-09-14",
+  "status": "local pilot passed; not a hotset deployment qualification",
+  "manifest": {
+    "schema": "eie.routing-campaign/v1",
+    "workloads": {
+      "schema": "eie.routing-workloads/v1",
+      "scope": "Short-context raw-completion pilot, not a Next session or a long-context hotset qualification",
+      "predict": 16,
+      "items": [
+        {
+          "id": "code-cal",
+          "domain": "code",
+          "split": "calibration",
+          "prompt": "Write a Python function that merges two sorted lists without sorting again.\n"
+        },
+        {
+          "id": "writing-cal",
+          "domain": "writing",
+          "split": "calibration",
+          "prompt": "Redige un court courrier professionnel pour reporter une livraison de deux jours.\n"
+        },
+        {
+          "id": "math-cal",
+          "domain": "math",
+          "split": "calibration",
+          "prompt": "Prove that the sum of the first n odd positive integers is n squared.\n"
+        },
+        {
+          "id": "conversation-cal",
+          "domain": "conversation",
+          "split": "calibration",
+          "prompt": "Bonjour, je cherche une idee de promenade tranquille pour dimanche. Que proposes-tu ?\n"
+        },
+        {
+          "id": "documents-cal",
+          "domain": "documents",
+          "split": "calibration",
+          "prompt": "Review this note for contradictions: The backup runs daily. No backup has run this week. All data is protected.\n"
+        },
+        {
+          "id": "code-test",
+          "domain": "code",
+          "split": "test",
+          "prompt": "Explain the bug in this Python function and fix it: def append_item(x, items=[]): items.append(x); return items\n"
+        },
+        {
+          "id": "writing-test",
+          "domain": "writing",
+          "split": "test",
+          "prompt": "Write a concise product description for a reusable steel water bottle without unsupported environmental claims.\n"
+        },
+        {
+          "id": "math-test",
+          "domain": "math",
+          "split": "test",
+          "prompt": "Solve 3x + 7 = 31, then explain how to verify the answer independently.\n"
+        },
+        {
+          "id": "conversation-test",
+          "domain": "conversation",
+          "split": "test",
+          "prompt": "I finished a difficult project today and want to unwind. Suggest a simple way to celebrate.\n"
+        },
+        {
+          "id": "documents-test",
+          "domain": "documents",
+          "split": "test",
+          "prompt": "Relis ce compte rendu : livraison promise mardi, tests prevus mercredi, validation obligatoire avant livraison. Identifie le probleme.\n"
+        }
+      ]
+    },
+    "workloads_sha256": "8dbd113fdb6c819c41f57f404d8833821ef950485d3a4b0b1cd954c4a7aed12e",
+    "binary_sha256": "fdd534781fb7a3afe8e15e9f17a0a4a3159e88db7bf40e334a42f3dbdbeac131",
+    "runtime_libraries_sha256": {
+      "ggml-base.dll": "ed8b3994d375dba68bd3b3db476f6dd2649233cdba95cc139a20cefeddd3b87b",
+      "ggml-cpu.dll": "d59bd61e9a5b4855d5e94411ef18ff5be89981e9cffbca1cea79029f12acc8c4",
+      "ggml-cuda.dll": "435786082fba81851ded80a664bdaf2a77d4e76a471bb37d58ef97e86a04b06b",
+      "ggml.dll": "a09f705ad350f48ff721873fe096b28a7386b0b4808f9bce8e5192b7afb9562c",
+      "llama-common.dll": "74a7c0a6f3932161b1dc488ba9288c440d18d01be97374bf583e997be52dc2f3",
+      "llama.dll": "939464c8b14f7d4daee6b21731170e5a575397986382fa3ea1bdb311ed8e1756"
+    },
+    "model_first_shard": "GLM-5.3-Flash-UD-Q4_K_XL-00001-of-00006.gguf",
+    "model_size_bytes": 9429859,
+    "model_provenance_sha256": "4c0a3d5cbe745b83b7329b6873c07f7a6c90714fabe12498259c6f29de1f0447",
+    "model_hashes_rechecked": false,
+    "profile": "glm-gpu",
+    "slots": 8,
+    "gpu_layers": 20,
+    "sampling": "greedy argmax; no stochastic sampling",
+    "conditions": "fresh process and empty EWS/KV caches per item; OS cache not flushed",
+    "created_unix": 1789398000.0407162,
+    "status": "preregistered"
+  },
+  "decode_test_results": [
+    {
+      "domain": "code",
+      "measured_8_slot_hit_rate": 0.32916666666666666,
+      "held_out_coverage_64": 0.3325396825396825,
+      "uniform_64_slots_expert_bytes": 41217425408,
+      "in_sample_90pct_slots_per_layer": 52,
+      "held_out_90pct_slots_per_layer": 251
+    },
+    {
+      "domain": "writing",
+      "measured_8_slot_hit_rate": 0.3476190476190476,
+      "held_out_coverage_64": 0.3257936507936508,
+      "uniform_64_slots_expert_bytes": 41217425408,
+      "in_sample_90pct_slots_per_layer": 43,
+      "held_out_90pct_slots_per_layer": 255
+    },
+    {
+      "domain": "math",
+      "measured_8_slot_hit_rate": 0.2720238095238095,
+      "held_out_coverage_64": 0.5017857142857143,
+      "uniform_64_slots_expert_bytes": 41217425408,
+      "in_sample_90pct_slots_per_layer": 49,
+      "held_out_90pct_slots_per_layer": 244
+    },
+    {
+      "domain": "conversation",
+      "measured_8_slot_hit_rate": 0.24226190476190476,
+      "held_out_coverage_64": 0.5837301587301588,
+      "uniform_64_slots_expert_bytes": 41217425408,
+      "in_sample_90pct_slots_per_layer": 46,
+      "held_out_90pct_slots_per_layer": 230
+    },
+    {
+      "domain": "documents",
+      "measured_8_slot_hit_rate": 0.3236111111111111,
+      "held_out_coverage_64": 0.4994047619047619,
+      "uniform_64_slots_expert_bytes": 41217425408,
+      "in_sample_90pct_slots_per_layer": 45,
+      "held_out_90pct_slots_per_layer": 239
+    }
+  ],
+  "trace_neutrality": {
+    "reference_sha256": "233144626403dfc14af73593710a7660afe66b72b2f5a61fcc2a003e4d4359b1",
+    "candidate_sha256": "233144626403dfc14af73593710a7660afe66b72b2f5a61fcc2a003e4d4359b1",
+    "bit_identical": true,
+    "scope": "first short workload only; not proof for every input"
+  },
+  "logit_floats_compared": 2478080,
+  "backend_lifecycle": {
+    "cancel": "cancelled",
+    "output": " Paris. In French",
+    "overflow": "error",
+    "plain_output_identical": true,
+    "recovery": "complete",
+    "result": "pass",
+    "scope": "real CpuBackend trace lifecycle, hybrid GPU experts"
+  },
+  "archive": {
+    "file": "glm53-routing-20260914.zip",
+    "bytes": 19419045,
+    "sha256": "1eef379f7c9a6f12582b7204e3273c3d381317542deab4d19320ce0727808e1e"
+  },
+  "limitations": [
+    "one short calibration and test prompt per domain",
+    "raw completion, not Next conversation",
+    "16 predictions per item; no 1k/4k/16k/64k sweep",
+    "first-control timing pair is not an overhead benchmark; concurrent compilation",
+    "selection counts are not probability mass",
+    "LRU curve is not the EWS top-k-protected policy",
+    "model receipt retained; 199.7 GB shard hashes not rechecked in this campaign",
+    "in-sample ranking is an oracle; unseen-expert ties are resolved by expert ID",
+    "no Kimi/Mixtral/Gemma family classification or multi-tier latency claim"
+  ]
+}
