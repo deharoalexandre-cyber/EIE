@@ -1,0 +1,100 @@
+{
+  "schema": "eie.windows-receipt/v1",
+  "date": "2026-09-14",
+  "provenance": "maintainer-side local execution of the distributed bundle; not independent replication",
+  "server_source": "f361b81",
+  "runtime_base": "2168b0cd8b87c75c29a1e6588692ebbb805b9bd2",
+  "runtime_patch": "patches/ews-runtime-2168b0.patch",
+  "profile": {
+    "arch": "x64",
+    "windows": "10 10.0.22631 (Professional)",
+    "model": "Default string DS16",
+    "cpu": "Intel(R) Core(TM) i7-10850H CPU @ 2.70GHz",
+    "logical_processors": 12,
+    "memory_gb": 34.0,
+    "toolchain": "compiler: g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r4) 16.1.0\ngenerator: Ninja\nbuild_type: Release\nGGML_NATIVE: OFF\nBUILD_SHARED_LIBS: OFF\nlinker_flags: -static\nEIE: f361b81",
+    "preset": "windows-cpu.yaml",
+    "n_ctx": "4096",
+    "type_k": "f16",
+    "type_v": "f16",
+    "flash_attn": "false",
+    "gpu_layers_offloaded": "0 (CPU)",
+    "effective_kv_and_ctx_per_model": [
+      {
+        "model": "Qwen3.5-9B-Q6_K",
+        "kv": "f16/f16",
+        "ctx": 4096,
+        "threads": 6
+      },
+      {
+        "model": "nomic-embed-text-v2-moe.Q6_K",
+        "kv": "f16/f16",
+        "ctx": 4096,
+        "threads": 6
+      }
+    ]
+  },
+  "sha256": {
+    "eie-server.exe": "20d0ac8e0582ad8493f7af377a0fe8f2db7ec2839873565366b5cb3312fd390c",
+    "Qwen3.5-9B-Q6_K.gguf": "3000f1b36c1c4cf623372d18a5c47adea3a302e8561e5e7e78eb7a872cc8c804",
+    "nomic-embed-text-v2-moe.Q6_K.gguf": "e74dafe6932fc7ae53f98061401f5cae136203a6b09fa940a2f1eb0ab5804ed8"
+  },
+  "load_seconds_until_all_models_healthy": 20.25,
+  "health": {
+    "status": "ok",
+    "uptime": 19,
+    "models": 2
+  },
+  "embeddings": {
+    "model": "nomic-embed-text-v2-moe.Q6_K",
+    "dimensions": 768,
+    "l2_norm": 1.0,
+    "wall_seconds": 0.1
+  },
+  "chat": {
+    "model": "Qwen3.5-9B-Q6_K",
+    "cold_prefix_64": {
+      "wall_seconds": 37.122,
+      "engine_ms": 37115,
+      "queue_and_transport_ms": 7.0,
+      "prompt_tokens": 174,
+      "completion_tokens": 64,
+      "cached_prefix_tokens": 0,
+      "kv_reused": 0,
+      "kv_gen": 64,
+      "finish_reason": "length",
+      "tokens_per_engine_second": 1.7
+    },
+    "warm_prefix_64": {
+      "wall_seconds": 44.982,
+      "engine_ms": 44974,
+      "queue_and_transport_ms": 8.0,
+      "prompt_tokens": 264,
+      "completion_tokens": 64,
+      "cached_prefix_tokens": 0,
+      "kv_reused": 0,
+      "kv_gen": 64,
+      "finish_reason": "length",
+      "tokens_per_engine_second": 1.4
+    },
+    "warm_prefix_256": {
+      "wall_seconds": 110.747,
+      "engine_ms": 110729,
+      "queue_and_transport_ms": 18.0,
+      "prompt_tokens": 351,
+      "completion_tokens": 256,
+      "cached_prefix_tokens": 0,
+      "kv_reused": 0,
+      "kv_gen": 256,
+      "finish_reason": "length",
+      "tokens_per_engine_second": 2.3
+    }
+  },
+  "limits": [
+    "one machine, one session, warm page cache for the model files",
+    "engine_ms is the server-side request time from the [KV] log line; queue_and_transport_ms is wall minus engine",
+    "tokens_per_engine_second includes prefill of the new turn; warm_prefix_256 approximates decode rate",
+    "no comparison with llama.cpp or Ollama on the same machine",
+    "no cold-cache protocol, no dispersion"
+  ]
+}

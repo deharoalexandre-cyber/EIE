@@ -172,7 +172,9 @@ It does **not** withdraw the September consumed-weight measurements.
 
 Windows/CUDA/Gemma has the identified local evidence. Linux CUDA operation
 is maintainer-reported; Intel macOS now has a separate
-[14 September bundle receipt](benchmarks/macos-intel-20260914.md). Apple Silicon has a
+[14 September bundle receipt](benchmarks/macos-intel-20260914.md), and a static
+Windows x64 CPU-only bundle has its own [14 September receipt](benchmarks/windows-cpu-20260914.md)
+on a consumer laptop, separate from the CUDA campaign. Apple Silicon has a
 separate reported on-device Metal run, not just a build path; its evidence
 status and scope are described above. ROCm and Android build paths are not
 qualified by the Windows campaign, and no Metal EWS result is established.

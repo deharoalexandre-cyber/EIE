@@ -9,7 +9,7 @@
 
 - **What it is:** a C++ inference server that loads GGUF models locally and exposes HTTP chat and embedding endpoints using a subset of the OpenAI API format.
 - **Who it is for:** developers of local assistants, RAG clients and desktop or self-hosted applications. **One LLM is enough; multiple models are optional.** [Elyne Next uses EIE/EWS daily at Elyne Corp](#production-use-elyne-next-resident-12b-and-streamed-26b).
-- **What is verified:** bounded Windows/CUDA serving and EWS tests, Intel macOS serving, and Android CPU text chat on a Z Flip6 have local maintainer-run receipts. Apple Silicon/Metal and the older multi-device Android timings remain separately labelled *maintainer-reported*.
+- **What is verified:** bounded Windows/CUDA serving and EWS tests, Intel macOS serving, Windows x64 CPU serving on a consumer laptop, and Android CPU text chat on a Z Flip6 have local maintainer-run receipts. Apple Silicon/Metal and the older multi-device Android timings remain separately labelled *maintainer-reported*.
 - **What is experimental:** EWS, an optional expert-weight streaming path for selected MoE models; GLM-5.3-Flash uses a separate experimental runtime.
 - **Where to check:** [capability status](#capability-status), [claim-by-claim evidence](docs/CLAIMS_AUDIT.md) and [remaining work](docs/ROADMAP_TO_CLAIMS.md).
 
@@ -232,7 +232,8 @@ After the same submodule/patch setup, recipes are available:
 |---|---|---|
 | Linux NVIDIA | `./scripts/build-cuda.sh` | Prior Linux operation reported; no complete published native run bundle |
 | Linux AMD | `./scripts/build-rocm.sh` | ROCm target, not a validated first-class device matrix |
-| CPU | `./scripts/build-cpu.sh` | Model/kernel compatibility and available RAM still apply |
+| Linux CPU (generic recipe) | `./scripts/build-cpu.sh` | Model/kernel compatibility and available RAM still apply; no receipt yet |
+| Windows x64 CPU (consumer laptop) | [prebuilt bundle](docs/windows.md) or `scriptsuild-windows-cpu.bat` + `presets/windows-cpu.yaml` | Locally verified on a 2020 laptop (i7-10850H, 6 cores, 32 GB, no GPU used): [receipt](docs/benchmarks/windows-cpu-20260914.md) + [JSON](docs/benchmarks/data/windows-cpu-20260914.json); static GCC build, AVX2, no CUDA |
 | macOS Intel | [prebuilt bundle](docs/macos.md) or `./scripts/build-macos-x86_64.sh` + `presets/macos-cpu.yaml` | Locally verified on a 2018 MacBook Pro (i5-8279U, 8 GB, CPU only): [receipt](docs/benchmarks/macos-intel-20260914.md) + [JSON](docs/benchmarks/data/macos-intel-20260914.json); Metal disabled by this project |
 | Apple Silicon | [prebuilt bundle](docs/macos.md) or `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Maintainer-reported MacBook Pro operation (JSON receipt from `scripts/receipt-macos.sh` pending): Metal, 16 GB memory, Gemma 4 E2B QAT Q4_0; 44–49 tok/s with a warm ~1.6k history, first output 0.07–0.10 s - [engine/application receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
 
@@ -249,7 +250,7 @@ The Windows EWS campaign does not qualify the portable reader, Metal, ROCm, or A
 ./build/eie-server -m model-a.gguf -m model-b.gguf --ctx 8192 --port 8090
 ```
 
-On Windows, use `build-ews/Release/eie-server.exe` with its DLL directory on `PATH`. This is normal loading; streaming requires an `ews_slots` setting as described in the [EWS guide](docs/ews/runtime-port.md).
+On Windows, use `build-ews/Release/eie-server.exe` with its DLL directory on `PATH`, or the static CPU-only `eie-server.exe` from the [Windows bundle](docs/windows.md). This is normal loading; streaming requires an `ews_slots` setting as described in the [EWS guide](docs/ews/runtime-port.md).
 
 **For GLM-5.3-Flash 320B streaming**, use the [separate GLM build and serving profile](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), then its [hybrid GPU settings](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). That experiment is not required for the single-model setup above.
 
