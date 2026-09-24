@@ -12,6 +12,8 @@
 - **What is verified:** bounded Windows/CUDA serving and EWS tests, Intel macOS serving, Windows x64 CPU serving on a consumer laptop, and Android CPU text chat on a Z Flip6 have local maintainer-run receipts. Apple Silicon/Metal and the older multi-device Android timings remain separately labelled *maintainer-reported*.
 - **What is experimental:** EWS, an optional expert-weight streaming path for selected MoE models; GLM-5.3-Flash uses a separate experimental runtime.
 - **Where to check:** [capability status](#capability-status), [claim-by-claim evidence](docs/CLAIMS_AUDIT.md) and [remaining work](docs/ROADMAP_TO_CLAIMS.md).
+- **Prebuilt bundles:** [macOS, Intel and Apple Silicon](docs/macos.md) · [Windows x64 CPU](docs/windows.md) · [Android arm64 and mobile components](mobile/README.md) · [all releases](https://github.com/deharoalexandre-cyber/EIE/releases).
+- **GLM-5.3-Flash reports:** [experiment guide](docs/GLM_EWS_EXPERIMENT.md) · [native baseline](docs/benchmarks/glm53-native-next-20260908.md) · [EWS](docs/benchmarks/glm53-ews-next-20260908.md) · [EWS with GPU experts](docs/benchmarks/glm53-ews-gpu-next-20260908.md) · [routing](docs/benchmarks/glm53-routing-20260914.md).
 
 ## What you can build with EIE
 
