@@ -202,6 +202,7 @@ There is **no `auto` selector**; unknown names fall back to F16. Separate K/V se
 **Choose the runtime before building:**
 
 - **Standard EIE / Gemma:** use the pinned submodule and `ews-runtime-2168b0.patch` in the commands below.
+- **Bonsai 2 27B / PrismML:** use the [optional PrismML source-build profile](docs/bonsai2.md), pinned to `prism-b10743-adfffbe` with F16 KV. It runs text requests through EIE and does not use the EWS patch. A Windows CPU/PTQ1_0 text smoke is recorded in that guide.
 - **GLM-5.3-Flash 320B / EWS:** use the [separate-checkout recipe](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), with its GLM-specific runtime revision and patch. For the latest measured profile, follow the [hybrid GPU configuration](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). Do not stack the GLM patch on an already Gemma-patched runtime.
 
 For the **standard path below**, initialize the pinned fork and apply its runtime patch **once**, before inference builds, including non-EWS profiles. The wrapper references fields added by that patch:
@@ -209,7 +210,7 @@ For the **standard path below**, initialize the pinned fork and apply its runtim
 ```bash
 git clone https://github.com/deharoalexandre-cyber/EIE.git
 cd EIE
-git submodule update --init
+git submodule update --init llama.cpp
 git -C llama.cpp apply ../patches/ews-runtime-2168b0.patch
 ```
 
@@ -254,6 +255,8 @@ The Windows EWS campaign does not qualify the portable reader, Metal, ROCm, or A
 
 On Windows, use `build-ews/Release/eie-server.exe` with its DLL directory on `PATH`, or the static CPU-only `eie-server.exe` from the [Windows bundle](docs/windows.md). This is normal loading; streaming requires an `ews_slots` setting as described in the [EWS guide](docs/ews/runtime-port.md).
 
+**For Bonsai 2**, follow the [PrismML profile's build, model download, F16 KV and text API example](docs/bonsai2.md). It passes the model's sampling settings and enables thinking explicitly; EIE returns raw thinking text in the ordinary content field.
+
 **For GLM-5.3-Flash 320B streaming**, use the [separate GLM build and serving profile](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), then its [hybrid GPU settings](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). That experiment is not required for the single-model setup above.
 
 `--models-dir` discovers files but **does not load them by itself**. Set `preload: [all]` in a preset only when all discovered models fit, or use repeatable `-m`. Other flags: `--config`/`-c`, `--host`, `--port`, `--ctx`.
@@ -266,7 +269,7 @@ curl http://localhost:8090/v1/chat/completions \
   -d '{"model":"model","messages":[{"role":"user","content":"Hello"}],"max_tokens":64}'
 ```
 
-Text messages use the GGUF's native chat template when available, with a generic fallback. EIE does not add an identity/persona; it disables the optional thinking channel in template rendering. Raw `prompt` passthrough is available when messages are not supplied.
+Text messages use the GGUF's native chat template when available, with a generic fallback. EIE does not add an identity/persona. The optional thinking channel is disabled by default; `enable_thinking: true` and `reasoning_effort` opt into the model template's thinking mode. The request also accepts `min_p`, `repetition_penalty` and `presence_penalty`. Raw `prompt` passthrough is available when messages are not supplied.
 
 **Compatibility limits:** native tool-call schemas/results, structured outputs, multimodal message arrays, seed handling and every SDK option are not implemented here. Unknown fields may be ignored. Serving now reports retained tokenized prompt length, sampled completion tokens and reused-prefix tokens in both modes. [Accounting semantics and qualification limits](tests/serving/README.md): serializer tests and the real-tokenizer gate pass on the identified 12B and streamed 26B profiles.
 
@@ -329,9 +332,9 @@ For migration from another engine, use a compatible GGUF artifact, point your cl
 
 See [CONTRIBUTING.md](docs/CONTRIBUTING.md). Extension interfaces exist; dynamic strategy plugins remain planned.
 
-EIE's code is [Apache 2.0](LICENSE), copyright 2026 Elyne Corp. The [llama.cpp fork](https://github.com/TheTom/llama-cpp-turboquant), dependencies, toolchain components and model weights retain their own licenses. See [NOTICE](NOTICE). This is not an Apache-2.0 relicensing of those artifacts.
+EIE's code is [Apache 2.0](LICENSE), copyright 2026 Elyne Corp. The [TurboQuant llama.cpp fork](https://github.com/TheTom/llama-cpp-turboquant), optional [PrismML llama.cpp fork](https://github.com/PrismML-Eng/llama.cpp), dependencies, toolchain components and model weights retain their own licenses. See [NOTICE](NOTICE). This is not an Apache-2.0 relicensing of those artifacts.
 
-Acknowledgments: [llama.cpp](https://github.com/ggml-org/llama.cpp), [TheTom's TurboQuant work](https://github.com/TheTom/llama-cpp-turboquant), and [AirLLM](https://github.com/lyogavin/airllm) as an inspiration for weight streaming. No competitor performance ranking is implied.
+Acknowledgments: [llama.cpp](https://github.com/ggml-org/llama.cpp), [TheTom's TurboQuant work](https://github.com/TheTom/llama-cpp-turboquant), [PrismML's Bonsai 2 runtime](https://github.com/PrismML-Eng/llama.cpp), and [AirLLM](https://github.com/lyogavin/airllm) as an inspiration for weight streaming. No competitor performance ranking is implied.
 
 ## Citation
 

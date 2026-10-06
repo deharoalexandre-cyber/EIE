@@ -44,6 +44,7 @@ struct ModelParams {
 
 struct SamplingParams {
     float temperature = 0.7f, top_p = 0.9f;
+    float min_p = 0.0f, repetition_penalty = 1.15f, presence_penalty = 0.0f;
     int top_k = 40, max_tokens = 2048;
     std::vector<std::string> stop; // arrêt de génération sur ces séquences
     // One-shot (consolidations, rêves, tâches annexes) : contexte ÉPHÉMÈRE,
@@ -63,6 +64,11 @@ struct SamplingParams {
 struct ChatMessage {
     std::string role;    // "system" / "user" / "assistant"
     std::string content;
+};
+
+struct ChatFormatOptions {
+    bool enable_thinking = false;
+    std::string reasoning_effort;
 };
 
 struct InferenceResult {
@@ -86,6 +92,8 @@ public:
     /** Applique le template de chat natif du modèle (métadonnées GGUF).
      *  Renvoie "" si le backend ne sait pas ; l'appelant utilise alors un repli. */
     virtual std::string formatChat(const std::vector<ChatMessage>& msgs) { return ""; }
+    virtual std::string formatChatWithOptions(const std::vector<ChatMessage>& msgs,
+                                              const ChatFormatOptions&) { return formatChat(msgs); }
     /** Embedding L2-normalisé du texte (modèles encodeurs type bge-m3).
      *  Renvoie un vecteur vide si le backend ne sait pas. */
     virtual std::vector<float> embed(const std::string& text) { return {}; }

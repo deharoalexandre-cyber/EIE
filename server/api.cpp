@@ -66,6 +66,9 @@ static SamplingParams samplingFromJson(const json& body) {
     SamplingParams sp;
     sp.temperature = body.value("temperature", sp.temperature);
     sp.top_p       = body.value("top_p", sp.top_p);
+    sp.min_p       = body.value("min_p", sp.min_p);
+    sp.repetition_penalty = body.value("repetition_penalty", sp.repetition_penalty);
+    sp.presence_penalty   = body.value("presence_penalty", sp.presence_penalty);
     sp.top_k       = body.value("top_k", sp.top_k);
     sp.max_tokens  = body.value("max_tokens", 256);
     sp.one_shot    = body.value("one_shot", false);
@@ -239,7 +242,12 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
 
         // Template de chat natif du modèle pour messages[] ; repli générique sinon.
         std::string prompt;
-        if (backend) prompt = backend->formatChat(messagesFromJson(body));
+        if (backend) {
+            ChatFormatOptions format;
+            format.enable_thinking = body.value("enable_thinking", false);
+            format.reasoning_effort = body.value("reasoning_effort", "");
+            prompt = backend->formatChatWithOptions(messagesFromJson(body), format);
+        }
         if (prompt.empty()) prompt = promptFromMessages(body);
         if (!backend) {
             res.status = 404;

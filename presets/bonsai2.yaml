@@ -1,0 +1,10 @@
+# Bonsai 2 GGUF text-chat profile. Pass the model path with -m.
+# Requires a Bonsai 2-capable PrismML llama.cpp runtime; EWS is not enabled.
+host: 127.0.0.1
+port: 8090
+strategy: generic
+auto_discover: false
+type_k: f16
+type_v: f16
+flash_attn: true
+n_ctx: 8192
