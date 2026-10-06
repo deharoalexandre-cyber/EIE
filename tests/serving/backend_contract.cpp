@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         }
         if (argc == 2 && std::string(argv[1]) == "--api-only") {
             check(eie::mapKvType("f16") == GGML_TYPE_F16, "F16 mapping changed");
-            auto * sampler = eie::penaltySampler(llama_sampler_init_penalties, 1024);
+            auto * sampler = eie::penaltySampler(llama_sampler_init_penalties, 1024, 1.0f, 0.0f);
             check(sampler != nullptr, "penalty sampler API mismatch");
             llama_sampler_free(sampler);
             common_chat_params rendered;

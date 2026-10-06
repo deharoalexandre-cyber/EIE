@@ -55,7 +55,7 @@ echo [OK] MSVC compiler found
 REM Init submodules
 echo.
 echo [..] Initializing submodules...
-git submodule update --init 2>nul
+git submodule update --init llama.cpp 2>nul
 
 REM Fix ASM compiler issue (MASM not always available in Build Tools)
 if exist "llama.cpp\ggml\CMakeLists.txt" (

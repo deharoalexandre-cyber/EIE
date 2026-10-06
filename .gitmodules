@@ -2,3 +2,7 @@
 	path = llama.cpp
 	url = https://github.com/TheTom/llama-cpp-turboquant.git
 	branch = feature/turboquant-kv-cache
+[submodule "llama-prism"]
+	path = llama-prism
+	url = https://github.com/PrismML-Eng/llama.cpp.git
+	branch = prism

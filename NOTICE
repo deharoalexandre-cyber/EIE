@@ -1,4 +1,5 @@
 EIE - Elyne Inference Engine
 Copyright 2026 Elyne Corp
 Based on llama.cpp by Georgi Gerganov. TurboQuant by TheTom.
+Optional Bonsai 2 runtime: PrismML-Eng/llama.cpp (MIT license).
 Licensed under Apache License 2.0.

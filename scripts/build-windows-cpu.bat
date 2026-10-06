@@ -3,7 +3,7 @@ REM EIE: Windows x64 CPU build (no CUDA), static and portable binary.
 REM Requires on PATH: cmake, ninja and either g++ (MinGW-w64 / WinLibs) or cl.exe
 REM (Visual Studio 2022 Build Tools, from a Developer PowerShell).
 REM Usage: scripts\build-windows-cpu.bat [build-dir]   (default: build-windows-cpu)
-REM Prerequisite, once per checkout: git submodule update --init
+REM Prerequisite, once per checkout: git submodule update --init llama.cpp
 REM   and git -C llama.cpp apply ..\patches\ews-runtime-2168b0.patch
 setlocal
 cd /d "%~dp0.."

@@ -21,6 +21,7 @@
 #include <thread>
 #include <algorithm>
 #include <cmath>
+#include <utility>
 #endif
 
 namespace eie {
@@ -64,11 +65,13 @@ static ggml_type mapKvType(const std::string& t) {
 }
 
 // The GLM runtime adds vocabulary size to the penalty sampler API.
-static llama_sampler * penaltySampler(llama_sampler * (*init)(int32_t, float, float, float), int32_t) {
-    return init(256, 1.15f, 0.0f, 0.0f);
+static llama_sampler * penaltySampler(llama_sampler * (*init)(int32_t, float, float, float),
+                                      int32_t, float repeat, float present) {
+    return init(256, repeat, 0.0f, present);
 }
-static llama_sampler * penaltySampler(llama_sampler * (*init)(int32_t, int32_t, float, float, float), int32_t n_vocab) {
-    return init(n_vocab, 256, 1.15f, 0.0f, 0.0f);
+static llama_sampler * penaltySampler(llama_sampler * (*init)(int32_t, int32_t, float, float, float),
+                                      int32_t n_vocab, float repeat, float present) {
+    return init(n_vocab, 256, repeat, 0.0f, present);
 }
 
 static std::string answerOnlyPrompt(common_chat_params rendered) {
@@ -166,11 +169,16 @@ public:
         mp.n_gpu_layers = p.n_gpu_layers;
 #endif
         if (p.ews_slots != 0) {
+#ifndef EIE_HAS_EWS
+            std::cerr << "EWS is unavailable with the PrismML llama.cpp runtime" << std::endl;
+            return false;
+#else
             try { expert_stream_ = std::make_unique<ExpertStream>(path_, p.ews_slots); }
             catch (const std::exception & e) { std::cerr << e.what() << std::endl; return false; }
             mp.ews_n_slots = p.ews_slots;
             mp.load_mode = LLAMA_LOAD_MODE_NONE;
             mp.use_extra_bufts = false;
+#endif
         }
         model_ = llama_model_load_from_file(path_.c_str(), mp);
         if (!model_) {
@@ -223,6 +231,11 @@ public:
     }
 
     std::string formatChat(const std::vector<ChatMessage>& msgs) override {
+        return formatChatWithOptions(msgs, {});
+    }
+
+    std::string formatChatWithOptions(const std::vector<ChatMessage>& msgs,
+                                      const ChatFormatOptions& options) override {
         if (!tmpls_ || msgs.empty()) return "";
         common_chat_templates_inputs in;
         for (auto& m : msgs) {
@@ -232,10 +245,13 @@ public:
             in.messages.push_back(cm);
         }
         in.add_generation_prompt = true;
-        // Pas de canal de "réflexion" par défaut : la réponse est la réponse.
-        in.enable_thinking = false;
+        in.enable_thinking = options.enable_thinking;
+        if (options.reasoning_effort == "low" || options.reasoning_effort == "medium" ||
+            options.reasoning_effort == "high" || options.reasoning_effort == "xhigh")
+            in.chat_template_kwargs["reasoning_effort"] = "\"" + options.reasoning_effort + "\"";
         try {
-            return answerOnlyPrompt(common_chat_templates_apply(tmpls_.get(), in));
+            auto rendered = common_chat_templates_apply(tmpls_.get(), in);
+            return options.enable_thinking ? rendered.prompt : answerOnlyPrompt(std::move(rendered));
         } catch (const std::exception& e) {
             std::cerr << "[" << name() << "] chat template failed: " << e.what() << std::endl;
             return "";
@@ -379,10 +395,12 @@ public:
 
         // Sampler chain
         llama_sampler* smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
-        // Pénalité de répétition : les petits modèles bouclent vite en complétion brute
-        llama_sampler_chain_add(smpl, penaltySampler(llama_sampler_init_penalties, llama_vocab_n_tokens(vocab)));
+        // Request overrides preserve the historical EIE repetition default.
+        llama_sampler_chain_add(smpl, penaltySampler(llama_sampler_init_penalties,
+            llama_vocab_n_tokens(vocab), s.repetition_penalty, s.presence_penalty));
         llama_sampler_chain_add(smpl, llama_sampler_init_top_k(s.top_k));
         llama_sampler_chain_add(smpl, llama_sampler_init_top_p(s.top_p, 1));
+        if (s.min_p > 0.0f) llama_sampler_chain_add(smpl, llama_sampler_init_min_p(s.min_p, 1));
         llama_sampler_chain_add(smpl, llama_sampler_init_temp(s.temperature));
         llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
