@@ -15,6 +15,38 @@ public:
         check(model_ != nullptr, "vocabulary-only load failed");
         tmpls_ = common_chat_templates_init(model_, "");
     }
+    void checkToolSamplerPromptPenalty() {
+        const auto* vocab = llama_model_get_vocab(model_);
+        auto prompt_tokens = common_tokenize(vocab, "Weather in Lisbon", false, true);
+        check(!prompt_tokens.empty(), "tool sampler test prompt has no tokens");
+        int32_t suppressed_count = 0;
+        const auto* suppressed = llama_vocab_get_suppress_tokens(vocab, &suppressed_count);
+        llama_token repeated = LLAMA_TOKEN_NULL;
+        for (llama_token token : prompt_tokens) {
+            bool is_suppressed = false;
+            for (int32_t i = 0; i < suppressed_count; ++i) {
+                if (suppressed[i] == token) { is_suppressed = true; break; }
+            }
+            if (token != LLAMA_TOKEN_NULL && !is_suppressed) { repeated = token; break; }
+        }
+        check(repeated != LLAMA_TOKEN_NULL, "tool sampler test has no ordinary prompt token");
+        common_params_sampling params;
+        params.penalty_last_n = 256;
+        params.penalty_repeat = 1.0f;
+        params.penalty_present = 2.0f;
+        params.samplers = {COMMON_SAMPLER_TYPE_PENALTIES};
+        auto baseline = common_sampler_ptr(common_sampler_init(model_, params));
+        auto primed = eie::makeToolSampler(model_, params, prompt_tokens);
+        check(baseline != nullptr && primed != nullptr, "tool sampler initialization failed");
+        llama_token_data plain_logit[] = {{repeated, 10.0f, 0.0f}};
+        llama_token_data primed_logit[] = {{repeated, 10.0f, 0.0f}};
+        llama_token_data_array plain_candidates = {plain_logit, 1, false};
+        llama_token_data_array primed_candidates = {primed_logit, 1, false};
+        llama_sampler_apply(common_sampler_get(baseline.get()), &plain_candidates);
+        llama_sampler_apply(common_sampler_get(primed.get()), &primed_candidates);
+        check(primed_logit[0].logit < plain_logit[0].logit,
+              "tool sampler did not apply presence penalty to a prompt token");
+    }
 };
 
 int main(int argc, char** argv) {
@@ -85,6 +117,7 @@ int main(int argc, char** argv) {
             const std::string open = "<think>";
             check(prompt.size() < open.size() || prompt.compare(prompt.size() - open.size(), open.size(), open) != 0,
                   "answer-only template still opens reasoning");
+            backend.checkToolSamplerPromptPenalty();
             std::cout << nlohmann::json({{"result", "pass"}, {"prompt", prompt}, {"weights_loaded", false}}).dump() << '\n';
             return 0;
         }

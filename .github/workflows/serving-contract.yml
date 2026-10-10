@@ -1,0 +1,38 @@
+name: Serving contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  serving:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize pinned vendor headers
+        run: git submodule update --init --depth 1 llama-prism
+
+      - name: Configure model-free serving tests
+        run: cmake -S tests/serving -B build-serving -DCMAKE_BUILD_TYPE=Release -DEIE_HTTP_VENDOR="$GITHUB_WORKSPACE/llama-prism/vendor"
+
+      - name: Build model-free serving tests
+        run: cmake --build build-serving --parallel 4
+
+      - name: Run offline contract tests
+        run: ctest --test-dir build-serving --output-on-failure
+
+      - name: Run HTTP route contract
+        run: python3 tests/serving/http_contract.py build-serving/eie-http-fixture
+
+      - name: Run HTTP authentication contract
+        run: python3 tests/serving/auth_contract.py build-serving/eie-http-fixture

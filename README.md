@@ -279,7 +279,7 @@ curl http://localhost:8090/v1/chat/completions \
   -d '{"model":"model","messages":[{"role":"user","content":"Hello"}],"max_tokens":64}'
 ```
 
-Text messages use the GGUF's native chat template when available, with a generic fallback. EIE does not add an identity/persona. The optional thinking channel is disabled by default; `enable_thinking: true` and `reasoning_effort` opt into the model template's thinking mode. The request also accepts `min_p`, `repetition_penalty` and `presence_penalty`. Raw `prompt` passthrough is available when messages are not supplied.
+Text messages use the GGUF's native chat template when available, with a generic fallback. EIE does not add an identity/persona. The optional thinking channel is disabled by default; `enable_thinking: true` requests it. `reasoning_effort` adjusts reasoning only when the model template supports that field; it does not enable thinking by itself. The request also accepts `min_p`, `repetition_penalty` and `presence_penalty`. Raw `prompt` passthrough is available when messages are not supplied.
 
 `/v1/chat/completions` accepts OpenAI-style function definitions in `tools`, `tool_choice`, and subsequent assistant/tool messages for a tool-result round trip. A parsed call appears in `message.tool_calls` with `finish_reason: "tool_calls"`; EIE returns the call for the client to execute. See the [request, response, streaming behavior and model limits](docs/serving-model-contract.md#tool-calling).
 
