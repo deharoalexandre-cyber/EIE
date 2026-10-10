@@ -19,6 +19,38 @@ public:
     VramStatus vram() override { return {}; }
     HealthStatus health() override { return {loaded, 0, "fixture"}; }
     std::vector<float> embed(const std::string&) override { return {1, 0, 0}; }
+    ChatPrompt formatChatRequest(const std::vector<ChatMessage>& msgs,
+                                 const ChatFormatOptions& options) override {
+        ChatPrompt out;
+        if (options.tools.empty()) return out; // Preserve legacy prompt tests.
+
+        const bool schema = options.tools.size() == 1 &&
+            options.tools[0].name == "lookup_weather" &&
+            options.tools[0].description == "Look up the weather" &&
+            options.tools[0].parameters.find("\"city\"") != std::string::npos &&
+            options.tools[0].parameters.find("\"required\"") != std::string::npos;
+        const bool history = msgs.size() == 3 && msgs[1].role == "assistant" &&
+            msgs[1].reasoning_content == "Checking weather." &&
+            msgs[1].tool_calls.size() == 1 &&
+            msgs[1].tool_calls[0].id == "call_fixture_weather" &&
+            msgs[1].tool_calls[0].name == "lookup_weather" &&
+            msgs[1].tool_calls[0].arguments == "{\"city\":\"Paris\"}" &&
+            msgs[2].role == "tool" &&
+            msgs[2].tool_call_id == "call_fixture_weather" &&
+            msgs[2].content == "{\"temperature_c\":18}";
+
+        if (options.reasoning_effort == "none" && options.enable_thinking)
+            out.prompt = "fixture-tool-invalid-thinking";
+        else if (!schema) out.prompt = "fixture-tool-invalid-schema";
+        else if (msgs.size() == 3) out.prompt = history ? "fixture-tool-followup"
+                                                         : "fixture-tool-invalid-history";
+        else if (options.tool_choice == ChatToolChoice::None) out.prompt = "fixture-tool-none";
+        else if (options.parallel_tool_calls) out.prompt = "fixture-tool-parallel";
+        else out.prompt = "fixture-tool-call";
+        out.parse_chat_output = true;
+        out.parse_tool_calls = options.tool_choice != ChatToolChoice::None;
+        return out;
+    }
     InferenceResult chat(const std::string& prompt, const SamplingParams& s) override {
         std::lock_guard<std::mutex> lock(mutex_);
         InferenceResult r;
@@ -34,6 +66,30 @@ public:
         routing_.end("complete"); // Synthetic data tests API plumbing only.
         if (prompt == "error") { r.ok = false; r.error = "injected test error"; return r; }
         if (prompt == "overflow") { r.ok = false; r.error = "context_length_exceeded"; return r; }
+        if (prompt == "fixture-tool-call" && s.chat_format.parse_tool_calls) {
+            r.tokens = 4;
+            r.finish_reason = "tool_calls";
+            r.reasoning_content = "Checking weather.";
+            r.tool_calls.push_back({"call_fixture_weather", "lookup_weather", "{\"city\":\"Paris\"}"});
+            return r;
+        }
+        if (prompt == "fixture-tool-parallel" && s.chat_format.parse_tool_calls) {
+            r.tokens = 8;
+            r.finish_reason = "tool_calls";
+            r.tool_calls.push_back({"call_fixture_weather", "lookup_weather", "{\"city\":\"Paris\"}"});
+            r.tool_calls.push_back({"call_fixture_weather_2", "lookup_weather", "{\"city\":\"Lyon\"}"});
+            return r;
+        }
+        if (prompt == "fixture-tool-followup") {
+            r.tokens = 1;
+            r.finish_reason = "stop";
+            r.text = "It is 18 C in Paris.";
+            if (s.on_token && !s.on_token(r.text)) {
+                r.finish_reason = "cancelled";
+                r.ok = false;
+            }
+            return r;
+        }
         TextOutput output(s.stop, s.on_token);
         std::vector<std::string> pieces = {"caf\xC3", "\xA9 ", "E", "ND tail"};
         r.finish_reason = "length";
