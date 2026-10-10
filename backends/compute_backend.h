@@ -42,6 +42,34 @@ struct ModelParams {
     KvConfig kv;
 };
 
+struct ChatToolCall {
+    std::string id, name, arguments;
+};
+
+struct ChatToolDefinition {
+    std::string name, description, parameters;
+};
+
+enum class ChatToolChoice { Auto, Required, None };
+
+// Template output is request-local: concurrent requests must not share parser
+// or grammar state on a loaded backend.
+struct ChatPrompt {
+    std::string prompt, error;
+    bool parse_chat_output = false;
+    bool parse_tool_calls = false;
+    int parser_format = 0;
+    std::string parser, generation_prompt, grammar;
+    bool grammar_lazy = false;
+    struct GrammarTrigger {
+        int type = 0;
+        std::string value;
+        int token = -1;
+    };
+    std::vector<GrammarTrigger> grammar_triggers;
+    std::vector<std::string> preserved_tokens, additional_stops;
+};
+
 struct SamplingParams {
     float temperature = 0.7f, top_p = 0.9f;
     float min_p = 0.0f, repetition_penalty = 1.15f, presence_penalty = 0.0f;
@@ -53,6 +81,7 @@ struct SamplingParams {
     bool one_shot = false;
     bool ews_trace = false; // Opt-in hard top-k / reuse-distance measurement.
     bool truncate_prompt = true; // legacy default; callers can request an intact task
+    ChatPrompt chat_format;
     // Streaming : appelé pour chaque morceau de texte généré (SSE côté API).
     // Retourne false pour interrompre la génération (client parti).
     std::function<bool(const std::string&)> on_token;
@@ -64,16 +93,24 @@ struct SamplingParams {
 struct ChatMessage {
     std::string role;    // "system" / "user" / "assistant"
     std::string content;
+    std::string reasoning_content;
+    std::vector<ChatToolCall> tool_calls;
+    std::string tool_call_id, name;
 };
 
 struct ChatFormatOptions {
     bool enable_thinking = false;
     std::string reasoning_effort;
+    std::vector<ChatToolDefinition> tools;
+    ChatToolChoice tool_choice = ChatToolChoice::Auto;
+    bool parallel_tool_calls = false;
 };
 
 struct InferenceResult {
     std::string model, text, error;
     std::string finish_reason = "stop";
+    std::vector<ChatToolCall> tool_calls;
+    std::string reasoning_content;
     int tokens = 0;
     int prompt_tokens = 0; // Actual retained tokenized prompt, including reused KV prefix.
     int reused_tokens = 0; // préfixe KV réutilisé (0 = préfill complet)
@@ -94,6 +131,16 @@ public:
     virtual std::string formatChat(const std::vector<ChatMessage>& msgs) { return ""; }
     virtual std::string formatChatWithOptions(const std::vector<ChatMessage>& msgs,
                                               const ChatFormatOptions&) { return formatChat(msgs); }
+    virtual ChatPrompt formatChatRequest(const std::vector<ChatMessage>& msgs,
+                                         const ChatFormatOptions& options) {
+        ChatPrompt out;
+        if (!options.tools.empty() && options.tool_choice != ChatToolChoice::None) {
+            out.error = "tool calling is unavailable for this backend";
+        } else {
+            out.prompt = formatChatWithOptions(msgs, options);
+        }
+        return out;
+    }
     /** Embedding L2-normalisé du texte (modèles encodeurs type bge-m3).
      *  Renvoie un vecteur vide si le backend ne sait pas. */
     virtual std::vector<float> embed(const std::string& text) { return {}; }

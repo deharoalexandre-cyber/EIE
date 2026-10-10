@@ -271,13 +271,15 @@ curl http://localhost:8090/v1/chat/completions \
 
 Text messages use the GGUF's native chat template when available, with a generic fallback. EIE does not add an identity/persona. The optional thinking channel is disabled by default; `enable_thinking: true` and `reasoning_effort` opt into the model template's thinking mode. The request also accepts `min_p`, `repetition_penalty` and `presence_penalty`. Raw `prompt` passthrough is available when messages are not supplied.
 
-**Compatibility limits:** native tool-call schemas/results, structured outputs, multimodal message arrays, seed handling and every SDK option are not implemented here. Unknown fields may be ignored. Serving now reports retained tokenized prompt length, sampled completion tokens and reused-prefix tokens in both modes. [Accounting semantics and qualification limits](tests/serving/README.md): serializer tests and the real-tokenizer gate pass on the identified 12B and streamed 26B profiles.
+`/v1/chat/completions` accepts OpenAI-style function definitions in `tools`, `tool_choice`, and subsequent assistant/tool messages for a tool-result round trip. A parsed call appears in `message.tool_calls` with `finish_reason: "tool_calls"`; EIE returns the call for the client to execute. See the [request, response, streaming behavior and model limits](docs/serving-model-contract.md#tool-calling).
 
-SSE and `one_shot` use the same incremental stop/UTF-8 path for streamed and buffered generation: supplying a stop no longer suppresses all callbacks. Offline, real-route/fake-model, native real-model and real HTTP chat/embedding tests pass in the recorded Windows/CUDA profiles. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error (HTTP 400 with `context_length_exceeded` in nonstream mode). `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
+**Compatibility limits:** JSON-schema constrained `response_format`, multimodal message arrays, seed handling and every SDK option are not implemented here. Unknown fields may be ignored. Tool use depends on the GGUF's chat template and model output; a successful HTTP response alone does not prove that a tool was called. Serving reports retained tokenized prompt length, sampled completion tokens and reused-prefix tokens in both modes. [Accounting semantics and qualification limits](tests/serving/README.md) distinguish serializer tests from real-model inference.
+
+Text-only SSE and `one_shot` use the same incremental stop/UTF-8 path for streamed and buffered generation: supplying a stop no longer suppresses all callbacks. Tool-enabled SSE buffers output until the native parser classifies it. Offline, real-route/fake-model, native real-model and real HTTP chat/embedding tests pass in the recorded Windows/CUDA profiles. Long prompts are truncated by default; `truncate_prompt: false` requests an explicit overflow error (HTTP 400 with `context_length_exceeded` in nonstream mode). `strict_model: true` rejects unknown model IDs rather than accepting the single-model fallback. These are specific runtime options, not complete OpenAI compatibility.
 
 | Endpoint | Method | Status |
 |---|---|---|
-| `/v1/chat/completions` | POST | Text chat, raw prompt, SSE; limits above |
+| `/v1/chat/completions` | POST | Text chat, function tools, raw prompt, SSE; limits above |
 | `/v1/embeddings` | POST | String/string-array input; encoder support depends on model; input is capped at 2,048 tokens |
 | `/v1/models` | GET | Loaded-model registry |
 | `/health` | GET | Process response/uptime and loaded-registry count, not inference readiness |

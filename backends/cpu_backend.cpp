@@ -14,6 +14,7 @@
 #include "llama.h"
 #include "common.h"
 #include "chat.h"
+#include "sampling.h"
 #include "expert_stream.h"
 #include "ggml-backend.h"
 #include "ggml-cpu.h"
@@ -22,6 +23,8 @@
 #include <algorithm>
 #include <cmath>
 #include <utility>
+#include <atomic>
+#include <ctime>
 #endif
 
 namespace eie {
@@ -236,25 +239,75 @@ public:
 
     std::string formatChatWithOptions(const std::vector<ChatMessage>& msgs,
                                       const ChatFormatOptions& options) override {
-        if (!tmpls_ || msgs.empty()) return "";
+        return formatChatRequest(msgs, options).prompt;
+    }
+
+    ChatPrompt formatChatRequest(const std::vector<ChatMessage>& msgs,
+                                 const ChatFormatOptions& options) override {
+        ChatPrompt out;
+        const bool wants_tools = !options.tools.empty() && options.tool_choice != ChatToolChoice::None;
+        if (!tmpls_ || msgs.empty()) {
+            if (wants_tools) out.error = "tool calling requires a model chat template and messages";
+            return out;
+        }
+        if (wants_tools) {
+            const auto caps = common_chat_templates_get_caps(tmpls_.get());
+            if (!caps.at("supports_tools") || !caps.at("supports_tool_calls")) {
+                out.error = "model chat template cannot describe and parse tool calls";
+                return out;
+            }
+        }
         common_chat_templates_inputs in;
-        for (auto& m : msgs) {
+        for (const auto& m : msgs) {
             common_chat_msg cm;
             cm.role = m.role;
             cm.content = m.content;
-            in.messages.push_back(cm);
+            cm.reasoning_content = m.reasoning_content;
+            cm.tool_name = m.name;
+            cm.tool_call_id = m.tool_call_id;
+            for (const auto& call : m.tool_calls)
+                cm.tool_calls.push_back({call.name, call.arguments, call.id});
+            in.messages.push_back(std::move(cm));
         }
+        for (const auto& tool : options.tools)
+            in.tools.push_back({tool.name, tool.description, tool.parameters});
+        in.tool_choice = options.tool_choice == ChatToolChoice::Required ? COMMON_CHAT_TOOL_CHOICE_REQUIRED :
+                         options.tool_choice == ChatToolChoice::None ? COMMON_CHAT_TOOL_CHOICE_NONE :
+                         COMMON_CHAT_TOOL_CHOICE_AUTO;
+        in.parallel_tool_calls = options.parallel_tool_calls;
         in.add_generation_prompt = true;
         in.enable_thinking = options.enable_thinking;
+        if (!options.tools.empty()) in.reasoning_format = COMMON_REASONING_FORMAT_AUTO;
         if (options.reasoning_effort == "low" || options.reasoning_effort == "medium" ||
             options.reasoning_effort == "high" || options.reasoning_effort == "xhigh")
             in.chat_template_kwargs["reasoning_effort"] = "\"" + options.reasoning_effort + "\"";
         try {
             auto rendered = common_chat_templates_apply(tmpls_.get(), in);
-            return options.enable_thinking ? rendered.prompt : answerOnlyPrompt(std::move(rendered));
+            if (wants_tools && (rendered.format == COMMON_CHAT_FORMAT_CONTENT_ONLY || rendered.parser.empty())) {
+                out.error = "model chat template does not support structured tool calls";
+                return out;
+            }
+            if (wants_tools && options.tool_choice == ChatToolChoice::Required && rendered.grammar.empty()) {
+                out.error = "model chat template cannot enforce tool_choice=required";
+                return out;
+            }
+            out.prompt = options.enable_thinking ? rendered.prompt : answerOnlyPrompt(rendered);
+            out.parse_chat_output = !options.tools.empty() && !rendered.parser.empty();
+            out.parse_tool_calls = wants_tools;
+            out.parser_format = static_cast<int>(rendered.format);
+            out.parser = std::move(rendered.parser);
+            out.generation_prompt = rendered.generation_prompt + out.prompt.substr(rendered.prompt.size());
+            out.grammar = std::move(rendered.grammar);
+            out.grammar_lazy = rendered.grammar_lazy;
+            for (const auto& trigger : rendered.grammar_triggers)
+                out.grammar_triggers.push_back({static_cast<int>(trigger.type), trigger.value, static_cast<int>(trigger.token)});
+            out.preserved_tokens = std::move(rendered.preserved_tokens);
+            out.additional_stops = std::move(rendered.additional_stops);
+            return out;
         } catch (const std::exception& e) {
             std::cerr << "[" << name() << "] chat template failed: " << e.what() << std::endl;
-            return "";
+            if (wants_tools) out.error = std::string("chat template failed: ") + e.what();
+            return out;
         }
     }
 
@@ -393,16 +446,73 @@ public:
             return r;
         }
 
-        // Sampler chain
-        llama_sampler* smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
-        // Request overrides preserve the historical EIE repetition default.
-        llama_sampler_chain_add(smpl, penaltySampler(llama_sampler_init_penalties,
-            llama_vocab_n_tokens(vocab), s.repetition_penalty, s.presence_penalty));
-        llama_sampler_chain_add(smpl, llama_sampler_init_top_k(s.top_k));
-        llama_sampler_chain_add(smpl, llama_sampler_init_top_p(s.top_p, 1));
-        if (s.min_p > 0.0f) llama_sampler_chain_add(smpl, llama_sampler_init_min_p(s.min_p, 1));
-        llama_sampler_chain_add(smpl, llama_sampler_init_temp(s.temperature));
-        llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+        // Tool templates supply a grammar (lazy for auto, strict for required).
+        // Use llama.cpp's shared sampler here so its trigger and prefill behavior
+        // matches llama-server. Plain chat keeps EIE's historical sampler chain.
+        common_sampler_ptr tool_sampler;
+        llama_sampler* smpl = nullptr;
+        if (s.chat_format.parse_tool_calls && !s.chat_format.grammar.empty()) {
+            common_params_sampling params;
+            params.top_k = s.top_k;
+            params.top_p = s.top_p;
+            params.min_p = s.min_p;
+            params.temp = s.temperature;
+            params.penalty_last_n = 256;
+            params.penalty_repeat = s.repetition_penalty;
+            params.penalty_present = s.presence_penalty;
+            params.min_keep = 1;
+            params.samplers = {COMMON_SAMPLER_TYPE_PENALTIES, COMMON_SAMPLER_TYPE_TOP_K,
+                               COMMON_SAMPLER_TYPE_TOP_P, COMMON_SAMPLER_TYPE_MIN_P,
+                               COMMON_SAMPLER_TYPE_TEMPERATURE};
+            params.grammar = {COMMON_GRAMMAR_TYPE_TOOL_CALLS, s.chat_format.grammar};
+            params.grammar_lazy = s.chat_format.grammar_lazy;
+            params.generation_prompt = s.chat_format.generation_prompt;
+            for (const auto& token : s.chat_format.preserved_tokens) {
+                auto ids = common_tokenize(vocab, token, false, true);
+                if (ids.size() == 1) params.preserved_tokens.insert(ids.front());
+            }
+            for (const auto& trigger : s.chat_format.grammar_triggers) {
+                auto type = static_cast<common_grammar_trigger_type>(trigger.type);
+                if (type == COMMON_GRAMMAR_TRIGGER_TYPE_WORD) {
+                    auto ids = common_tokenize(vocab, trigger.value, false, true);
+                    if (ids.size() == 1 && params.preserved_tokens.count(ids.front())) {
+                        params.grammar_triggers.push_back({COMMON_GRAMMAR_TRIGGER_TYPE_TOKEN,
+                                                          trigger.value, ids.front()});
+                        continue;
+                    }
+                }
+                params.grammar_triggers.push_back({type, trigger.value,
+                    static_cast<llama_token>(trigger.token)});
+            }
+            try {
+                tool_sampler.reset(common_sampler_init(model_, params));
+            } catch (const std::exception& e) {
+                llama_batch_free(batch);
+                if (s.one_shot) llama_free(run_ctx);
+                if (!s.one_shot) cache_tokens_.clear();
+                r.ok = false;
+                r.error = std::string("tool grammar initialization failed: ") + e.what();
+                return r;
+            }
+            if (!tool_sampler) {
+                llama_batch_free(batch);
+                if (s.one_shot) llama_free(run_ctx);
+                if (!s.one_shot) cache_tokens_.clear();
+                r.ok = false;
+                r.error = "tool grammar initialization failed";
+                return r;
+            }
+        } else {
+            smpl = llama_sampler_chain_init(llama_sampler_chain_default_params());
+            // Request overrides preserve the historical EIE repetition default.
+            llama_sampler_chain_add(smpl, penaltySampler(llama_sampler_init_penalties,
+                llama_vocab_n_tokens(vocab), s.repetition_penalty, s.presence_penalty));
+            llama_sampler_chain_add(smpl, llama_sampler_init_top_k(s.top_k));
+            llama_sampler_chain_add(smpl, llama_sampler_init_top_p(s.top_p, 1));
+            if (s.min_p > 0.0f) llama_sampler_chain_add(smpl, llama_sampler_init_min_p(s.min_p, 1));
+            llama_sampler_chain_add(smpl, llama_sampler_init_temp(s.temperature));
+            llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+        }
 
         // Generation loop
         TextOutput output(s.stop, s.on_token);
@@ -412,7 +522,9 @@ public:
         if (expert_stream_) expert_stream_->tracePhase(RoutingPhase::Decode);
         for (int i = 0; i < s.max_tokens && n_past < n_ctx; i++) {
             if (cancelled()) { was_cancelled = true; break; }
-            llama_token id = llama_sampler_sample(smpl, run_ctx, -1);
+            llama_token id = tool_sampler ? common_sampler_sample(tool_sampler.get(), run_ctx, -1)
+                                          : llama_sampler_sample(smpl, run_ctx, -1);
+            if (tool_sampler) common_sampler_accept(tool_sampler.get(), id, true);
             ++r.tokens; // Include a sampled EOG or token containing a stop sequence.
             if (llama_vocab_is_eog(vocab, id)) { r.finish_reason = "stop"; break; }
             std::string piece = common_token_to_piece(run_ctx, id);
@@ -430,7 +542,7 @@ public:
         }
         if (decode_ok && !was_cancelled && !output.finish()) was_cancelled = true;
 
-        llama_sampler_free(smpl);
+        if (smpl) llama_sampler_free(smpl);
         llama_batch_free(batch);
         if (s.one_shot) llama_free(run_ctx);
 
@@ -447,6 +559,32 @@ public:
         if (!decode_ok) {
             r.error = expert_stream_ && !expert_stream_->error().empty() ? expert_stream_->error() : "generation decode failed";
             if (!s.one_shot) cache_tokens_.clear();
+        }
+
+        if (r.ok && s.chat_format.parse_chat_output && r.finish_reason != "cancelled") {
+            try {
+                common_chat_parser_params parser_params;
+                parser_params.format = static_cast<common_chat_format>(s.chat_format.parser_format);
+                parser_params.reasoning_format = COMMON_REASONING_FORMAT_AUTO;
+                parser_params.generation_prompt = s.chat_format.generation_prompt;
+                parser_params.parser.load(s.chat_format.parser);
+                auto parsed = common_chat_parse(r.text, r.finish_reason == "length", parser_params);
+                r.text = parsed.content;
+                r.reasoning_content = parsed.reasoning_content;
+                if (r.finish_reason != "length" && s.chat_format.parse_tool_calls) {
+                    static std::atomic<uint64_t> next_call_id{0};
+                    for (const auto& call : parsed.tool_calls) {
+                        std::string id = call.id;
+                        if (id.empty()) id = "call_eie_" + std::to_string(std::time(nullptr)) + "_" +
+                                               std::to_string(++next_call_id);
+                        r.tool_calls.push_back({id, call.name, call.arguments});
+                    }
+                    if (!r.tool_calls.empty()) r.finish_reason = "tool_calls";
+                }
+            } catch (const std::exception& e) {
+                r.ok = false;
+                r.error = std::string("tool response parse failed: ") + e.what();
+            }
         }
 
         auto t1 = std::chrono::steady_clock::now();

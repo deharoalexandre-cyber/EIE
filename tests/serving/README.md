@@ -26,6 +26,8 @@ python tests/serving/http_contract.py build-serving/Release/eie-http-fixture.exe
 The Python standard-library runner starts only its own localhost fixture on a
 temporary port and stops that process at the end. It exercises the real EIE
 routes, SSE, UTF-8, usage, injected errors/recovery and concurrent requests.
+Its tool-call cases also check schema forwarding, `tool_choice`, structured
+non-stream and SSE replies, tool-result history, and invalid-request errors.
 Its predetermined prompt count is a serializer check, not tokenizer evidence.
 
 ## Output and usage semantics

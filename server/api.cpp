@@ -13,6 +13,8 @@
 #include <csignal>
 #include <thread>
 #include <chrono>
+#include <set>
+#include <algorithm>
 
 // httplib + nlohmann/json come from the llama.cpp vendor tree;
 // HAS_HTTPLIB is defined by CMake when the submodule is present.
@@ -41,7 +43,8 @@ static std::string promptFromMessages(const json& body) {
     if (body.contains("messages") && body["messages"].is_array()) {
         for (auto& m : body["messages"]) {
             std::string role = m.value("role", "user");
-            std::string content = m.value("content", "");
+            std::string content = m.contains("content") && m["content"].is_string()
+                ? m["content"].get<std::string>() : "";
             if (role == "system")      ss << content << "\n\n";
             else if (role == "user")   ss << "User: " << content << "\n";
             else                       ss << "Assistant: " << content << "\n";
@@ -53,13 +56,122 @@ static std::string promptFromMessages(const json& body) {
     return ss.str();
 }
 
-// Extract OpenAI-style messages[] into ChatMessage structs.
+// Keep assistant tool calls and tool results in the history rendered by the
+// model's native template. A tool reply commonly has null/empty content.
 static std::vector<ChatMessage> messagesFromJson(const json& body) {
     std::vector<ChatMessage> msgs;
-    if (body.contains("messages") && body["messages"].is_array())
-        for (auto& m : body["messages"])
-            msgs.push_back({m.value("role", "user"), m.value("content", "")});
+    if (!body.contains("messages")) return msgs;
+    if (!body["messages"].is_array()) throw std::invalid_argument("messages must be an array");
+    for (const auto& m : body["messages"]) {
+        if (!m.is_object() || !m.value("role", json()).is_string())
+            throw std::invalid_argument("each message needs a role");
+        ChatMessage msg;
+        msg.role = m.at("role").get<std::string>();
+        if (msg.role != "system" && msg.role != "developer" && msg.role != "user" &&
+            msg.role != "assistant" && msg.role != "tool")
+            throw std::invalid_argument("unsupported message role");
+        if (m.contains("content") && !m["content"].is_null()) {
+            if (!m["content"].is_string()) throw std::invalid_argument("text message content must be a string or null");
+            msg.content = m["content"].get<std::string>();
+        }
+        if (m.contains("name")) {
+            if (!m["name"].is_string()) throw std::invalid_argument("message name must be a string");
+            msg.name = m["name"].get<std::string>();
+        }
+        if (m.contains("reasoning_content") && !m["reasoning_content"].is_null()) {
+            if (msg.role != "assistant" || !m["reasoning_content"].is_string())
+                throw std::invalid_argument("reasoning_content must be an assistant string");
+            msg.reasoning_content = m["reasoning_content"].get<std::string>();
+        }
+        if (m.contains("tool_call_id")) {
+            if (!m["tool_call_id"].is_string()) throw std::invalid_argument("tool_call_id must be a string");
+            msg.tool_call_id = m["tool_call_id"].get<std::string>();
+        }
+        if (msg.role == "tool" && msg.tool_call_id.empty())
+            throw std::invalid_argument("tool message requires tool_call_id");
+        if (m.contains("tool_calls")) {
+            if (msg.role != "assistant" || !m["tool_calls"].is_array())
+                throw std::invalid_argument("tool_calls must be an assistant array");
+            for (const auto& item : m["tool_calls"]) {
+                if (!item.is_object() || item.value("type", "") != "function" ||
+                    !item.contains("function") || !item["function"].is_object() ||
+                    !item["function"].value("name", json()).is_string() ||
+                    !item["function"].value("arguments", json()).is_string() ||
+                    !item.value("id", json()).is_string())
+                    throw std::invalid_argument("invalid assistant tool_calls entry");
+                msg.tool_calls.push_back({item["id"].get<std::string>(),
+                    item["function"]["name"].get<std::string>(),
+                    item["function"]["arguments"].get<std::string>()});
+            }
+        }
+        msgs.push_back(std::move(msg));
+    }
     return msgs;
+}
+
+static ChatFormatOptions toolOptionsFromJson(const json& body) {
+    ChatFormatOptions options;
+    options.enable_thinking = body.value("enable_thinking", false);
+    options.reasoning_effort = body.value("reasoning_effort", "");
+    if (body.contains("chat_template_kwargs")) {
+        const auto& kwargs = body["chat_template_kwargs"];
+        if (!kwargs.is_object()) throw std::invalid_argument("chat_template_kwargs must be an object");
+        if (kwargs.contains("enable_thinking")) {
+            if (!kwargs["enable_thinking"].is_boolean())
+                throw std::invalid_argument("chat_template_kwargs.enable_thinking must be a boolean");
+            options.enable_thinking = kwargs["enable_thinking"].get<bool>();
+        }
+    }
+    if (options.reasoning_effort == "none") options.enable_thinking = false;
+    options.parallel_tool_calls = body.value("parallel_tool_calls", false);
+    if (body.contains("tools")) {
+        if (!body["tools"].is_array()) throw std::invalid_argument("tools must be an array");
+        std::set<std::string> names;
+        for (const auto& item : body["tools"]) {
+            if (!item.is_object() || item.value("type", "") != "function" ||
+                !item.contains("function") || !item["function"].is_object())
+                throw std::invalid_argument("only function tools are supported");
+            const auto& fn = item["function"];
+            if (!fn.value("name", json()).is_string() || fn["name"].get<std::string>().empty())
+                throw std::invalid_argument("tool function requires a name");
+            if (fn.contains("description") && !fn["description"].is_string())
+                throw std::invalid_argument("tool description must be a string");
+            if (fn.contains("parameters") && !fn["parameters"].is_object())
+                throw std::invalid_argument("tool parameters must be a JSON object");
+            ChatToolDefinition tool;
+            tool.name = fn["name"].get<std::string>();
+            if (!names.insert(tool.name).second) throw std::invalid_argument("duplicate tool function name");
+            tool.description = fn.value("description", "");
+            tool.parameters = fn.value("parameters", json{{"type", "object"}, {"properties", json::object()}}).dump();
+            options.tools.push_back(std::move(tool));
+        }
+    }
+    if (body.contains("tool_choice")) {
+        const auto& choice = body["tool_choice"];
+        if (choice.is_string()) {
+            const auto value = choice.get<std::string>();
+            if (value == "auto") options.tool_choice = ChatToolChoice::Auto;
+            else if (value == "required") options.tool_choice = ChatToolChoice::Required;
+            else if (value == "none") options.tool_choice = ChatToolChoice::None;
+            else throw std::invalid_argument("tool_choice must be auto, required, none, or a named function");
+        } else if (choice.is_object()) {
+            if (choice.value("type", "") != "function" || !choice.contains("function") ||
+                !choice["function"].is_object() || !choice["function"].value("name", json()).is_string())
+                throw std::invalid_argument("invalid named tool_choice");
+            const auto name = choice["function"]["name"].get<std::string>();
+            auto it = std::find_if(options.tools.begin(), options.tools.end(),
+                [&](const ChatToolDefinition& tool) { return tool.name == name; });
+            if (it == options.tools.end()) throw std::invalid_argument("named tool_choice is not in tools");
+            ChatToolDefinition selected = *it;
+            options.tools = {std::move(selected)};
+            options.tool_choice = ChatToolChoice::Required;
+        } else {
+            throw std::invalid_argument("invalid tool_choice");
+        }
+    }
+    if (options.tool_choice == ChatToolChoice::Required && options.tools.empty())
+        throw std::invalid_argument("tool_choice=required needs at least one tool");
+    return options;
 }
 
 static SamplingParams samplingFromJson(const json& body) {
@@ -67,7 +179,7 @@ static SamplingParams samplingFromJson(const json& body) {
     sp.temperature = body.value("temperature", sp.temperature);
     sp.top_p       = body.value("top_p", sp.top_p);
     sp.min_p       = body.value("min_p", sp.min_p);
-    sp.repetition_penalty = body.value("repetition_penalty", sp.repetition_penalty);
+    sp.repetition_penalty = body.value("repetition_penalty", body.value("repeat_penalty", sp.repetition_penalty));
     sp.presence_penalty   = body.value("presence_penalty", sp.presence_penalty);
     sp.top_k       = body.value("top_k", sp.top_k);
     sp.max_tokens  = body.value("max_tokens", 256);
@@ -115,8 +227,21 @@ static std::string chatCompletionJson(const InferenceResult& r, const std::strin
        << "\"object\":\"chat.completion\","
        << "\"model\":\"" << escapeJson(model) << "\","
        << "\"choices\":[{\"index\":0,"
-       << "\"message\":{\"role\":\"assistant\",\"content\":\"" << escapeJson(r.text) << "\"},"
-       << "\"finish_reason\":\"" << r.finish_reason << "\"}],"
+       << "\"message\":{\"role\":\"assistant\",\"content\":\"" << escapeJson(r.text) << "\"";
+    if (!r.reasoning_content.empty())
+        ss << ",\"reasoning_content\":\"" << escapeJson(r.reasoning_content) << "\"";
+    if (!r.tool_calls.empty()) {
+        ss << ",\"tool_calls\":[";
+        for (size_t i = 0; i < r.tool_calls.size(); ++i) {
+            if (i) ss << ',';
+            const auto& call = r.tool_calls[i];
+            ss << "{\"id\":\"" << escapeJson(call.id) << "\",\"type\":\"function\","
+               << "\"function\":{\"name\":\"" << escapeJson(call.name)
+               << "\",\"arguments\":\"" << escapeJson(call.arguments) << "\"}}";
+        }
+        ss << ']';
+    }
+    ss << "},\"finish_reason\":\"" << escapeJson(r.finish_reason) << "\"}],"
        << "\"usage\":{\"prompt_tokens\":" << r.prompt_tokens << ",\"completion_tokens\":" << r.tokens
        << ",\"total_tokens\":" << (int64_t(r.prompt_tokens) + r.tokens)
        << ",\"prompt_tokens_details\":{\"cached_tokens\":" << std::max(0, r.reused_tokens) << "}}}";
@@ -223,16 +348,33 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
     // POST /v1/chat/completions
     post("/v1/chat/completions", [&](const httplib::Request& req, httplib::Response& res) {
         json body = json::parse(req.body, nullptr, false);
-        if (body.is_discarded()) {
+        if (body.is_discarded() || !body.is_object()) {
             res.status = 400;
             res.set_content("{\"error\":\"invalid JSON\"}", "application/json");
             return;
         }
-        std::string model = body.value("model", "default");
-        SamplingParams sp = samplingFromJson(body);
+        std::string model;
+        SamplingParams sp;
+        ChatFormatOptions format;
+        std::vector<ChatMessage> messages;
+        bool strict_model = false, stream = false;
+        try {
+            model = body.value("model", "default");
+            sp = samplingFromJson(body);
+            format = toolOptionsFromJson(body);
+            messages = messagesFromJson(body);
+            strict_model = body.value("strict_model", false);
+            stream = body.value("stream", false);
+            if (!format.tools.empty() && format.tool_choice != ChatToolChoice::None && messages.empty())
+                throw std::invalid_argument("tool calling requires messages");
+        } catch (const std::exception& e) {
+            res.status = 400;
+            res.set_content(json({{"error", {{"message", e.what()}, {"type", "invalid_request_error"}}}}).dump(), "application/json");
+            return;
+        }
 
         auto* backend = models.get(model);
-        if (!backend && !body.value("strict_model", false)) {
+        if (!backend && !strict_model) {
             // repli : l'unique modèle de GÉNÉRATION chargé (les embedders sont exclus)
             std::vector<std::string> gen;
             for (auto& a : models.loaded())
@@ -241,21 +383,30 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
         }
 
         // Template de chat natif du modèle pour messages[] ; repli générique sinon.
-        std::string prompt;
-        if (backend) {
-            ChatFormatOptions format;
-            format.enable_thinking = body.value("enable_thinking", false);
-            format.reasoning_effort = body.value("reasoning_effort", "");
-            prompt = backend->formatChatWithOptions(messagesFromJson(body), format);
-        }
-        if (prompt.empty()) prompt = promptFromMessages(body);
         if (!backend) {
             res.status = 404;
             res.set_content("{\"error\":\"model not found\"}", "application/json");
             return;
         }
+        // Keep model-specific formatting, grammar and parser together per request.
+        ChatPrompt rendered = backend->formatChatRequest(messages, format);
+        if (!rendered.error.empty()) {
+            res.status = 400;
+            res.set_content(json({{"error", {{"message", rendered.error}, {"type", "invalid_request_error"}}}}).dump(), "application/json");
+            return;
+        }
+        const bool wants_tools = !format.tools.empty() && format.tool_choice != ChatToolChoice::None;
+        if (rendered.prompt.empty() && wants_tools) {
+            res.status = 400;
+            res.set_content(json({{"error", {{"message", "model chat template cannot render tool calls"},
+                {"type", "invalid_request_error"}}}}).dump(), "application/json");
+            return;
+        }
+        std::string prompt = rendered.prompt.empty() ? promptFromMessages(body) : rendered.prompt;
+        sp.chat_format = std::move(rendered);
+        sp.stop.insert(sp.stop.end(), sp.chat_format.additional_stops.begin(), sp.chat_format.additional_stops.end());
 
-        if (body.value("stream", false)) {
+        if (stream) {
             // SSE : chunks OpenAI (chat.completion.chunk) au fil de la génération.
             std::string prompt_copy = prompt, model_copy = model;
             SamplingParams sp_copy = sp;
@@ -268,7 +419,7 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
                         return sink.write(line.data(), line.size());
                     };
                     sp_copy.should_continue = [&sink] { return sink.is_writable(); };
-                    sp_copy.on_token = [&](const std::string& piece) {
+                    if (!sp_copy.chat_format.parse_chat_output) sp_copy.on_token = [&](const std::string& piece) {
                         return emit({{"id", "eie-" + std::to_string(id)},
                                      {"object", "chat.completion.chunk"},
                                      {"model", model_copy},
@@ -291,6 +442,30 @@ void startServer(const ServerConfig& cfg, ModelManager& models,
                               << " gen=" << result.tokens
                               << " total_ms=" << (int)result.latency_ms << " (stream)" << std::endl;
                     metrics.recordModel(model_copy, result.latency_ms, result.tokens);
+                    if (sp_copy.chat_format.parse_chat_output) {
+                        // Classify complete output before emitting deltas: model control
+                        // tokens must not leak as delta.content.
+                        if (!result.reasoning_content.empty()) emit({{"id", "eie-" + std::to_string(id)},
+                            {"object", "chat.completion.chunk"}, {"model", model_copy},
+                            {"choices", {{{"index", 0}, {"delta", {{"reasoning_content", result.reasoning_content}}},
+                                          {"finish_reason", nullptr}}}}});
+                        if (!result.text.empty()) emit({{"id", "eie-" + std::to_string(id)},
+                            {"object", "chat.completion.chunk"}, {"model", model_copy},
+                            {"choices", {{{"index", 0}, {"delta", {{"content", result.text}}},
+                                          {"finish_reason", nullptr}}}}});
+                        if (!result.tool_calls.empty()) {
+                            json calls = json::array();
+                            for (size_t i = 0; i < result.tool_calls.size(); ++i) {
+                                const auto& call = result.tool_calls[i];
+                                calls.push_back({{"index", i}, {"id", call.id}, {"type", "function"},
+                                    {"function", {{"name", call.name}, {"arguments", call.arguments}}}});
+                            }
+                            emit({{"id", "eie-" + std::to_string(id)},
+                                {"object", "chat.completion.chunk"}, {"model", model_copy},
+                                {"choices", {{{"index", 0}, {"delta", {{"tool_calls", calls}}},
+                                              {"finish_reason", nullptr}}}}});
+                        }
+                    }
                     emit({{"id", "eie-" + std::to_string(id)},
                           {"object", "chat.completion.chunk"},
                           {"model", model_copy},
