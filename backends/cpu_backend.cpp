@@ -40,6 +40,20 @@ static void ensureBackendInit() {
     std::call_once(once, [] { llama_backend_init(); });
 }
 
+static common_sampler_ptr makeToolSampler(llama_model* model, common_params_sampling& params,
+                                          const std::vector<llama_token>& prompt_tokens) {
+    common_sampler_ptr sampler(common_sampler_init(model, params));
+    if (sampler) {
+        // llama-server feeds the full retained prompt to its sampler without
+        // applying the output grammar. Include reused KV tokens too: penalties
+        // depend on the logical prompt, not only this request's prefill delta.
+        for (llama_token token : prompt_tokens)
+            if (token != LLAMA_TOKEN_NULL)
+                common_sampler_accept(sampler.get(), token, false);
+    }
+    return sampler;
+}
+
 // Map EIE KV type names to ggml types. TurboQuant KV types come from the
 // llama-cpp-turboquant fork; on plain CPU builds the safe choices are
 // f16 / q8_0 / q4_0.
@@ -485,7 +499,7 @@ public:
                     static_cast<llama_token>(trigger.token)});
             }
             try {
-                tool_sampler.reset(common_sampler_init(model_, params));
+                tool_sampler = makeToolSampler(model_, params, tokens);
             } catch (const std::exception& e) {
                 llama_batch_free(batch);
                 if (s.one_shot) llama_free(run_ctx);
