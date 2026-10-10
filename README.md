@@ -202,7 +202,7 @@ There is **no `auto` selector**; unknown names fall back to F16. Separate K/V se
 **Choose the runtime before building:**
 
 - **Default TurboQuant/EWS:** use the pinned submodule and `ews-runtime-2168b0.patch` in the commands below.
-- **Optional PrismML llama.cpp:** initialize `llama-prism` and select it with `-DEIE_LLAMA_RUNTIME=prism`. It has no EIE EWS port. A [Bonsaï 2 model profile](https://github.com/deharoalexandre-cyber/EIE/tree/feat/bonsai2-profile-20261011) is kept on a separate branch.
+- **Optional PrismML llama.cpp:** initialize `llama-prism` and select it with `-DEIE_LLAMA_RUNTIME=prism`. It has no EIE EWS port.
 - **GLM-5.3-Flash 320B / EWS:** use the [separate-checkout recipe](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), with its GLM-specific runtime revision and patch. For the latest measured profile, follow the [hybrid GPU configuration](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). Do not stack the GLM patch on an already Gemma-patched runtime.
 
 For the **default TurboQuant path below**, initialize the pinned fork and apply its runtime patch **once**, before inference builds, including non-EWS profiles. The wrapper references fields added by that patch:
