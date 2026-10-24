@@ -1,5 +1,7 @@
 # EIE: Elyne Inference Engine
 
+**Language: English · [Français](README.fr.md)**
+
 **A local inference server for GGUF models: chat, embeddings and configurable multi-model execution.**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -246,7 +248,7 @@ After the same submodule/patch setup, recipes are available:
 | Linux NVIDIA | `./scripts/build-cuda.sh` | Prior Linux operation reported; no complete published native run bundle |
 | Linux AMD | `./scripts/build-rocm.sh` | ROCm target, not a validated first-class device matrix |
 | Linux CPU (generic recipe) | `./scripts/build-cpu.sh` | Model/kernel compatibility and available RAM still apply; no receipt yet |
-| Windows x64 CPU (consumer laptop) | [prebuilt bundle](docs/windows.md) or `scriptsuild-windows-cpu.bat` + `presets/windows-cpu.yaml` | Locally verified on a 2020 laptop (i7-10850H, 6 cores, 32 GB, no GPU used): [receipt](docs/benchmarks/windows-cpu-20260914.md) + [JSON](docs/benchmarks/data/windows-cpu-20260914.json); static GCC build, AVX2, no CUDA |
+| Windows x64 CPU (consumer laptop) | [prebuilt bundle](docs/windows.md) or `scripts/build-windows-cpu.bat` + `presets/windows-cpu.yaml` | Locally verified on a 2020 laptop (i7-10850H, 6 cores, 32 GB, no GPU used): [receipt](docs/benchmarks/windows-cpu-20260914.md) + [JSON](docs/benchmarks/data/windows-cpu-20260914.json); static GCC build, AVX2, no CUDA |
 | macOS Intel | [prebuilt bundle](docs/macos.md) or `./scripts/build-macos-x86_64.sh` + `presets/macos-cpu.yaml` | Locally verified on a 2018 MacBook Pro (i5-8279U, 8 GB, CPU only): [receipt](docs/benchmarks/macos-intel-20260914.md) + [JSON](docs/benchmarks/data/macos-intel-20260914.json); Metal disabled by this project |
 | Apple Silicon | [prebuilt bundle](docs/macos.md) or `./scripts/build-macos-arm64.sh` + `presets/macos-silicon.yaml` | Maintainer-reported MacBook Pro operation (JSON receipt from `scripts/receipt-macos.sh` pending): Metal, 16 GB memory, Gemma 4 E2B QAT Q4_0; 44–49 tok/s with a warm ~1.6k history, first output 0.07–0.10 s - [engine/application receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
 
