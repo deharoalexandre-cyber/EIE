@@ -1,0 +1,112 @@
+{
+  "schema": "eie.windows-hip-x2-summary/v1",
+  "scope": "three separate one-model EIE runs, loopback, synthetic prompts",
+  "platform": "GMKtec EVO-X2, Windows 11 build 26100, AMD Radeon 8060S gfx1151",
+  "toolchain": "HIP SDK 7.2, Visual Studio Build Tools 2022, clang++, Ninja",
+  "eie_source_commit": "527c4501415ce871b1f66bf2175e50d53fe0d17d",
+  "prismml_commit": "a15369706017f177cae8aa40b6b8592259a48806",
+  "eie_executable_sha256": "1c376e0d57a8763dd4d38020f703e7c090456fcc58884d5f9fea8b9aa3ffef6f",
+  "build_profile": {
+    "EIE_LLAMA_RUNTIME": "prism",
+    "GGML_HIP": "ON",
+    "GGML_BACKEND_DL": "ON",
+    "GPU_TARGETS": "gfx1151"
+  },
+  "cases": {
+    "gemma": {
+      "model": "gemma-4-12B-it-QAT-Q4_0",
+      "model_sha256": "f568ac5de71c8fcac5d5794494388ad94db9e18b4368ca897e21b30d2448eeec",
+      "kind": "chat",
+      "passed": true,
+      "timestamp": "2026-11-23T16:51:07.227888+00:00",
+      "startup_seconds": 2.532,
+      "health_models": 1,
+      "rocm_device_in_log": true,
+      "gpu_layers_offloaded": [
+        49,
+        49
+      ],
+      "trials": [
+        {
+          "ok": true,
+          "wall_seconds": 1.532,
+          "completion_tokens": 38,
+          "finish_reason": "stop"
+        },
+        {
+          "ok": true,
+          "wall_seconds": 1.468,
+          "completion_tokens": 40,
+          "finish_reason": "stop"
+        }
+      ],
+      "private_raw_receipt_sha256": "275612c7aeb5636698da8ecb35cc3f40cb6002763d30c90c9bc0a99d39b6ef65",
+      "private_raw_log_sha256": "ea94e2ebd2d687c2dab7b96b744d4c37ef5b17a85a94003ad00ead496d5d0cd4"
+    },
+    "bonsai": {
+      "model": "Ternary-Bonsai-2-27B-PQ2_0",
+      "model_sha256": "3907dc1658db1f78a9826bf8d5bcb8dc65db0d466388937af57f2294fae62ec1",
+      "kind": "chat",
+      "passed": true,
+      "timestamp": "2026-11-23T16:53:54.276774+00:00",
+      "startup_seconds": 2.547,
+      "health_models": 1,
+      "rocm_device_in_log": true,
+      "gpu_layers_offloaded": [
+        65,
+        65
+      ],
+      "trials": [
+        {
+          "ok": true,
+          "wall_seconds": 2.313,
+          "completion_tokens": 50,
+          "finish_reason": "stop"
+        },
+        {
+          "ok": true,
+          "wall_seconds": 2.156,
+          "completion_tokens": 50,
+          "finish_reason": "stop"
+        }
+      ],
+      "private_raw_receipt_sha256": "435c67f16bc6b8b93a10d996529a8a72777199cc893fa433b4605421eaf030cc",
+      "private_raw_log_sha256": "2299fa1c6fc78e26bd897bb8fc66813ba6af7c2d4db5af0b65715bcef709301c"
+    },
+    "nomic": {
+      "model": "nomic-embed-text-v2-moe.Q6_K",
+      "model_sha256": "e74dafe6932fc7ae53f98061401f5cae136203a6b09fa940a2f1eb0ab5804ed8",
+      "kind": "embedding",
+      "passed": true,
+      "timestamp": "2026-11-23T16:54:06.177375+00:00",
+      "startup_seconds": 1.031,
+      "health_models": 1,
+      "rocm_device_in_log": true,
+      "gpu_layers_offloaded": [
+        13,
+        13
+      ],
+      "trials": [
+        {
+          "ok": true,
+          "wall_seconds": 0.141,
+          "dimensions": 768
+        },
+        {
+          "ok": true,
+          "wall_seconds": 0.016,
+          "dimensions": 768
+        }
+      ],
+      "private_raw_receipt_sha256": "2bfca770e387547aa0e8961c0869d084351cafb42608e9474201d1a08aef7ef8",
+      "private_raw_log_sha256": "5a8950046f6964b0195d68c3058d0a2576dd779a4bad1113d29166ef2ed747bd"
+    }
+  },
+  "limits": [
+    "one machine and one run per model; no statistical latency estimate",
+    "models loaded separately; no simultaneous multi-model run",
+    "no EWS, long-context, sustained-load, or full client application validation",
+    "request wall times include transport and prompt processing, not isolated decode",
+    "private raw receipts and logs retained on the qualification machine"
+  ]
+}

@@ -10,6 +10,12 @@ Z Flip6 / SM8650 / Android 16 with Gemma E2B QAT Q4_0. The
 exact model/library hashes and both preliminary and release trials. This is
 maintainer-side CPU text-chat validation, not independent replication or Android EWS.
 
+AMD update, 23 November: [the Windows HIP receipt](benchmarks/x2-amd-20261123.md)
+records real EIE HTTP chat and embedding inference on a Radeon 8060S `gfx1151`
+with HIP SDK 7.2. Gemma, Bonsaï and Nomic passed separately, two requests each,
+with full layer offload to `ROCm0`. This is direct serving, not EWS, Linux ROCm,
+multi-model coexistence, or a sustained-load qualification.
+
 ## Scope and status
 
 Requested by Alexandre De Haro; performed with Codex through source inspection,
@@ -182,8 +188,11 @@ is maintainer-reported; Intel macOS now has a separate
 Windows x64 CPU-only bundle has its own [14 September receipt](benchmarks/windows-cpu-20260914.md)
 on a consumer laptop, separate from the CUDA campaign. Apple Silicon has a
 separate reported on-device Metal run, not just a build path; its evidence
-status and scope are described above. ROCm and Android build paths are not
-qualified by the Windows campaign, and no Metal EWS result is established.
+status and scope are described above. Windows/HIP on one Radeon 8060S has
+its own [direct-serving receipt](benchmarks/x2-amd-20261123.md); Linux ROCm
+and EWS on ROCm remain unqualified. Android has a separate bounded CPU
+receipt. Neither the Windows CUDA campaign nor these separate checks establish
+a Metal EWS result.
 The standalone Android wrapper is not a complete APK. The new native HTTP bundles
 are independently packaged from that wrapper and locally tested on the Z Flip6;
 Windows results are not used to qualify them.

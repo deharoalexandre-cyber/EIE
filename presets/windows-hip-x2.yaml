@@ -1,0 +1,13 @@
+# Qualification locale AMD gfx1151. Use --model with a GGUF test path.
+# This preset does not preload a model and binds only to loopback.
+host: 127.0.0.1
+port: 8099
+strategy: generic
+model_dir: models
+auto_discover: false
+type_k: f16
+type_v: f16
+flash_attn: true
+n_ctx: 8192
+reserve_mb: 512
+log_level: info

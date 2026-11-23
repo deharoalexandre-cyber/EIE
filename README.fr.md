@@ -32,6 +32,7 @@ EIE peut traiter les modèles séparément ou appliquer une stratégie de groupe
 | Périmètre | État documenté |
 | --- | --- |
 | Inférence locale Windows/CUDA et service HTTP | Essais bornés avec modèles réels ; [reçu du service](docs/benchmarks/serving-functional-20260908.md). |
+| Inférence Windows/HIP sur AMD Radeon 8060S | EIE compilé et exécuté sur le GMKtec EVO-X2 : deux requêtes par modèle pour Gemma 12B, Bonsaï 27B et Nomic, avec toutes les couches sur `ROCm0`. [Rapport et limites](docs/benchmarks/x2-amd-20261123.md). Ce résultat ne qualifie ni Linux/ROCm, ni EWS sur AMD, ni la coexistence des modèles. |
 | Elyne Next, modèle résident 12B et auxiliaire 26B via EWS | Aller-retour réel de l'application observé localement ; le résultat ne qualifie pas toute sa durée de vie ni un déploiement à grande échelle. |
 | EWS sur Gemma 26B | Consommation effective des poids chargés et coexistence avec Next vérifiées dans les profils publiés ; [rapport](docs/benchmarks/ews-consumed-20260905.md). |
 | EWS sur GLM | Voie expérimentale distincte, avec contrôles numériques et aller-retour Next bornés ; aucune généralisation à tous les modèles MoE. |

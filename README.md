@@ -11,7 +11,7 @@
 
 - **What it is:** a C++ inference server that loads GGUF models locally and exposes HTTP chat and embedding endpoints using a subset of the OpenAI API format.
 - **Who it is for:** developers of local assistants, RAG clients and desktop or self-hosted applications. **One LLM is enough; multiple models are optional.** [Elyne Next uses EIE/EWS daily at Elyne Corp](#production-use-elyne-next-resident-12b-and-streamed-26b).
-- **What is verified:** bounded Windows/CUDA serving and EWS tests, Intel macOS serving, Windows x64 CPU serving on a consumer laptop, and Android CPU text chat on a Z Flip6 have local maintainer-run receipts. Apple Silicon/Metal and the older multi-device Android timings remain separately labelled *maintainer-reported*.
+- **What is verified:** bounded Windows/CUDA serving and EWS tests, Windows/HIP chat and embeddings on one AMD `gfx1151` machine, Intel macOS serving, Windows x64 CPU serving on a consumer laptop, and Android CPU text chat on a Z Flip6 have local maintainer-run receipts. Apple Silicon/Metal and the older multi-device Android timings remain separately labelled *maintainer-reported*.
 - **What is experimental:** EWS, an optional expert-weight streaming path for selected MoE models; GLM-5.3-Flash uses a separate experimental runtime.
 - **Where to check:** [capability status](#capability-status), [claim-by-claim evidence](docs/CLAIMS_AUDIT.md) and [remaining work](docs/ROADMAP_TO_CLAIMS.md).
 - **Prebuilt bundles:** [macOS, Intel and Apple Silicon](docs/macos.md) · [Windows x64 CPU](docs/windows.md) · [Android arm64 and mobile components](mobile/README.md) · [all releases](https://github.com/deharoalexandre-cyber/EIE/releases).
@@ -167,10 +167,11 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 | Automatic KV optimization | **Not operational**: no `auto` selector; health latency remains zero |
 | Device-memory telemetry | Runtime port queries device memory; no reserve/budget/eviction enforcement |
 | CUDA EWS | Local Windows/CUDA/Gemma validation, bounded above |
+| AMD HIP / ROCm direct serving | [Windows 11 / Radeon 8060S `gfx1151` receipt](docs/benchmarks/x2-amd-20261123.md): real EIE chat with Gemma 12B and Bonsaï 27B, embeddings with Nomic; two short requests per model, all layers on `ROCm0`. No Linux, EWS, simultaneous-model or sustained-load qualification. |
 | Elyne Next: resident 12B + streamed 26B | [Daily operational use at Elyne Corp](#production-use-elyne-next-resident-12b-and-streamed-26b); the real tool call, auxiliary answer, resident integration and continuation are also [locally validated by the maintainer](docs/benchmarks/serving-functional-20260908.md#real-next-positive-route-and-a-retained-failure) |
 | GLM EWS | Separate experimental runtime; host-cache and hybrid GPU-expert profiles have bounded numerical checks and actual fresh-state Next roundtrips; not all-GPU experts or general quality qualification |
 | Apple Silicon / Metal | Reported real MacBook Pro operation with 16 GB unified memory and Gemma 4 E2B QAT Q4_0; warm-prefix engine-only output rates 44–49 tok/s, with separate application timings; [receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
-| Other platforms | Build paths or portable code; not qualified by the Windows campaign |
+| Other platforms | Build paths or portable code; qualified only where a separate platform receipt is linked above |
 | Audit logging | Optional FNV-derived prototype, not a cryptographic/verifiable audit ledger |
 | Custom strategy plugins | Interface exists; dynamic library loading planned |
 
@@ -239,6 +240,30 @@ cmake --build build-ews --config Release --target eie-server ews-forward -j 6
 
 `89` is the tested GPU architecture, not a universal setting. The binary is `build-ews/Release/eie-server.exe`; its runtime DLL directory is `build-ews/bin/Release`. See the runtime guide for `PATH` and CUDA-graph settings. No prebuilt executable is distributed here.
 
+### Windows (AMD HIP, tested on `gfx1151`)
+
+The [EVO-X2 receipt](docs/benchmarks/x2-amd-20261123.md) records a local build
+and actual EIE inference with HIP SDK 7.2, the Radeon 8060S, and the pinned
+PrismML submodule. Install the matching AMD driver/HIP SDK, Visual Studio 2022
+Build Tools with C++ and Windows SDK, CMake and Ninja. In an x64 Developer
+PowerShell:
+
+```powershell
+git submodule update --init llama-prism
+git -C llama-prism rev-parse HEAD
+.\scripts\build-windows-hip.ps1
+```
+
+The recorded PrismML revision is `a15369706017f177cae8aa40b6b8592259a48806`.
+The script builds `build-windows-hip\eie-server.exe` and places a runnable copy
+next to the dynamic backend DLLs in `build-windows-hip\bin`. Start EIE from
+that DLL directory when using `GGML_BACKEND_DL=ON`; the test harness does this.
+Use `presets/windows-hip-x2.yaml` for the isolated loopback profile and
+`scripts/qualify-windows-hip.py` for one-model chat or embedding checks. The
+[published summary receipt](docs/benchmarks/data/x2-windows-hip-20261123.json)
+contains executable/model hashes, startup and request times, and GPU placement.
+It does not establish performance on other AMD GPUs or Linux ROCm.
+
 ### Linux and macOS build targets
 
 After the same submodule/patch setup, recipes are available:
@@ -246,7 +271,7 @@ After the same submodule/patch setup, recipes are available:
 | Target | Command | Qualification |
 |---|---|---|
 | Linux NVIDIA | `./scripts/build-cuda.sh` | Prior Linux operation reported; no complete published native run bundle |
-| Linux AMD | `./scripts/build-rocm.sh` | ROCm target, not a validated first-class device matrix |
+| Linux AMD | `./scripts/build-rocm.sh` | Linux ROCm target; Windows HIP evidence above does not validate this build |
 | Linux CPU (generic recipe) | `./scripts/build-cpu.sh` | Model/kernel compatibility and available RAM still apply; no receipt yet |
 | Windows x64 CPU (consumer laptop) | [prebuilt bundle](docs/windows.md) or `scripts/build-windows-cpu.bat` + `presets/windows-cpu.yaml` | Locally verified on a 2020 laptop (i7-10850H, 6 cores, 32 GB, no GPU used): [receipt](docs/benchmarks/windows-cpu-20260914.md) + [JSON](docs/benchmarks/data/windows-cpu-20260914.json); static GCC build, AVX2, no CUDA |
 | macOS Intel | [prebuilt bundle](docs/macos.md) or `./scripts/build-macos-x86_64.sh` + `presets/macos-cpu.yaml` | Locally verified on a 2018 MacBook Pro (i5-8279U, 8 GB, CPU only): [receipt](docs/benchmarks/macos-intel-20260914.md) + [JSON](docs/benchmarks/data/macos-intel-20260914.json); Metal disabled by this project |
