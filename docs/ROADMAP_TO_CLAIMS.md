@@ -71,7 +71,10 @@ separate capabilities; one should not be inferred from another.
    auxiliary inference. The September short envelope did not exercise all of
    these functions.
 5. Qualify other quantizations and hardware separately. Windows direct I/O
-   results do not validate Linux page-cache behavior, ROCm, Metal or mobile.
+   results do not validate Linux page-cache behavior, Metal or mobile. A
+   [separate Windows HIP direct-serving check](benchmarks/x2-amd-20261123.md)
+   now covers one AMD `gfx1151` machine and three GGUFs; it does not validate
+   EWS on ROCm or Linux ROCm.
 6. Benchmark policy changes against equal budgets: slot capacity, RAM cache,
    resident model/context and instrumentation must match. Do not combine the
    August simulated SLRU claims with the September consumed LRU implementation.
