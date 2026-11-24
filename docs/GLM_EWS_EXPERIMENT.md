@@ -8,7 +8,9 @@ in the linked receipts.
 
 **Later experiment:** A separate [24 November AMD EVO-X2 HIP trial](benchmarks/glm53-ews-hip-x2-20261124.md)
 served the same 199.7 GB GLM artifact through EIE/EWS with 47/47 layers on
-ROCm0 and a bounded expert cache. Its best single measured 128-token request
+ROCm0 and a bounded expert cache. Its CMake selector pointed to the `llama.cpp`
+directory containing the Unsloth GLM revision and EWS patch; the separate
+PrismML submodule was not compiled into this build. Its best single measured 128-token request
 reached 2.103 tokens/s at 128 slots. The [raw receipt](benchmarks/data/ews/glm53-ews-hip-x2-20261124.json)
 preserves all profile counters. It does not rerun the September Next loop or
 provide a paired native numerical reference.

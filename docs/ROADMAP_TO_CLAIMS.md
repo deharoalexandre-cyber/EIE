@@ -72,9 +72,12 @@ separate capabilities; one should not be inferred from another.
    these functions.
 5. Qualify other quantizations and hardware separately. Windows direct I/O
    results do not validate Linux page-cache behavior, Metal or mobile. A
-   [separate Windows HIP direct-serving check](benchmarks/x2-amd-20261123.md)
-   now covers one AMD `gfx1151` machine and three GGUFs; it does not validate
-   EWS on ROCm or Linux ROCm.
+   [Windows HIP direct-serving check](benchmarks/x2-amd-20261123.md)
+   covers one AMD `gfx1151` machine and three GGUFs through PrismML. A distinct
+   [GLM/EWS HIP trial](benchmarks/glm53-ews-hip-x2-20261124.md) has now built
+   and served the Unsloth-based EWS path on that AMD machine. It is a single-run
+   feasibility/scaling observation, without a paired native reference, repeated
+   timing or full EWS unit-test target qualification; Linux ROCm remains untested.
 6. Benchmark policy changes against equal budgets: slot capacity, RAM cache,
    resident model/context and instrumentation must match. Do not combine the
    August simulated SLRU claims with the September consumed LRU implementation.

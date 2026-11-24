@@ -18,7 +18,7 @@ slot cache, one-token microbatches and no per-chunk SHA verification.
 ## AMD EVO-X2 GLM trial (24 November 2026)
 
 An isolated [EIE/EWS HIP experiment](../benchmarks/glm53-ews-hip-x2-20261124.md)
-streamed the frozen 199.7 GB GLM-5.3-Flash GGUF on a Radeon 8060S. With
+streamed the frozen 199.7 GB GLM-5.3-Flash GGUF on a Radeon 8060S. This build selected the `llama.cpp` directory containing the Unsloth GLM revision and EWS patch (`EIE_LLAMA_RUNTIME=turboquant` in CMake); it did not use the optional `llama-prism` submodule. With
 47/47 layers placed on ROCm0 and 128 bounded EWS expert slots, one measured
 128-token request delivered **2.103 tokens/s** of decode cadence. A separate
 answer finished normally. The [raw receipt](../benchmarks/data/ews/glm53-ews-hip-x2-20261124.json)

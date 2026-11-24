@@ -11,7 +11,7 @@
 
 - **What it is:** a C++ inference server that loads GGUF models locally and exposes HTTP chat and embedding endpoints using a subset of the OpenAI API format.
 - **Who it is for:** developers of local assistants, RAG clients and desktop or self-hosted applications. **One LLM is enough; multiple models are optional.** [Elyne Next uses EIE/EWS daily at Elyne Corp](#production-use-elyne-next-resident-12b-and-streamed-26b).
-- **What is verified:** bounded Windows/CUDA serving and EWS tests, Windows/HIP chat and embeddings on one AMD `gfx1151` machine, Intel macOS serving, Windows x64 CPU serving on a consumer laptop, and Android CPU text chat on a Z Flip6 have local maintainer-run receipts. Apple Silicon/Metal and the older multi-device Android timings remain separately labelled *maintainer-reported*.
+- **What is verified:** bounded Windows/CUDA serving and EWS tests, Windows/HIP chat and embeddings plus a separate GLM/EWS HTTP trial on one AMD `gfx1151` machine, Intel macOS serving, Windows x64 CPU serving on a consumer laptop, and Android CPU text chat on a Z Flip6 have local maintainer-run receipts. Apple Silicon/Metal and the older multi-device Android timings remain separately labelled *maintainer-reported*.
 - **What is experimental:** EWS, an optional expert-weight streaming path for selected MoE models; GLM-5.3-Flash uses a separate experimental runtime.
 - **Where to check:** [capability status](#capability-status), [claim-by-claim evidence](docs/CLAIMS_AUDIT.md) and [remaining work](docs/ROADMAP_TO_CLAIMS.md).
 - **Prebuilt bundles:** [macOS, Intel and Apple Silicon](docs/macos.md) · [Windows x64 CPU](docs/windows.md) · [Android arm64 and mobile components](mobile/README.md) · [all releases](https://github.com/deharoalexandre-cyber/EIE/releases).
@@ -167,9 +167,9 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 | Automatic KV optimization | **Not operational**: no `auto` selector; health latency remains zero |
 | Device-memory telemetry | Runtime port queries device memory; no reserve/budget/eviction enforcement |
 | CUDA EWS | Local Windows/CUDA/Gemma validation, bounded above |
-| AMD HIP / ROCm direct serving | [Windows 11 / Radeon 8060S `gfx1151` receipt](docs/benchmarks/x2-amd-20261123.md): real EIE chat and embeddings, all layers on `ROCm0`. A separate three-trial 384-token stream measured median decode cadence of **27.12 tok/s** for Gemma 4 12B QAT Q4_0 and **22.81 tok/s** for Bonsaï 2 27B PQ2_0; Nomic embedding batches reached a median **244.76 vectors/s** for 32 short inputs. [Raw summary](docs/benchmarks/data/x2-windows-hip-throughput-20261124.json). No Linux, EWS, simultaneous-model or sustained-load qualification. |
+| AMD HIP / ROCm direct serving | [Windows 11 / Radeon 8060S `gfx1151` receipt](docs/benchmarks/x2-amd-20261123.md): real EIE chat and embeddings, all layers on `ROCm0`. A separate three-trial 384-token stream measured median decode cadence of **27.12 tok/s** for Gemma 4 12B QAT Q4_0 and **22.81 tok/s** for Bonsaï 2 27B PQ2_0; Nomic embedding batches reached a median **244.76 vectors/s** for 32 short inputs. [Raw summary](docs/benchmarks/data/x2-windows-hip-throughput-20261124.json). This PrismML build does not include EWS; a separate Unsloth/EWS build on the same AMD machine is reported below. No Linux, simultaneous-model or sustained-load qualification. |
 | Elyne Next: resident 12B + streamed 26B | [Daily operational use at Elyne Corp](#production-use-elyne-next-resident-12b-and-streamed-26b); the real tool call, auxiliary answer, resident integration and continuation are also [locally validated by the maintainer](docs/benchmarks/serving-functional-20260908.md#real-next-positive-route-and-a-retained-failure) |
-| GLM EWS | Separate experimental runtime: earlier host-cache and hybrid GPU-expert checks include fresh-state Next roundtrips; a later [AMD EVO-X2 HIP trial](docs/benchmarks/glm53-ews-hip-x2-20261124.md) streamed the 199.7 GB GLM artifact with 47/47 layers on ROCm0 and measured 2.103 tokens/s at 128 EWS slots. One call per profile, no paired native reference, no GRCA coexistence or general quality qualification. |
+| GLM EWS | Separate experimental Unsloth runtime in `llama.cpp` (not `llama-prism`): earlier host-cache and hybrid GPU-expert checks include fresh-state Next roundtrips; a later [AMD EVO-X2 HIP trial](docs/benchmarks/glm53-ews-hip-x2-20261124.md) streamed the 199.7 GB GLM artifact with 47/47 layers on ROCm0 and measured 2.103 tokens/s at 128 EWS slots. One call per profile, no paired native reference, no GRCA coexistence or general quality qualification. |
 | Apple Silicon / Metal | Reported real MacBook Pro operation with 16 GB unified memory and Gemma 4 E2B QAT Q4_0; warm-prefix engine-only output rates 44–49 tok/s, with separate application timings; [receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
 | Other platforms | Build paths or portable code; qualified only where a separate platform receipt is linked above |
 | Audit logging | Optional FNV-derived prototype, not a cryptographic/verifiable audit ledger |
@@ -205,8 +205,8 @@ There is **no `auto` selector**; unknown names fall back to F16. Separate K/V se
 **Choose the runtime before building:**
 
 - **Default TurboQuant/EWS:** use the pinned submodule and `ews-runtime-2168b0.patch` in the commands below.
-- **Optional PrismML llama.cpp:** initialize `llama-prism` and select it with `-DEIE_LLAMA_RUNTIME=prism`. It has no EIE EWS port.
-- **GLM-5.3-Flash 320B / EWS:** use the [separate-checkout recipe](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), with its GLM-specific runtime revision and patch. For the latest measured profile, follow the [hybrid GPU configuration](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction). Do not stack the GLM patch on an already Gemma-patched runtime.
+- **Optional PrismML llama.cpp:** initialize `llama-prism` and select it with `-DEIE_LLAMA_RUNTIME=prism`. This path was selected for Bonsaï's ternary-weight qualification; Gemma and Nomic were also checked on the same binary. It has no EIE EWS port.
+- **GLM-5.3-Flash 320B / EWS:** use the [separate-checkout recipe](docs/GLM_EWS_EXPERIMENT.md#reproduce-in-a-separate-checkout), with its GLM-specific runtime revision and patch. The [earlier laptop profile](docs/GLM_EWS_EXPERIMENT.md#gpu-placement-reproduction) was hybrid; the [later AMD X2 profile](docs/benchmarks/glm53-ews-hip-x2-20261124.md) placed 47/47 layers on ROCm0 with EWS. Do not stack the GLM patch on an already Gemma-patched runtime.
 
 For the **default TurboQuant path below**, initialize the pinned fork and apply its runtime patch **once**, before inference builds, including non-EWS profiles. The wrapper references fields added by that patch:
 
@@ -244,7 +244,10 @@ cmake --build build-ews --config Release --target eie-server ews-forward -j 6
 
 The [EVO-X2 receipt](docs/benchmarks/x2-amd-20261123.md) records a local build
 and actual EIE inference with HIP SDK 7.2, the Radeon 8060S, and the pinned
-PrismML submodule. Install the matching AMD driver/HIP SDK, Visual Studio 2022
+PrismML submodule. That PrismML build is the ternary-capable direct-serving
+qualification for Bonsaï (with Gemma and Nomic controls), not the separate
+[GLM/EWS HIP build](docs/benchmarks/glm53-ews-hip-x2-20261124.md), which uses
+the Unsloth source in `llama.cpp` and does not compile `llama-prism`. Install the matching AMD driver/HIP SDK, Visual Studio 2022
 Build Tools with C++ and Windows SDK, CMake and Ninja. In an x64 Developer
 PowerShell:
 
