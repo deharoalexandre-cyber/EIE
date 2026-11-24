@@ -167,7 +167,7 @@ This replaces an unversioned competitor comparison. Absence or inferiority of fe
 | Automatic KV optimization | **Not operational**: no `auto` selector; health latency remains zero |
 | Device-memory telemetry | Runtime port queries device memory; no reserve/budget/eviction enforcement |
 | CUDA EWS | Local Windows/CUDA/Gemma validation, bounded above |
-| AMD HIP / ROCm direct serving | [Windows 11 / Radeon 8060S `gfx1151` receipt](docs/benchmarks/x2-amd-20261123.md): real EIE chat with Gemma 12B and Bonsaï 27B, embeddings with Nomic; two short requests per model, all layers on `ROCm0`. No Linux, EWS, simultaneous-model or sustained-load qualification. |
+| AMD HIP / ROCm direct serving | [Windows 11 / Radeon 8060S `gfx1151` receipt](docs/benchmarks/x2-amd-20261123.md): real EIE chat and embeddings, all layers on `ROCm0`. A separate three-trial 384-token stream measured median decode cadence of **27.12 tok/s** for Gemma 4 12B QAT Q4_0 and **22.81 tok/s** for Bonsaï 2 27B PQ2_0; Nomic embedding batches reached a median **244.76 vectors/s** for 32 short inputs. [Raw summary](docs/benchmarks/data/x2-windows-hip-throughput-20261124.json). No Linux, EWS, simultaneous-model or sustained-load qualification. |
 | Elyne Next: resident 12B + streamed 26B | [Daily operational use at Elyne Corp](#production-use-elyne-next-resident-12b-and-streamed-26b); the real tool call, auxiliary answer, resident integration and continuation are also [locally validated by the maintainer](docs/benchmarks/serving-functional-20260908.md#real-next-positive-route-and-a-retained-failure) |
 | GLM EWS | Separate experimental runtime; host-cache and hybrid GPU-expert profiles have bounded numerical checks and actual fresh-state Next roundtrips; not all-GPU experts or general quality qualification |
 | Apple Silicon / Metal | Reported real MacBook Pro operation with 16 GB unified memory and Gemma 4 E2B QAT Q4_0; warm-prefix engine-only output rates 44–49 tok/s, with separate application timings; [receipt](docs/benchmarks/macos-apple-silicon-20260913.md) |
@@ -262,7 +262,13 @@ Use `presets/windows-hip-x2.yaml` for the isolated loopback profile and
 `scripts/qualify-windows-hip.py` for one-model chat or embedding checks. The
 [published summary receipt](docs/benchmarks/data/x2-windows-hip-20261123.json)
 contains executable/model hashes, startup and request times, and GPU placement.
-It does not establish performance on other AMD GPUs or Linux ROCm.
+For longer generation and embedding batches, run
+`scripts/benchmark-windows-hip-x2.py` with the same `--exe`, `--dll-dir`,
+`--preset`, `--model`, `--kind`, `--out`, `--eie-commit`, and
+`--prismml-commit` arguments. The [throughput receipt](docs/benchmarks/data/x2-windows-hip-throughput-20261124.json)
+and [method](docs/benchmarks/x2-amd-20261123.md#longer-generation-and-embedding-throughput-24-november-2026)
+record three trials per model. These results do not establish performance on
+other AMD GPUs or Linux ROCm.
 
 ### Linux and macOS build targets
 

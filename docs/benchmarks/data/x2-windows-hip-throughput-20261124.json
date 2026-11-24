@@ -1,0 +1,236 @@
+{
+  "schema": "eie.windows-hip-x2-throughput-public/v1",
+  "host": "GMKtec EVO-X2, Ryzen AI MAX+ 395 / Radeon 8060S gfx1151, 128 GB unified RAM, Windows 11, HIP SDK 7.2",
+  "method": "One EIE process and one GGUF at a time; synthetic input, loopback HTTP, warmup and three measured trials per model. Chat rate is (content pieces - 1) / first-to-last content-piece span; 384 pieces equaled 384 completion tokens in every measured chat trial. Embedding rate is 32 vectors / HTTP wall time.",
+  "benchmark_script_sha256": "5d7242f790450cfe6ae73f019cf37e97ac498b6e692cc632e700f92980095125",
+  "limits": [
+    "All chat trials reached finish_reason=length; generated content was partial benchmark output.",
+    "Other GRCA services remained running; background activity was not controlled.",
+    "No simultaneous EIE model inference, prolonged load, EWS, Linux ROCm, or full GRCA application benchmark.",
+    "The embedding inputs were short synthetic strings; vectors/s is not comparable to chat tokens/s."
+  ],
+  "cases": {
+    "gemma": {
+      "schema": "eie.windows-hip-x2-throughput/v1",
+      "scope": "isolated EIE process, one GGUF, synthetic input, loopback, three measured trials",
+      "utc": "2026-11-24T19:43:54.712300+00:00",
+      "eie_commit": "527c4501415ce871b1f66bf2175e50d53fe0d17d",
+      "prismml_commit": "a15369706017f177cae8aa40b6b8592259a48806",
+      "exe_filename": "eie-server.exe",
+      "exe_sha256": "1c376e0d57a8763dd4d38020f703e7c090456fcc58884d5f9fea8b9aa3ffef6f",
+      "preset_filename": "windows-hip-x2.yaml",
+      "preset_sha256": "4fdab42f74492e5e10894f5f92fbc7b25c1d8d7774c5323bee38f7faa7f72ade",
+      "model_filename": "gemma-4-12B-it-QAT-Q4_0.gguf",
+      "model_sha256": "f568ac5de71c8fcac5d5794494388ad94db9e18b4368ca897e21b30d2448eeec",
+      "kind": "chat",
+      "gpu_expected": "ROCm0 gfx1151",
+      "prompt": "Redige une liste numerotee de 50 actions concretes pour organiser un bureau. Chaque ligne contient une phrase differente de six a dix mots. Continue jusqu'au numero 50.",
+      "embedding_input_count": null,
+      "trials": [
+        {
+          "trial": 1,
+          "http_wall_seconds": 14.181,
+          "time_to_first_content_seconds": 0.121,
+          "content_piece_count": 384,
+          "completion_tokens": 384,
+          "prompt_tokens": 59,
+          "cached_prompt_tokens": 4,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 1385,
+          "response_sha256": "c808f8bfb63de53a5e3c435fd146c5515e193b5b7cf7cda2e471351812d13f10",
+          "content_piece_span_seconds": 14.059,
+          "content_pieces_per_second": 27.24,
+          "completion_tokens_per_http_second": 27.08,
+          "ok": true
+        },
+        {
+          "trial": 2,
+          "http_wall_seconds": 14.207,
+          "time_to_first_content_seconds": 0.082,
+          "content_piece_count": 384,
+          "completion_tokens": 384,
+          "prompt_tokens": 59,
+          "cached_prompt_tokens": 48,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 1367,
+          "response_sha256": "e1cc295392c662bec8fdbb9c58cf395ea221dffbb025c86c0165c326443c7bee",
+          "content_piece_span_seconds": 14.124,
+          "content_pieces_per_second": 27.12,
+          "completion_tokens_per_http_second": 27.03,
+          "ok": true
+        },
+        {
+          "trial": 3,
+          "http_wall_seconds": 14.409,
+          "time_to_first_content_seconds": 0.083,
+          "content_piece_count": 384,
+          "completion_tokens": 384,
+          "prompt_tokens": 59,
+          "cached_prompt_tokens": 48,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 1403,
+          "response_sha256": "002950eb7e7e4381abab5038795a239a65d956ba2424f1e37c02b5b9960e5461",
+          "content_piece_span_seconds": 14.324,
+          "content_pieces_per_second": 26.74,
+          "completion_tokens_per_http_second": 26.65,
+          "ok": true
+        }
+      ],
+      "ok": true,
+      "startup_seconds": 2.531,
+      "warmup_completion_tokens": 13,
+      "private_log_sha256": "022ff80f02364d9e324cdc208a142d25ce733ec377d78d39d5911065ec2fd4d9",
+      "gpu_layers_offloaded": [
+        49,
+        49
+      ],
+      "rocm_device_in_log": true,
+      "median_rate": 27.12,
+      "raw_receipt_sha256": "30d49e7efd05f8ce735809f2d7cbef5db6c02eaf6cad27d2e5c5df3455f68281"
+    },
+    "bonsai": {
+      "schema": "eie.windows-hip-x2-throughput/v1",
+      "scope": "isolated EIE process, one GGUF, synthetic input, loopback, three measured trials",
+      "utc": "2026-11-24T19:44:59.443600+00:00",
+      "eie_commit": "527c4501415ce871b1f66bf2175e50d53fe0d17d",
+      "prismml_commit": "a15369706017f177cae8aa40b6b8592259a48806",
+      "exe_filename": "eie-server.exe",
+      "exe_sha256": "1c376e0d57a8763dd4d38020f703e7c090456fcc58884d5f9fea8b9aa3ffef6f",
+      "preset_filename": "windows-hip-x2.yaml",
+      "preset_sha256": "4fdab42f74492e5e10894f5f92fbc7b25c1d8d7774c5323bee38f7faa7f72ade",
+      "model_filename": "Ternary-Bonsai-2-27B-PQ2_0.gguf",
+      "model_sha256": "3907dc1658db1f78a9826bf8d5bcb8dc65db0d466388937af57f2294fae62ec1",
+      "kind": "chat",
+      "gpu_expected": "ROCm0 gfx1151",
+      "prompt": "Redige une liste numerotee de 50 actions concretes pour organiser un bureau. Chaque ligne contient une phrase differente de six a dix mots. Continue jusqu'au numero 50.",
+      "embedding_input_count": null,
+      "trials": [
+        {
+          "trial": 1,
+          "http_wall_seconds": 16.512,
+          "time_to_first_content_seconds": 0.209,
+          "content_piece_count": 384,
+          "completion_tokens": 384,
+          "prompt_tokens": 58,
+          "cached_prompt_tokens": 0,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 1405,
+          "response_sha256": "cd01e31281b26e98fd5c3bc604c73716675db304ad3809ba610cb710a5824d77",
+          "content_piece_span_seconds": 16.3,
+          "content_pieces_per_second": 23.5,
+          "completion_tokens_per_http_second": 23.26,
+          "ok": true
+        },
+        {
+          "trial": 2,
+          "http_wall_seconds": 17.062,
+          "time_to_first_content_seconds": 0.268,
+          "content_piece_count": 384,
+          "completion_tokens": 384,
+          "prompt_tokens": 58,
+          "cached_prompt_tokens": 0,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 1478,
+          "response_sha256": "5145717ecc74a4a6d27e598380ae81b8aae82c158151db9933e4bacb403463e8",
+          "content_piece_span_seconds": 16.791,
+          "content_pieces_per_second": 22.81,
+          "completion_tokens_per_http_second": 22.51,
+          "ok": true
+        },
+        {
+          "trial": 3,
+          "http_wall_seconds": 17.059,
+          "time_to_first_content_seconds": 0.266,
+          "content_piece_count": 384,
+          "completion_tokens": 384,
+          "prompt_tokens": 58,
+          "cached_prompt_tokens": 0,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 1468,
+          "response_sha256": "26a257b4f9a4c467cc66137d3672f804adab8d1fefcaca0a27780d193c126fb8",
+          "content_piece_span_seconds": 16.789,
+          "content_pieces_per_second": 22.81,
+          "completion_tokens_per_http_second": 22.51,
+          "ok": true
+        }
+      ],
+      "ok": true,
+      "startup_seconds": 2.515,
+      "warmup_completion_tokens": 12,
+      "private_log_sha256": "d6c5a94af63abfc47d9fd5b3b1dec75774c6f065e760e1d70c076b0d7f255877",
+      "gpu_layers_offloaded": [
+        65,
+        65
+      ],
+      "rocm_device_in_log": true,
+      "median_rate": 22.81,
+      "raw_receipt_sha256": "e51dc298960c160388e430fe6e921f263a639b788b5a55a284e37b027534923d"
+    },
+    "nomic": {
+      "schema": "eie.windows-hip-x2-throughput/v1",
+      "scope": "isolated EIE process, one GGUF, synthetic input, loopback, three measured trials",
+      "utc": "2026-11-24T19:46:12.707408+00:00",
+      "eie_commit": "527c4501415ce871b1f66bf2175e50d53fe0d17d",
+      "prismml_commit": "a15369706017f177cae8aa40b6b8592259a48806",
+      "exe_filename": "eie-server.exe",
+      "exe_sha256": "1c376e0d57a8763dd4d38020f703e7c090456fcc58884d5f9fea8b9aa3ffef6f",
+      "preset_filename": "windows-hip-x2.yaml",
+      "preset_sha256": "4fdab42f74492e5e10894f5f92fbc7b25c1d8d7774c5323bee38f7faa7f72ade",
+      "model_filename": "nomic-embed-text-v2-moe.Q6_K.gguf",
+      "model_sha256": "e74dafe6932fc7ae53f98061401f5cae136203a6b09fa940a2f1eb0ab5804ed8",
+      "kind": "embedding",
+      "gpu_expected": "ROCm0 gfx1151",
+      "prompt": null,
+      "embedding_input_count": 32,
+      "trials": [
+        {
+          "trial": 1,
+          "http_wall_seconds": 0.138,
+          "vectors": 32,
+          "dimensions": [
+            768
+          ],
+          "vectors_per_http_second": 231.91,
+          "ok": true
+        },
+        {
+          "trial": 2,
+          "http_wall_seconds": 0.118,
+          "vectors": 32,
+          "dimensions": [
+            768
+          ],
+          "vectors_per_http_second": 271.79,
+          "ok": true
+        },
+        {
+          "trial": 3,
+          "http_wall_seconds": 0.131,
+          "vectors": 32,
+          "dimensions": [
+            768
+          ],
+          "vectors_per_http_second": 244.76,
+          "ok": true
+        }
+      ],
+      "ok": true,
+      "startup_seconds": 1.016,
+      "warmup_dimensions": 768,
+      "private_log_sha256": "59b7694d4095a4543b5cdd2c7a849d7795b88cc3ae215abd4b53d2f24ffcd547",
+      "gpu_layers_offloaded": [
+        13,
+        13
+      ],
+      "rocm_device_in_log": true,
+      "median_rate": 244.76,
+      "raw_receipt_sha256": "eff6c3ccbde9e462e2720e869beb806fdf3eda253ea1fab3cb596ac5e245d723"
+    }
+  }
+}
