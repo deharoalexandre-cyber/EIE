@@ -1,0 +1,810 @@
+{
+  "schema": "eie.glm53-ews-hip-x2-public-evidence/v1",
+  "experiment_date": "2026-11-24",
+  "scope": "isolated EIE HTTP experiment on GMKtec EVO-X2, one measured call per profile",
+  "model_copy_source_json_sha256": "948282d9a4baea5f62ee4164640f6b32e6221631a191f93faddb6ed42b2e86ae",
+  "model_copy_receipt": {
+    "schema": "eie.glm53-ews-hip-x2-model-copy/v1",
+    "model_revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+    "files": [
+      {
+        "name": "GLM-5.3-Flash-UD-Q4_K_XL-00001-of-00006.gguf",
+        "bytes": 9429859,
+        "sha256": "00dceaf3ed08781b1e44513a44ebb19e96248d01ba2a80b17f675a2b6fa9a1ee",
+        "ok": true
+      },
+      {
+        "name": "GLM-5.3-Flash-UD-Q4_K_XL-00002-of-00006.gguf",
+        "bytes": 49198039200,
+        "sha256": "d3ecb6ff3957a99878f9a0352676a0913748a431a9a4a1b1ffa5ade9b8947a74",
+        "ok": true
+      },
+      {
+        "name": "GLM-5.3-Flash-UD-Q4_K_XL-00003-of-00006.gguf",
+        "bytes": 49988626304,
+        "sha256": "328073c004e7c5395b208247feed26089db247b94dd8fa4ab0f2569d86c1d770",
+        "ok": true
+      },
+      {
+        "name": "GLM-5.3-Flash-UD-Q4_K_XL-00004-of-00006.gguf",
+        "bytes": 48700701344,
+        "sha256": "6803ab7effa6da4a0b02c9c7865952fdd6c5b2e10e53903348da369e90bd13f9",
+        "ok": true
+      },
+      {
+        "name": "GLM-5.3-Flash-UD-Q4_K_XL-00005-of-00006.gguf",
+        "bytes": 49026026752,
+        "sha256": "852f3df9dacde3d196796f9fe738468e80c8701555ff0a8c30bc010fb8974dd8",
+        "ok": true
+      },
+      {
+        "name": "GLM-5.3-Flash-UD-Q4_K_XL-00006-of-00006.gguf",
+        "bytes": 2784497888,
+        "sha256": "c6ba510fafc1e12cc0addbc361a329c0c592ab96980098e7e25e107d8faa983e",
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  "prompt_128_token_runs": "Rédige une liste numérotée de trente conseils brefs et distincts pour organiser un bureau. Une phrase concrète par ligne. Continue jusqu'au numéro trente.",
+  "warmup_prompt": "Combien font 17 + 25 ? Réponds uniquement avec le nombre.",
+  "run_profiles": [
+    {
+      "name": "probe20",
+      "gpu_layers": 20,
+      "ews_slots": 8,
+      "graphs_disabled": false
+    },
+    {
+      "name": "probe20-nographs",
+      "gpu_layers": 20,
+      "ews_slots": 8,
+      "graphs_disabled": true
+    },
+    {
+      "name": "probe47-slots8",
+      "gpu_layers": 47,
+      "ews_slots": 8,
+      "graphs_disabled": true
+    },
+    {
+      "name": "probe47-slots16",
+      "gpu_layers": 47,
+      "ews_slots": 16,
+      "graphs_disabled": true
+    },
+    {
+      "name": "probe47-slots32",
+      "gpu_layers": 47,
+      "ews_slots": 32,
+      "graphs_disabled": true
+    },
+    {
+      "name": "probe47-slots64",
+      "gpu_layers": 47,
+      "ews_slots": 64,
+      "graphs_disabled": true
+    },
+    {
+      "name": "probe47-slots96",
+      "gpu_layers": 47,
+      "ews_slots": 96,
+      "graphs_disabled": true
+    },
+    {
+      "name": "probe47-slots128",
+      "gpu_layers": 47,
+      "ews_slots": 128,
+      "graphs_disabled": true
+    },
+    {
+      "name": "probe47-slots128-complete",
+      "gpu_layers": 47,
+      "ews_slots": 128,
+      "graphs_disabled": true
+    }
+  ],
+  "runs": [
+    {
+      "name": "probe20",
+      "source_json_sha256": "bb58ac72fc338df06cde5088c5b36924cd2558f861fe5942bbe16496d0fedbb0",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 20/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size =  5747.20 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "9eb791819361c122b279fb15cb8ca8dcf40605fa4ecd826e97d4f5910fd617a5",
+        "port": 18380,
+        "alias": "glm-5.3-flash-ews",
+        "warmup": {
+          "http_wall_seconds": 50.868,
+          "time_to_first_content_seconds": 49.063,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.039,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 282.782,
+          "time_to_first_content_seconds": 86.803,
+          "content_piece_count": 128,
+          "completion_tokens": 128,
+          "prompt_tokens": 53,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 446,
+          "response_sha256": "b627fc28882998600fa816ef0a8e2e24bc6cb3cb0bab5a66b777bfdad00b6194",
+          "content_piece_span_seconds": 194.376,
+          "content_pieces_per_second": 0.653,
+          "completion_tokens_per_http_second": 0.453,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 16.656,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 2198339584,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 2953838592,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 5152178176,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "b627fc28882998600fa816ef0a8e2e24bc6cb3cb0bab5a66b777bfdad00b6194",
+        "ews_after": {
+          "callbacks": 8904,
+          "device_expert_bytes": 2198339584,
+          "device_payload_bytes": 269809811456,
+          "hits": 24684,
+          "host_expert_bytes": 2953838592,
+          "host_payload_bytes": 444468363264,
+          "logical_expert_bytes": 185478414336,
+          "misses": 46548,
+          "payload_bytes": 714278174720,
+          "physical_expert_bytes": 5152178176,
+          "read_bytes": 714850156544
+        },
+        "log_sha256": "ed901bdbb91a5eba91c8f8ff1b2e9bee1041a4c71b59dd190e6055b4acc3de03"
+      }
+    },
+    {
+      "name": "probe20-nographs",
+      "source_json_sha256": "161904644066b435debaff34b9b77b412169aa71317f11e8b114470a594e21f3",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 20/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size =  5747.20 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "9eb791819361c122b279fb15cb8ca8dcf40605fa4ecd826e97d4f5910fd617a5",
+        "port": 18380,
+        "alias": "glm-5.3-flash-ews",
+        "warmup": {
+          "http_wall_seconds": 50.404,
+          "time_to_first_content_seconds": 48.642,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.04,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 281.788,
+          "time_to_first_content_seconds": 86.397,
+          "content_piece_count": 128,
+          "completion_tokens": 128,
+          "prompt_tokens": 53,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 446,
+          "response_sha256": "b627fc28882998600fa816ef0a8e2e24bc6cb3cb0bab5a66b777bfdad00b6194",
+          "content_piece_span_seconds": 193.838,
+          "content_pieces_per_second": 0.655,
+          "completion_tokens_per_http_second": 0.454,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 7.125,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 2198339584,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 2953838592,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 5152178176,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "b627fc28882998600fa816ef0a8e2e24bc6cb3cb0bab5a66b777bfdad00b6194",
+        "ews_after": {
+          "callbacks": 8904,
+          "device_expert_bytes": 2198339584,
+          "device_payload_bytes": 269809811456,
+          "hits": 24684,
+          "host_expert_bytes": 2953838592,
+          "host_payload_bytes": 444468363264,
+          "logical_expert_bytes": 185478414336,
+          "misses": 46548,
+          "payload_bytes": 714278174720,
+          "physical_expert_bytes": 5152178176,
+          "read_bytes": 714850156544
+        },
+        "log_sha256": "5f82754c1e46ad99dac895339749c2f2c86e3c58b4396a1eac51ea59371c6e93"
+      }
+    },
+    {
+      "name": "probe47-slots8",
+      "source_json_sha256": "36901d585246a6b034853260b08250e1b61620b3453bf8d30a41929ed713a7f3",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 47/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size = 13464.37 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "00a8f054cb7eec41c723930ac684e3eb83f64efce46dd1d2d94284d4ee955a97",
+        "port": 18381,
+        "alias": "glm-5.3-flash-ews",
+        "warmup": {
+          "http_wall_seconds": 49.374,
+          "time_to_first_content_seconds": 47.585,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.041,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 278.663,
+          "time_to_first_content_seconds": 84.326,
+          "content_piece_count": 128,
+          "completion_tokens": 128,
+          "prompt_tokens": 53,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 461,
+          "response_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+          "content_piece_span_seconds": 192.738,
+          "content_pieces_per_second": 0.659,
+          "completion_tokens_per_http_second": 0.459,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 6.078,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 5152178176,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 5152178176,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+        "ews_after": {
+          "callbacks": 8904,
+          "device_expert_bytes": 5152178176,
+          "device_payload_bytes": 722314592256,
+          "hits": 24154,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 47078,
+          "payload_bytes": 722314592256,
+          "physical_expert_bytes": 5152178176,
+          "read_bytes": 722893086720
+        },
+        "log_sha256": "8d6b28662d50e5795679293c96e2e14b1ce12bb75747daf50ec0122300786d9e"
+      }
+    },
+    {
+      "name": "probe47-slots16",
+      "source_json_sha256": "747d720ada66ca13e8e5c1955fe75b8fe840b46b7be79c5c8714a59b4173659e",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 47/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size = 18377.87 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "8157de644542f42194b095d59d8a4618110080591bd680e2f744788ef47dc74d",
+        "port": 18382,
+        "alias": "glm-5.3-flash-ews",
+        "warmup": {
+          "http_wall_seconds": 41.746,
+          "time_to_first_content_seconds": 40.182,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.048,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 235.465,
+          "time_to_first_content_seconds": 71.393,
+          "content_piece_count": 128,
+          "completion_tokens": 128,
+          "prompt_tokens": 53,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 461,
+          "response_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+          "content_piece_span_seconds": 162.593,
+          "content_pieces_per_second": 0.781,
+          "completion_tokens_per_http_second": 0.544,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 6.047,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 10304356352,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 10304356352,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+        "ews_after": {
+          "callbacks": 8904,
+          "device_expert_bytes": 10304356352,
+          "device_payload_bytes": 598486155264,
+          "hits": 32252,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 38980,
+          "payload_bytes": 598486155264,
+          "physical_expert_bytes": 10304356352,
+          "read_bytes": 598965141504
+        },
+        "log_sha256": "8cd7a334729bf036a185fd04a60b72315ef4e959adc2e3fd0020b8dfb7f555d4"
+      }
+    },
+    {
+      "name": "probe47-slots32",
+      "source_json_sha256": "0ed1f923dadd49ca081105a9be3bdef56072331384ed5f7e3c38c6d9eba849cf",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 47/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size = 28204.87 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "778a905767fc0a392f77db2f24387463f8ce6c271c0dfa1a95968bdd89299303",
+        "port": 18383,
+        "alias": "glm-5.3-flash-ews",
+        "warmup": {
+          "http_wall_seconds": 34.905,
+          "time_to_first_content_seconds": 33.547,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.057,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 190.778,
+          "time_to_first_content_seconds": 56.743,
+          "content_piece_count": 128,
+          "completion_tokens": 128,
+          "prompt_tokens": 53,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 461,
+          "response_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+          "content_piece_span_seconds": 132.845,
+          "content_pieces_per_second": 0.956,
+          "completion_tokens_per_http_second": 0.671,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 6.047,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 20608712704,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 20608712704,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+        "ews_after": {
+          "callbacks": 8904,
+          "device_expert_bytes": 20608712704,
+          "device_payload_bytes": 474382991360,
+          "hits": 40350,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 30882,
+          "payload_bytes": 474382991360,
+          "physical_expert_bytes": 20608712704,
+          "read_bytes": 474762469376
+        },
+        "log_sha256": "4b6e42f51680755da7d558934caf16cf652382a50af9ff24b1e0d93ed298d54a"
+      }
+    },
+    {
+      "name": "probe47-slots64",
+      "source_json_sha256": "8aef013425b98e4d4da1034150533e65409367c7374740ec67dafbe6d0b1c406",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 47/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size = 47858.87 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "255f5a67dc46cf965b26d3020d8f444af254fc72d59e151aa51ff7fcf055a889",
+        "port": 18384,
+        "alias": "glm-5.3-flash-ews",
+        "warmup": {
+          "http_wall_seconds": 30.987,
+          "time_to_first_content_seconds": 30.254,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.065,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 143.579,
+          "time_to_first_content_seconds": 43.086,
+          "content_piece_count": 128,
+          "completion_tokens": 128,
+          "prompt_tokens": 53,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 461,
+          "response_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+          "content_piece_span_seconds": 99.539,
+          "content_pieces_per_second": 1.276,
+          "completion_tokens_per_http_second": 0.891,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 6.609,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 41217425408,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 41217425408,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+        "ews_after": {
+          "callbacks": 8904,
+          "device_expert_bytes": 41217425408,
+          "device_payload_bytes": 346947125248,
+          "hits": 48654,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 22578,
+          "payload_bytes": 346947125248,
+          "physical_expert_bytes": 41217425408,
+          "read_bytes": 347224563712
+        },
+        "log_sha256": "bd0fad79631d788398908b3bc56a6bbc2760b2c49a37636de80c6b440930be3f"
+      }
+    },
+    {
+      "name": "probe47-slots96",
+      "source_json_sha256": "d6db8b45d2e853688b27295748c3b280820d1f23256b440d54af80731162c402",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 47/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size = 67512.87 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "d6691e14623a4aa3e28b1fe8f5a6fd9d6e9bc58c7f7558091cf07ca54a7b9203",
+        "port": 18385,
+        "alias": "glm-5.3-flash-ews",
+        "warmup": {
+          "http_wall_seconds": 30.555,
+          "time_to_first_content_seconds": 29.905,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.065,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 110.178,
+          "time_to_first_content_seconds": 32.062,
+          "content_piece_count": 128,
+          "completion_tokens": 128,
+          "prompt_tokens": 53,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 461,
+          "response_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+          "content_piece_span_seconds": 77.362,
+          "content_pieces_per_second": 1.642,
+          "completion_tokens_per_http_second": 1.162,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 7.609,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 61826138112,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 61826138112,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+        "ews_after": {
+          "callbacks": 8904,
+          "device_expert_bytes": 61826138112,
+          "device_payload_bytes": 254094409728,
+          "hits": 54697,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 16535,
+          "payload_bytes": 254094409728,
+          "physical_expert_bytes": 61826138112,
+          "read_bytes": 254297591808
+        },
+        "log_sha256": "e66a7b95609fcf11a6ef0cbe4a43ca464702acb89fd4eb3972e9828cb6eb6c45"
+      }
+    },
+    {
+      "name": "probe47-slots128",
+      "source_json_sha256": "17a61a31a62808745ea3d9ef9069297cd76d08891eea0a522b4813272aa68018",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 47/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size = 87166.87 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "dc0b325be605d867e63f73103ae17f18cd21e3441622c93299c4f0d815965eb5",
+        "port": 18386,
+        "alias": "glm-5.3-flash-ews",
+        "warmup": {
+          "http_wall_seconds": 31.048,
+          "time_to_first_content_seconds": 30.427,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.064,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 87.103,
+          "time_to_first_content_seconds": 26.279,
+          "content_piece_count": 128,
+          "completion_tokens": 128,
+          "prompt_tokens": 53,
+          "finish_reason": "length",
+          "done_event": true,
+          "response_characters": 461,
+          "response_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+          "content_piece_span_seconds": 60.378,
+          "content_pieces_per_second": 2.103,
+          "completion_tokens_per_http_second": 1.47,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 12.172,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 82434850816,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 82434850816,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "b690d243dc2a9d8c9dfc8bf7e2667774673cd9c815dce5173f30afd2b65dd955",
+        "ews_after": {
+          "callbacks": 8904,
+          "device_expert_bytes": 82434850816,
+          "device_payload_bytes": 196724457472,
+          "hits": 58423,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 12809,
+          "payload_bytes": 196724457472,
+          "physical_expert_bytes": 82434850816,
+          "read_bytes": 196881854464
+        },
+        "log_sha256": "33b443abc42ac214fba204668fc4a3605b17af0053ba7467871fef7054f405e6"
+      }
+    },
+    {
+      "name": "probe47-slots128-complete",
+      "source_json_sha256": "6e7ef00fa8deb44aadbe46a4ff80cd3ee73a73c3748a8536319d0add66b7b783",
+      "server_log_markers": {
+        "rocm_initialized": true,
+        "offload_line": "load_tensors: offloaded 47/47 layers to GPU",
+        "rocm_model_buffer_line": "load_tensors:        ROCm0 model buffer size = 87166.87 MiB"
+      },
+      "receipt": {
+        "schema": "eie.glm53-ews-hip-x2-probe/v1",
+        "exe_sha256": "3f9b67da18ef86c59dd8afa43e08921843f7c74d8ae4fe6edb8ad2eb9f7c3392",
+        "config_sha256": "dc0b325be605d867e63f73103ae17f18cd21e3441622c93299c4f0d815965eb5",
+        "port": 18386,
+        "alias": "glm-5.3-flash-ews",
+        "measured_prompt": "Une opération échoue dans 10 % des cas. La répéter une fois garantit-elle que le risque tombe à 1 % si les deux tentatives dépendent du même serveur indisponible ? Explique en deux phrases.",
+        "measured_max_tokens": 256,
+        "warmup": {
+          "http_wall_seconds": 31.127,
+          "time_to_first_content_seconds": 30.499,
+          "content_piece_count": 1,
+          "completion_tokens": 2,
+          "prompt_tokens": 30,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 2,
+          "response_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+          "content_piece_span_seconds": null,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 0.064,
+          "errors": []
+        },
+        "measured": {
+          "http_wall_seconds": 81.922,
+          "time_to_first_content_seconds": 34.499,
+          "content_piece_count": 95,
+          "completion_tokens": 96,
+          "prompt_tokens": 64,
+          "finish_reason": "stop",
+          "done_event": true,
+          "response_characters": 359,
+          "response_sha256": "dc408079fd298653e5b0cbb5444dae139b1dafc95867b9f60dcd80c0a4b936d0",
+          "content_piece_span_seconds": 46.625,
+          "content_pieces_per_second": null,
+          "completion_tokens_per_http_second": 1.172,
+          "errors": []
+        },
+        "ok": true,
+        "startup_seconds": 10.046,
+        "ews_before": {
+          "callbacks": 0,
+          "device_expert_bytes": 82434850816,
+          "device_payload_bytes": 0,
+          "hits": 0,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 0,
+          "payload_bytes": 0,
+          "physical_expert_bytes": 82434850816,
+          "read_bytes": 0
+        },
+        "warmup_answer": "42",
+        "response_file_sha256": "dc408079fd298653e5b0cbb5444dae139b1dafc95867b9f60dcd80c0a4b936d0",
+        "ews_after": {
+          "callbacks": 7980,
+          "device_expert_bytes": 82434850816,
+          "device_payload_bytes": 194877194240,
+          "hits": 51152,
+          "host_expert_bytes": 0,
+          "host_payload_bytes": 0,
+          "logical_expert_bytes": 185478414336,
+          "misses": 12688,
+          "payload_bytes": 194877194240,
+          "physical_expert_bytes": 82434850816,
+          "read_bytes": 195033104384
+        },
+        "log_sha256": "cf58576be22fb6c9018e86420b7b3db2c1ed679ff362a459751ff7361aa4075a"
+      },
+      "measured_response_text": "Non, répéter l'opération ne garantit pas ce risque de 1 %. Si les deux tentatives dépendent du même serveur indisponible, leurs échecs sont **corrélés** (dépendants), donc la formule du produit des probabilités — valable uniquement pour des événements indépendants — ne s'applique pas : le risque résiduel reste proche de 10 % plutôt que de diminuer vers 1 %."
+    }
+  ],
+  "notes": [
+    "EWS counters include arithmetic warm-up and measured request.",
+    "The full server logs remain in the local experiment archive; per-run receipts preserve their SHA-256 hashes.",
+    "The first graph-enabled run used an earlier version of the probe script. Later runs used GGML_CUDA_DISABLE_GRAPHS=1."
+  ]
+}

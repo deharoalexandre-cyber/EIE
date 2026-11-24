@@ -15,6 +15,19 @@ within the documented profiles. GLM, arbitrary contexts, other architectures
 and other hardware are not thereby validated. This runtime uses an LRU-style
 slot cache, one-token microbatches and no per-chunk SHA verification.
 
+## AMD EVO-X2 GLM trial (24 November 2026)
+
+An isolated [EIE/EWS HIP experiment](../benchmarks/glm53-ews-hip-x2-20261124.md)
+streamed the frozen 199.7 GB GLM-5.3-Flash GGUF on a Radeon 8060S. With
+47/47 layers placed on ROCm0 and 128 bounded EWS expert slots, one measured
+128-token request delivered **2.103 tokens/s** of decode cadence. A separate
+answer finished normally. The [raw receipt](../benchmarks/data/ews/glm53-ews-hip-x2-20261124.json)
+records the nine profile runs, EWS counters, model hashes and limitations.
+
+These are single-run observations in a separate experimental GLM runtime.
+They do not establish native equivalence, cold-cache speedup, sustained load,
+general answer quality or coexistence with Elyne GRCA.
+
 ## Historical August routing / I/O campaign
 
 The [August report](../benchmarks/ews-gemma4-a4b-rtx4090-laptop.md) and
